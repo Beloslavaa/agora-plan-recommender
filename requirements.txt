@@ -1,0 +1,13 @@
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+openai>=1.55.0
+httpx>=0.28.0
+duckduckgo_search>=6.2.0
+# web server (needed to run the API / serve the UI)
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+# database (Supabase Postgres). >=3.2 needed for lazy pool construction (open=False).
+psycopg[binary]>=3.2
+psycopg-pool>=3.2
+# optional: only if you set llm_provider=anthropic
+# anthropic>=0.40.0

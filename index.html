@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agora — plans for your city</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #d9d9d9; font-family: "Space Mono", monospace; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes spinRing { to { transform: rotate(360deg); } }
+  @keyframes grainShift { 0% { transform: translate(0,0); } 100% { transform: translate(-6%,-4%); } }
+  #app { display:flex; flex-direction:column; height:100vh; max-width:460px; margin:0 auto;
+         position:relative; background:#FFFFFF; overflow:hidden;
+         box-shadow:0 0 0 4px #121212, 0 0 60px rgba(0,0,0,0.35); }
+  main { flex:1; overflow-y:auto; position:relative; z-index:1; background:#FFFFFF; }
+  /* Halftone dot layer — sits ABOVE the photo (z-index:1) so the image reads
+     through it as a pale, screened texture. */
+  .imgslot-dots { position:absolute; inset:0; z-index:1; background-image:radial-gradient(#8a8a8a 1.1px, transparent 1.7px);
+                  background-size:5px 5px; opacity:0.7; mix-blend-mode:multiply; pointer-events:none; }
+  /* Photo behind the dots: black & white, paled toward the white panel. */
+  .photo-bw { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;
+              filter:grayscale(1) contrast(0.9) brightness(1.08); opacity:0.72; }
+  .anton { font-family:'Anton', sans-serif; }
+  /* Titles keep the dense Anton treatment: condensed (scaleX 0.84 from the left),
+     tight leading (line-height ~0.82). Feed titles wrap naturally, always fill at
+     least 2 lines (min-height), stay a consistent 34px, and only auto-shrink if a
+     very long one would exceed ~3 lines (so nothing is cut with "…"). */
+  .card-title  { font-family:'Anton',sans-serif; font-size:34px; line-height:0.82; text-transform:uppercase;
+                 letter-spacing:-0.01em; color:#121212; overflow:hidden; overflow-wrap:break-word;
+                 min-height:56px; max-height:86px;
+                 transform:scaleX(0.84); transform-origin:left; text-align:left; }
+  .detail-title{ font-family:'Anton',sans-serif; font-size:62px; line-height:0.78; text-transform:uppercase;
+                 letter-spacing:-0.02em; color:#121212; word-break:break-word; overflow:hidden; max-height:204px;
+                 transform:scaleX(0.84); transform-origin:left; }
+  .saved-title { font-family:'Anton',sans-serif; font-size:26px; line-height:0.8; text-transform:uppercase;
+                 color:#121212; word-break:break-word; overflow:hidden; max-height:64px;
+                 transform:scaleX(0.84); transform-origin:left; }
+  a.plainlink { text-decoration:none; }
+  button { font-family:'Space Mono', monospace; }
+  @media (prefers-reduced-motion: reduce) {
+    #ring { animation: none !important; }
+    #grain { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="main"></main>
+
+  <!-- BOTTOM NAV -->
+  <nav style="position:relative;z-index:5;flex:none;height:82px;background:#FFFFFF;border-top:5px solid #121212;display:flex;align-items:center;justify-content:space-between;padding:0 32px;">
+    <button id="nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;">
+      <span style="font-size:28px;line-height:1;color:#121212;">☺</span>
+      <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
+    </button>
+    <button id="nav-home" style="position:relative;width:88px;height:88px;border-radius:50%;background:#EA4632;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transform:translateY(-24px);">
+      <div id="ring" style="position:absolute;inset:-7px;border:3px dashed #121212;border-radius:50%;animation:spinRing 9s linear infinite;pointer-events:none;"></div>
+      <span class="anton" style="font-size:26px;line-height:0.8;color:#121212;transform:scaleX(0.85);">FOR<br>YOU</span>
+    </button>
+    <button id="nav-saved" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;">
+      <span id="nav-saved-heart" style="font-size:24px;line-height:1;color:#121212;">♥</span>
+      <span id="nav-saved-label" style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">SAVED</span>
+    </button>
+  </nav>
+
+  <!-- grain overlay -->
+  <div id="grain" style="position:absolute;inset:-10%;z-index:4;pointer-events:none;opacity:0.07;mix-blend-mode:multiply;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);animation:grainShift 3s steps(4) infinite;"></div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ── palette ──────────────────────────────────────────────
+  const INK='#121212', WHITE='#FFFFFF', RED='#EA4632', CYAN='#7FA9BD', PINK='#E3A5CE', MUST='#E4BE55';
+
+  // ── API base (same origin as the FastAPI app) ────────────
+  const API = "";                 // '' → relative to wherever this page is served
+  const PAGE = 15;                // /plans page size for infinite scroll
+
+  // ── per-browser anonymous user id (for interactions) ─────
+  function getUid() {
+    let id = null;
+    try { id = localStorage.getItem("agora_uid"); } catch (e) {}
+    if (!id) {
+      id = "anon_" + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem("agora_uid", id); } catch (e) {}
+    }
+    return id;
+  }
+  const UID = getUid();
+
+  // ── saved set (local; backend has no "my saved" endpoint) ─
+  function loadSaved() {
+    try { return JSON.parse(localStorage.getItem("agora_saved") || "{}") || {}; }
+    catch (e) { return {}; }
+  }
+  function persistSaved() {
+    try { localStorage.setItem("agora_saved", JSON.stringify(state.saved)); } catch (e) {}
+  }
+
+  // ── network helpers ──────────────────────────────────────
+  async function getJSON(path) {
+    const r = await fetch(API + path, { headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status + " for " + path);
+    return r.json();
+  }
+  function postInteraction(planId, type) {
+    // fire-and-forget; a failed interaction must never block the UI
+    fetch(API + "/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: UID, plan_id: planId, interaction_type: type }),
+    }).catch(function () {});
+  }
+
+  // ── url guards (defence-in-depth: data comes from scrapes) ─
+  const isHttp = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
+
+  // ── date formatting ──────────────────────────────────────
+  const DOW = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  const pad2 = (n) => String(n).padStart(2, "0");
+  function parseD(s) {
+    if (!s) return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2]-1, +m[3]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const fmtD = (d) => DOW[d.getDay()] + " " + pad2(d.getDate()) + "." + pad2(d.getMonth()+1);
+  function formatDates(start, end) {
+    const s = parseD(start), e = parseD(end);
+    if (s && e) return s.getTime() === e.getTime() ? fmtD(s) : fmtD(s) + " → " + fmtD(e);
+    if (s) return fmtD(s);
+    if (e) return "UNTIL " + fmtD(e);
+    return "DATES TBA";
+  }
+
+  // Tags come from the DB `tags` field (LLM-extracted from scraped pages), so
+  // they can be noisy — age ratings, advisories, full sentences. Keep only
+  // short, topical keywords; fall back to the category if nothing survives.
+  const _TAG_JUNK = /(menor|recomendad|p[uú]blico|calific|clasific|rated|\bedad\b|a[nñ]os|mayores|apta|\+\s*\d+|todos los|content|advisor)/i;
+  function keywords(plan) {
+    let kw = Array.isArray(plan.tags) ? plan.tags : [];
+    kw = kw
+      .map((t) => String(t).replace(/\s+/g, " ").trim())
+      .filter((t) => {
+        if (!t) return false;
+        if (t.length > 22 || t.split(" ").length > 3) return false;  // keywords are short
+        if (/^\d+$/.test(t)) return false;                           // bare numbers
+        if (_TAG_JUNK.test(t)) return false;                         // ratings / advisories
+        return true;
+      })
+      .map((t) => t.toLowerCase());
+    kw = [...new Set(kw)];                                           // dedupe
+    if (!kw.length && plan.category) kw = [String(plan.category).replace(/_/g, " ")];
+    return kw.slice(0, 4);
+  }
+
+  // Normalize scraped titles: collapse messy whitespace/newlines. Sizing and
+  // length are then standardized purely by CSS (fixed size + line clamp).
+  function cleanTitle(t) {
+    return (t || "").replace(/\s+/g, " ").trim();
+  }
+
+  // Shrink a title's font-size until the full text fits its fixed-height box,
+  // so long titles are never cut with "…". Runs once elements are in the DOM.
+  function fitTitle(node, maxPx, minPx) {
+    let size = maxPx, guard = 0;
+    node.style.fontSize = size + "px";
+    while (node.scrollHeight > node.clientHeight + 1 && size > minPx && guard < 48) {
+      size -= 1; guard++;
+      node.style.fontSize = size + "px";
+    }
+  }
+  function fitAllTitles() {
+    const root = document.getElementById("main");
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll(".card-title").forEach((n) => fitTitle(n, 34, 28));
+    root.querySelectorAll(".detail-title").forEach((n) => fitTitle(n, 62, 28));
+    root.querySelectorAll(".saved-title").forEach((n) => fitTitle(n, 26, 15));
+  }
+
+  // ── signature: outward-only sine-wave rounded-rect border ─
+  const WAVE_PATH = (function () {
+    const W=400,H=210,a=9,wT=10,wS=5,NT=170,NS=95,p=[];
+    const outT=(t)=>-a*(1+Math.sin(2*Math.PI*wT*t));
+    const outB=(t)=> a*(1+Math.sin(2*Math.PI*wT*t));
+    const outR=(u)=> a*(1+Math.sin(2*Math.PI*wS*u));
+    const outL=(u)=>-a*(1+Math.sin(2*Math.PI*wS*u));
+    for (let i=0;i<=NT;i++){const t=i/NT;p.push([t*W,outT(t)]);}
+    for (let i=1;i<=NS;i++){const u=i/NS;p.push([W+outR(u),u*H]);}
+    for (let i=1;i<=NT;i++){const t=i/NT;p.push([W-t*W,H+outB(t)]);}
+    for (let i=1;i<NS;i++){const u=i/NS;p.push([outL(u),H-u*H]);}
+    return "M " + p.map((q)=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L ") + " Z";
+  })();
+
+  // ── sunburst: alternating outer/inner spikes — a bold graphic shape
+  // instead of a plain oversized circle (which just read as "circle cropped
+  // to a corner curve" at the size the old case 1 used).
+  const BURST_PATH = (function () {
+    const CX=100, CY=100, SPIKES=10, RO=94, RI=54, p=[];
+    for (let i=0;i<SPIKES*2;i++){
+      const ang = (i/(SPIKES*2))*2*Math.PI - Math.PI/2;
+      const r = i % 2 === 0 ? RO : RI;
+      p.push([CX+r*Math.cos(ang), CY+r*Math.sin(ang)]);
+    }
+    return "M " + p.map((q)=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L ") + " Z";
+  })();
+
+  // ── 15 layout recipes (rotate every 15 cards) ────────────
+  const RECIPES = [
+    { bg:WHITE, ac:RED,  ph:"R", deco:"num",      dcol:MUST },
+    { bg:CYAN,  ac:RED,  ph:"L", deco:"rings",    dcol:MUST },
+    { bg:WHITE, ac:PINK, ph:"R", deco:"blob",     dcol:PINK, dcol2:CYAN },
+    { bg:MUST,  ac:RED,  ph:"L", deco:"none",     dcol:RED  },
+    { bg:RED,   ac:CYAN, ph:"R", deco:"num",      dcol:CYAN },
+    { bg:WHITE, ac:CYAN, ph:"R", deco:"arc",      dcol:CYAN },
+    { bg:PINK,  ac:RED,  ph:"L", deco:"bars",     dcol:RED  },
+    { bg:WHITE, ac:MUST, ph:"R", deco:"triangle", dcol:MUST },
+    { bg:CYAN,  ac:PINK, ph:"R", deco:"none",     dcol:PINK },
+    { bg:WHITE, ac:RED,  ph:"L", deco:"num",      dcol:RED,  stripes:true },
+    { bg:WHITE, ac:CYAN, ph:"R", deco:"cross",    dcol:MUST },
+    { bg:PINK,  ac:CYAN, ph:"R", deco:"rings",    dcol:CYAN },
+    { bg:MUST,  ac:RED,  ph:"L", deco:"blob",     dcol:PINK, dcol2:RED },
+    { bg:WHITE, ac:PINK, ph:"L", deco:"arc",      dcol:PINK },
+    { bg:RED,   ac:MUST, ph:"R", deco:"num",      dcol:MUST },
+  ];
+  const faintOf = (hex) => hex + "2b";  // ~17% alpha
+
+  // ── tiny DOM helper (textContent-only for data → no XSS) ─
+  function el(tag, css, opts) {
+    opts = opts || {};
+    const n = document.createElement(tag);
+    if (css) n.style.cssText = css;
+    if (opts.text != null) n.textContent = opts.text;   // safe: never innerHTML for data
+    if (opts.svg != null) n.innerHTML = opts.svg;        // static author-controlled markup only
+    if (opts.attrs) for (const k in opts.attrs) n.setAttribute(k, opts.attrs[k]);
+    if (opts.on) for (const k in opts.on) n.addEventListener(k, opts.on[k]);
+    return n;
+  }
+
+  // Photo panel — ONLY built when the plan actually has a photo. The image is
+  // rendered black & white and paled (.photo-bw) UNDER the halftone dots.
+  // If the image fails to load, the whole panel is removed so the flex content
+  // reflows to full width (i.e. it falls back to the no-photo card).
+  function photoPanel(plan, side) {
+    const border = side === "L" ? "border-right:4px solid #121212;" : "border-left:4px solid #121212;";
+    const wrap = el("div",
+      "position:relative;width:120px;flex:none;background:#FFFFFF;overflow:hidden;isolation:isolate;z-index:3;" + border);
+    const img = el("img", "",
+      { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "", loading: "lazy" } });
+    img.addEventListener("error", function () { wrap.remove(); });
+    wrap.appendChild(img);                                   // photo (z-index:0)
+    wrap.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));  // dots on top (z-index:1)
+    return wrap;
+  }
+
+  function decoration(r, i) {
+    const dcol = r.dcol || r.ac, dcol2 = r.dcol2 || r.ac;
+    switch (r.deco) {
+      case "num":
+        return el("div",
+          "position:absolute;bottom:-40px;left:6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.7;color:" +
+          faintOf(dcol) + ";transform:scaleX(0.68);transform-origin:left bottom;pointer-events:none;",
+          { text: pad2(i + 1) });
+      case "rings":
+        return el("div",
+          "position:absolute;top:-48px;right:-42px;width:188px;height:188px;z-index:1;pointer-events:none;opacity:0.5;",
+          { svg: "<svg viewBox='0 0 200 200' width='188' height='188'><circle cx='100' cy='100' r='90' fill='none' stroke='"+dcol+"' stroke-width='9'/><circle cx='100' cy='100' r='62' fill='none' stroke='"+dcol+"' stroke-width='9'/><circle cx='100' cy='100' r='34' fill='none' stroke='"+dcol+"' stroke-width='9'/></svg>" });
+      case "arc":
+        return el("div",
+          "position:absolute;bottom:-72px;left:-52px;width:172px;height:172px;border-radius:50%;background:" +
+          dcol + ";opacity:0.32;z-index:1;pointer-events:none;");
+      case "bars":
+        return el("div",
+          "position:absolute;top:-24px;right:-14px;width:150px;height:236px;background:repeating-linear-gradient(48deg," +
+          dcol + " 0 13px, transparent 13px 30px);opacity:0.38;z-index:1;pointer-events:none;transform:rotate(5deg);");
+      case "blob":
+        return el("div",
+          "position:absolute;top:-26px;left:60px;width:150px;height:150px;background:linear-gradient(150deg," +
+          dcol + "," + dcol2 + ");border-radius:47% 53% 60% 40% / 42% 46% 54% 58%;opacity:0.5;z-index:1;pointer-events:none;transform:rotate(-8deg);");
+      case "triangle":
+        return el("div",
+          "position:absolute;top:-28px;right:-26px;width:178px;height:178px;background:" +
+          dcol + ";clip-path:polygon(100% 0,100% 100%,0 0);opacity:0.34;z-index:1;pointer-events:none;");
+      case "cross":
+        return el("div",
+          "position:absolute;bottom:-42px;left:-26px;width:150px;height:150px;z-index:1;pointer-events:none;opacity:0.4;transform:rotate(12deg);",
+          { svg: "<svg viewBox='0 0 120 120' width='150' height='150'><path d='M46 0 h28 v46 h46 v28 h-46 v46 h-28 v-46 h-46 v-28 h46 z' fill='"+dcol+"'/></svg>" });
+      default:
+        return null;
+    }
+  }
+
+  // A large shape that FILLS its (relative) parent — used to occupy the space
+  // where a photo would go on no-image cards. `i` rotates the shape for variety.
+  function fillShape(i, accent) {
+    const c = accent;
+    const wrap = el("div", "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;");
+    let shape;
+    switch (i % 5) {
+      case 0: // organic blob
+        shape = el("div",
+          "position:absolute;top:-8%;left:6%;width:88%;height:116%;background:" + c +
+          ";opacity:0.5;border-radius:47% 53% 60% 40% / 42% 46% 54% 58%;transform:rotate(-6deg);");
+        break;
+      case 1: // sunburst — bold spiked shape, fully visible (not cropped)
+        shape = el("div",
+          "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(4deg);opacity:0.45;",
+          { svg: "<svg viewBox='0 0 200 200' width='250' height='250'><path d='" + BURST_PATH + "' fill='" + c + "'/></svg>" });
+        break;
+      case 2: // triangle — smaller and tilted, reads as a triangle (not a sliced rectangle)
+        shape = el("div",
+          "position:absolute;top:52%;left:50%;width:70%;height:64%;transform:translate(-50%,-48%) rotate(8deg);background:" + c +
+          ";opacity:0.4;clip-path:polygon(50% 4%,96% 96%,4% 96%);");
+        break;
+      case 3: // concentric rings
+        shape = el("div",
+          "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.5;",
+          { svg: "<svg viewBox='0 0 200 200' width='240' height='240'><circle cx='100' cy='100' r='92' fill='none' stroke='" + c + "' stroke-width='12'/><circle cx='100' cy='100' r='58' fill='none' stroke='" + c + "' stroke-width='12'/><circle cx='100' cy='100' r='24' fill='" + c + "'/></svg>" });
+        break;
+      default: // bold cross
+        shape = el("div",
+          "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(10deg);opacity:0.42;",
+          { svg: "<svg viewBox='0 0 120 120' width='230' height='230'><path d='M46 0 h28 v46 h46 v28 h-46 v46 h-28 v-46 h-46 v-28 h46 z' fill='" + c + "'/></svg>" });
+    }
+    wrap.appendChild(shape);
+    return wrap;
+  }
+
+  // ── build one feed card element ──────────────────────────
+  function buildCard(plan, i) {
+    const r = RECIPES[i % 15];
+    const hasPhoto = isHttp(plan.image_url);
+    // photo side only matters when there IS a photo; no-photo cards are always
+    // left-aligned full-width.
+    const left = hasPhoto && r.ph === "L";
+    const align = hasPhoto ? (left ? "right" : "left") : "left";
+    const accent = r.ac, bg = r.bg;
+    const dateColor = bg === WHITE ? accent : INK;
+
+    const wrap = el("div", "position:relative;");
+
+    // wave border (author-controlled colors → safe inline svg)
+    wrap.appendChild(el("div",
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0;",
+      { svg:
+        "<svg viewBox='0 0 400 210' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
+        "<path d='"+WAVE_PATH+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
+        "<path d='"+WAVE_PATH+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>" }));
+
+    const card = el("div",
+      "position:relative;display:flex;align-items:stretch;min-height:214px;background:" + bg +
+      ";margin-bottom:46px;cursor:pointer;overflow:hidden;",
+      { on: { click: function () { openPlan(plan); } } });
+
+    // Blue stripes stay UNDER the photo panel (z-index:3) — unlike the accent
+    // shapes below, this one is a full-bleed background pattern, not a small
+    // graphic accent, and covering the image with it would just look broken.
+    if (r.stripes) card.appendChild(el("div",
+      "position:absolute;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(90deg,#7FA9BD 0 16px, transparent 16px 36px);opacity:0.8;"));
+    // No-image cards MUST show a shape — if the recipe has none, substitute one.
+    let decoType = r.deco;
+    if (!hasPhoto && decoType === "none") {
+      decoType = ["rings", "blob", "triangle", "cross", "arc"][i % 5];
+    }
+    const deco = decoration({ ...r, deco: decoType }, i);
+    if (deco) {
+      // On photo cards, the accent shape reads bolder sitting IN FRONT of the
+      // photo panel (z-index:3) rather than hidden behind its opaque white
+      // background wherever they'd overlap. No-photo cards keep the shape
+      // behind the text content (z-index:2), same as before.
+      if (hasPhoto) deco.style.zIndex = "4";
+      card.appendChild(deco);
+    }
+
+    if (hasPhoto && left) card.appendChild(photoPanel(plan, "L"));
+
+    // content column — spans full width when there's no photo box
+    const padding = hasPhoto
+      ? (left ? "16px 16px 14px 12px" : "16px 12px 14px 16px")
+      : "16px 16px 14px 16px";
+    const content = el("div",
+      "position:relative;flex:1;padding:" + padding +
+      ";display:flex;flex-direction:column;justify-content:space-between;z-index:2;text-align:" +
+      align + ";");
+
+    const titleBox = el("div", "",
+      { text: (plan.short_title || plan.title) || "UNTITLED", attrs: { class: "card-title" } });
+    content.appendChild(titleBox);
+
+    const bottom = el("div", "");
+    const tags = el("div",
+      "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;justify-content:" +
+      (align === "right" ? "flex-end" : "flex-start") + ";");
+    keywords(plan).forEach(function (k) {
+      tags.appendChild(el("span",
+        "font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
+        accent + ";padding:2px 7px;", { text: k }));
+    });
+    bottom.appendChild(tags);
+    bottom.appendChild(el("div",
+      "font-weight:700;font-size:11px;letter-spacing:0.04em;color:" + dateColor + ";",
+      { text: formatDates(plan.start_date, plan.end_date) }));
+    content.appendChild(bottom);
+    card.appendChild(content);
+
+    if (hasPhoto && !left) card.appendChild(photoPanel(plan, "R"));
+
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  // ── state ────────────────────────────────────────────────
+  const state = {
+    view: "home",
+    feed: [],           // array of plan objects, in display order
+    ids: new Set(),     // ids already in feed (dedup)
+    cache: {},          // id → plan (for saved lookups)
+    offset: 0,          // /plans pagination cursor
+    done: false,        // no more /plans pages
+    loading: false,
+    selected: null,     // current plan object in detail
+    detailFrom: "home", // which view BACK should return to from detail: "home" | "cinema"
+    cinema: null,       // { key, name, plans, loading } while state.view === "cinema"
+    saved: loadSaved(), // { [id]: true }
+  };
+
+  const main = document.getElementById("main");
+
+  function remember(plan) {
+    state.cache[plan.id] = plan;
+  }
+  function addPlans(plans) {
+    let added = 0;
+    plans.forEach(function (p) {
+      if (!p || p.id == null || state.ids.has(p.id)) return;
+      state.ids.add(p.id);
+      state.feed.push(p);
+      remember(p);
+      added++;
+    });
+    return added;
+  }
+
+  // ── data loading ─────────────────────────────────────────
+  // Cinemas are grouped server-side (one row per chain, movies excluded from
+  // /plans and /recommendations) — turn each into a card-shaped object so
+  // buildCard/openPlan can handle it like any other feed item.
+  async function loadCinemas() {
+    try {
+      const cinemas = await getJSON("/cinemas");
+      addPlans((cinemas || []).map(function (c) {
+        return {
+          id: "cinema:" + c.key,
+          isCinema: true,
+          cinemaKey: c.key,
+          title: c.name,
+          short_title: c.name,
+          description: "",
+          image_url: c.image_url,
+          tags: ["cinema"],
+          category: null,
+          start_date: null,
+          end_date: null,
+        };
+      }));
+    } catch (e) { /* no cinemas yet — fine, feed just won't lead with them */ }
+  }
+
+  async function loadInitial() {
+    await loadCinemas();            // cinema cards lead the feed
+    // "For you" = popularity-ranked recommendations, then paginate the rest.
+    try {
+      const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?limit=50");
+      addPlans(recs.map((r) => r.plan).filter(Boolean));
+    } catch (e) { /* fall through to /plans */ }
+    await loadMore();               // top up with the general catalogue
+  }
+  async function loadMore() {
+    if (state.loading || state.done) return;
+    state.loading = true;
+    try {
+      const page = await getJSON("/plans?limit=" + PAGE + "&offset=" + state.offset);
+      state.offset += PAGE;
+      if (!Array.isArray(page) || page.length < PAGE) state.done = true;
+      addPlans(page || []);
+    } catch (e) {
+      state.done = true;            // stop hammering a broken endpoint
+    } finally {
+      state.loading = false;
+      if (state.view === "home") renderHome();
+    }
+  }
+
+  // ── navigation ───────────────────────────────────────────
+  function openPlan(plan) {
+    if (plan.isCinema) { openCinema(plan); return; }
+    // Remember whether BACK from the detail page should return here or to
+    // the cinema list it was opened from.
+    state.detailFrom = state.view === "cinema" ? "cinema" : "home";
+    state.selected = plan;
+    remember(plan);
+    postInteraction(plan.id, "click");
+    state.view = "detail";
+    render();
+    main.scrollTop = 0;
+  }
+  function goHome()  { state.view = "home";  render(); main.scrollTop = 0; }
+  function goSaved() { state.view = "saved"; render(); main.scrollTop = 0; }
+  function goBackFromDetail() {
+    if (state.detailFrom === "cinema" && state.cinema) { state.view = "cinema"; render(); }
+    else { state.view = "home"; render(); }
+    main.scrollTop = 0;
+  }
+  async function openCinema(hub) {
+    state.cinema = { key: hub.cinemaKey, name: hub.short_title || hub.title, plans: [], loading: true };
+    state.view = "cinema";
+    render();
+    main.scrollTop = 0;
+    try {
+      const plans = await getJSON("/cinemas/" + encodeURIComponent(hub.cinemaKey) + "/plans");
+      (plans || []).forEach(remember);
+      state.cinema.plans = plans || [];
+    } catch (e) {
+      state.cinema.plans = [];
+    } finally {
+      state.cinema.loading = false;
+      if (state.view === "cinema") render();
+    }
+  }
+  function shuffle() {
+    if (!state.feed.length) return;
+    openPlan(state.feed[Math.floor(Math.random() * state.feed.length)]);
+  }
+  function toggleSave() {
+    const p = state.selected;
+    if (!p) return;
+    const now = !state.saved[p.id];
+    if (now) { state.saved[p.id] = true; postInteraction(p.id, "attendance"); }
+    else { delete state.saved[p.id]; }
+    persistSaved();
+    render();
+  }
+
+  // ── renderers ────────────────────────────────────────────
+  function feedHeader() {
+    const head = el("div", "position:relative;margin-bottom:24px;overflow:visible;");
+    head.appendChild(el("div",
+      "position:absolute;left:120px;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
+      { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
+    head.appendChild(el("div",
+      "position:absolute;top:12px;right:-4px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
+    head.appendChild(el("div",
+      "position:absolute;top:4px;right:-12px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
+    head.appendChild(el("div",
+      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
+      { text: "[ recommended for you ]" }));
+    head.appendChild(el("div",
+      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      { text: "Agora" }));
+    head.appendChild(el("div",
+      "position:relative;margin-top:14px;max-width:230px;font-size:10.5px;line-height:1.55;color:#121212;",
+      { text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
+    return head;
+  }
+
+  function renderHome() {
+    main.innerHTML = "";
+    const pad = el("div", "padding:22px 18px 26px;");
+    pad.appendChild(feedHeader());
+
+    if (!state.feed.length) {
+      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
+      box.appendChild(el("div",
+        "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        { text: state.loading ? "Loading\nplans" : "No plans\nyet" }));
+      box.appendChild(el("div",
+        "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
+        { text: state.loading ? "Pulling the latest from your city." : "Run the ingestion pipeline to fill the feed." }));
+      pad.appendChild(box);
+    } else {
+      state.feed.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
+      pad.appendChild(el("div",
+        "text-align:center;font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#121212;opacity:0.5;padding:4px 0 10px;",
+        { text: state.done ? "· that's the whole stack — back to top ·" : "· loading more plans ·" }));
+    }
+    main.appendChild(pad);
+    fitAllTitles();
+  }
+
+  function renderDetail() {
+    main.innerHTML = "";
+    const p = state.selected || {};
+    // A movie opened from a cinema list won't be in the home feed — look it
+    // up in whichever list it actually came from, so the "plan NN" badge and
+    // card-recipe accent color line up with where the user was.
+    const sourceList = state.detailFrom === "cinema" && state.cinema ? state.cinema.plans : state.feed;
+    const idx = sourceList.findIndex((x) => x.id === p.id);
+    const r = RECIPES[(idx >= 0 ? idx : 0) % 15];
+    const accent = r.ac;
+    const saved = !!state.saved[p.id];
+
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:16px 18px 20px;");
+
+    box.appendChild(el("button",
+      "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;",
+      { text: "◂ BACK", on: { click: goBackFromDetail } }));
+
+    const titleWrap = el("div", "position:relative;margin-top:18px;overflow:hidden;");
+    titleWrap.appendChild(el("div",
+      "position:absolute;bottom:-40px;right:-6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.66;color:" +
+      faintOf(accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;",
+      { text: pad2((idx >= 0 ? idx : 0) + 1) }));
+    titleWrap.appendChild(el("div",
+      "font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";margin-bottom:6px;",
+      { text: "[ plan " + pad2((idx >= 0 ? idx : 0) + 1) + " ]" }));
+    titleWrap.appendChild(el("div",
+      "position:relative;z-index:2;",
+      { text: cleanTitle(p.title) || "UNTITLED", attrs: { class: "detail-title" } }));
+    box.appendChild(titleWrap);
+
+    // banner: only when there's a photo (B&W-paled photo under the halftone dots).
+    // No-image plans get a filling shape behind the description instead (below).
+    // hasPhoto only reflects what the data says (a plausible image_url) — the
+    // image can still 404/403 at render time (dead link, hotlink protection,
+    // etc.), so the fallback to the no-photo shape layout has to happen on the
+    // img's error event, not just once up front.
+    const hasPhoto = isHttp(p.image_url);
+    let descContainer; // assigned below; referenced here so the banner's error
+                        // handler (attached before descContainer exists) can
+                        // swap its content once the image actually fails.
+
+    function renderShapedDesc() {
+      descContainer.innerHTML = "";
+      const stage = el("div", "position:relative;min-height:230px;margin-top:6px;");
+      stage.appendChild(fillShape(idx >= 0 ? idx : 0, accent));   // shape behind (z-index:0)
+      const overlay = el("div", "position:relative;z-index:1;");
+      overlay.appendChild(planLabel);
+      overlay.appendChild(descText);
+      stage.appendChild(overlay);
+      descContainer.appendChild(stage);
+    }
+
+    if (hasPhoto) {
+      const banner = el("div",
+        "position:relative;height:190px;margin-top:16px;border:4px solid #121212;background:#FFFFFF;overflow:hidden;isolation:isolate;");
+      const img = el("img", "",
+        { attrs: { class: "photo-bw", src: p.image_url, alt: p.title || "" } });
+      const dots = el("div", "", { attrs: { class: "imgslot-dots" } });
+      img.addEventListener("error", function () {
+        // Image never actually loaded → fall all the way back to the no-photo
+        // treatment (drop the empty banner, re-render the description behind
+        // a shape) instead of leaving a bare "[ no photo ]" rectangle above
+        // flat description text.
+        banner.remove();
+        renderShapedDesc();
+      });
+      banner.appendChild(img);
+      banner.appendChild(dots);
+      box.appendChild(banner);
+    }
+
+    const body = el("div", "padding-top:18px;");
+    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px;");
+    keywords(p).forEach(function (k) {
+      tags.appendChild(el("span",
+        "font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
+        accent + ";padding:3px 8px;", { text: k }));
+    });
+    body.appendChild(tags);
+    body.appendChild(el("div",
+      "font-weight:700;font-size:14px;letter-spacing:0.03em;color:" + accent + ";margin-bottom:14px;",
+      { text: formatDates(p.start_date, p.end_date) }));
+    if (p.location) {
+      body.appendChild(el("div",
+        "font-weight:700;font-size:11px;letter-spacing:0.04em;color:#121212;margin-bottom:20px;",
+        { text: "◎ " + p.location }));
+    }
+    const planLabel = el("div",
+      "font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:9px;",
+      { text: "// the plan" });
+    const descText = el("div",
+      "font-size:12px;line-height:1.7;color:#121212;max-width:400px;",
+      { text: p.description || "No description available for this plan yet." });
+
+    descContainer = el("div", "");
+    if (hasPhoto) {
+      descContainer.appendChild(planLabel);
+      descContainer.appendChild(descText);
+    } else {
+      // No photo → a shape fills the space and the description sits over it.
+      renderShapedDesc();
+    }
+    body.appendChild(descContainer);
+
+    // save button
+    const btn = el("button",
+      "margin-top:24px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;padding:16px;border:4px solid #121212;cursor:pointer;background:" +
+      (saved ? RED : WHITE) + ";color:#121212;box-shadow:6px 6px 0 0 #121212;",
+      { on: { click: toggleSave } });
+    btn.appendChild(el("span", "font-size:19px;line-height:1;", { text: saved ? "♥" : "♡" }));
+    btn.appendChild(document.createTextNode(saved ? "SAVED" : "SAVE THIS PLAN"));
+    body.appendChild(btn);
+
+    // event link: prefer dedicated event page, then purchase link, then listing
+    const link = isHttp(p.url) ? p.url : (isHttp(p.ticket_url) ? p.ticket_url : (isHttp(p.source_url) ? p.source_url : null));
+    const linkLabel = "↗ view event";
+    const a = el("a",
+      "margin-top:12px;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:12px;letter-spacing:0.07em;text-transform:uppercase;padding:15px;border:4px solid #121212;cursor:pointer;background:#E4BE55;color:#121212;text-decoration:none;box-shadow:5px 5px 0 0 #121212;" +
+      (link ? "" : "opacity:0.5;pointer-events:none;"),
+      { text: linkLabel,
+        attrs: link ? { href: link, target: "_blank", rel: "noopener noreferrer" } : { href: "#" } });
+    a.className = "plainlink";
+    body.appendChild(a);
+
+    box.appendChild(body);
+    main.appendChild(box);
+    fitAllTitles();
+  }
+
+  function renderSaved() {
+    main.innerHTML = "";
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:22px 18px 20px;");
+
+    const head = el("div", "position:relative;margin-bottom:18px;overflow:hidden;");
+    head.appendChild(el("div",
+      "position:absolute;bottom:-30px;right:-4px;font-family:'Anton',sans-serif;font-size:130px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);transform-origin:right bottom;pointer-events:none;",
+      { text: "♥" }));
+    head.appendChild(el("div",
+      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:6px;",
+      { text: "[ your list ]" }));
+    head.appendChild(el("div",
+      "position:relative;font-family:'Anton',sans-serif;font-size:66px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      { text: "Saved" }));
+
+    const ids = Object.keys(state.saved).filter((k) => state.saved[k]);
+    head.appendChild(el("div",
+      "position:relative;margin-top:8px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
+      { text: ids.length ? ("// " + ids.length + (ids.length === 1 ? " plan kept" : " plans kept")) : "// no plans kept" }));
+    box.appendChild(head);
+
+    if (!ids.length) {
+      const empty = el("div", "padding:50px 20px;text-align:center;border:4px dashed #121212;");
+      empty.appendChild(el("div",
+        "font-family:'Anton',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        { text: "Nothing\nSaved Yet" }));
+      empty.appendChild(el("div",
+        "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
+        { text: "Open a plan and tap the heart to keep it here." }));
+      box.appendChild(empty);
+      main.appendChild(box);
+      return;
+    }
+
+    ids.forEach(function (id) {
+      const p = state.cache[id];
+      const row = el("div",
+        "position:relative;display:flex;align-items:stretch;min-height:104px;background:#E3A5CE;border:4px solid #121212;margin-bottom:14px;cursor:pointer;overflow:hidden;box-shadow:5px 5px 0 0 #EA4632;");
+
+      // Photo slot goes first (left). `display:contents` lets its child become
+      // the flex item, so we can fill it now or after an async fetch without
+      // disturbing order. No photo → slot stays empty → content is full width.
+      const photoSlot = el("div", "display:contents;");
+
+      const contentCol = el("div", "flex:1;padding:12px 12px 10px;display:flex;flex-direction:column;justify-content:space-between;");
+      const titleEl = el("div",
+        "",
+        { text: p ? (cleanTitle(p.title) || "UNTITLED") : "…", attrs: { class: "saved-title" } });
+      const dateEl = el("div",
+        "font-weight:700;font-size:10px;letter-spacing:0.03em;color:#121212;",
+        { text: p ? formatDates(p.start_date, p.end_date) : "" });
+      contentCol.appendChild(titleEl);
+      contentCol.appendChild(dateEl);
+
+      row.appendChild(photoSlot);
+      row.appendChild(contentCol);
+      row.appendChild(el("div", "align-self:center;padding-right:12px;font-size:19px;color:#EA4632;opacity:0.7;", { text: "♥" }));
+
+      function attachPhoto(plan) {
+        if (!isHttp(plan.image_url)) return;   // no photo → no box
+        const pbox = el("div",
+          "position:relative;width:80px;flex:none;background:#FFFFFF;border-right:4px solid #121212;overflow:hidden;isolation:isolate;");
+        const img = el("img", "",
+          { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "" } });
+        img.addEventListener("error", function () { pbox.remove(); });
+        pbox.appendChild(img);
+        pbox.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));
+        photoSlot.appendChild(pbox);
+      }
+
+      if (p) {
+        attachPhoto(p);
+        row.addEventListener("click", function () { openPlan(p); });
+      } else {
+        // not in cache (e.g. after a reload) → fetch it, then fill in
+        getJSON("/plans/" + encodeURIComponent(id)).then(function (plan) {
+          remember(plan);
+          titleEl.textContent = cleanTitle(plan.title) || "UNTITLED";
+          dateEl.textContent = formatDates(plan.start_date, plan.end_date);
+          attachPhoto(plan);
+          row.addEventListener("click", function () { openPlan(plan); });
+        }).catch(function () { titleEl.textContent = "PLAN #" + id; });
+      }
+      box.appendChild(row);
+    });
+    main.appendChild(box);
+    fitAllTitles();
+  }
+
+  // One cinema's movie list — same card visuals as the home feed (via
+  // buildCard), but a fixed, already-sorted list instead of infinite scroll.
+  function renderCinema() {
+    main.innerHTML = "";
+    const c = state.cinema || { name: "", plans: [], loading: true };
+    const pad = el("div", "padding:22px 18px 26px;");
+
+    const head = el("div", "position:relative;margin-bottom:24px;overflow:visible;");
+    head.appendChild(el("button",
+      "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;margin-bottom:18px;",
+      { text: "◂ BACK", on: { click: goHome } }));
+    head.appendChild(el("div",
+      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
+      { text: "[ cinema ]" }));
+    head.appendChild(el("div",
+      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:56px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      { text: c.name || "" }));
+    head.appendChild(el("div",
+      "position:relative;margin-top:10px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
+      { text: c.loading
+          ? "Loading showtimes…"
+          : "// " + c.plans.length + (c.plans.length === 1 ? " movie showing" : " movies showing") + ", soonest first" }));
+    pad.appendChild(head);
+
+    if (!c.loading && !c.plans.length) {
+      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;");
+      box.appendChild(el("div",
+        "font-family:'Anton',sans-serif;font-size:30px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        { text: "No movies\nlisted" }));
+      pad.appendChild(box);
+    } else {
+      c.plans.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
+    }
+    main.appendChild(pad);
+    fitAllTitles();
+  }
+
+  function updateNav() {
+    const on = state.view === "saved";
+    document.getElementById("nav-saved-heart").style.color = on ? RED : INK;
+    document.getElementById("nav-saved-label").style.color = on ? RED : INK;
+  }
+
+  function render() {
+    if (state.view === "home") renderHome();
+    else if (state.view === "detail") renderDetail();
+    else if (state.view === "saved") renderSaved();
+    else if (state.view === "cinema") renderCinema();
+    updateNav();
+  }
+
+  // ── infinite scroll ──────────────────────────────────────
+  main.addEventListener("scroll", function () {
+    if (state.view !== "home") return;
+    if (main.scrollTop + main.clientHeight > main.scrollHeight - 700) loadMore();
+  }, { passive: true });
+
+  // ── wire nav ─────────────────────────────────────────────
+  document.getElementById("nav-explore").addEventListener("click", shuffle);
+  document.getElementById("nav-home").addEventListener("click", goHome);
+  document.getElementById("nav-saved").addEventListener("click", goSaved);
+
+  // ── go ───────────────────────────────────────────────────
+  render();          // paint the home shell immediately (loading state)
+  loadInitial();
+  // Anton loads async and changes text metrics — re-fit once it's ready.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
+})();
+</script>
+</body>
+</html>
