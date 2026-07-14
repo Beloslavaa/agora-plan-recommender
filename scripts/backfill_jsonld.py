@@ -1,6 +1,6 @@
 """Targeted backfill: patch existing DB rows using JSON-LD from their known source page.
 
-Unlike backfill.py (which uses LLM/search to fill gaps), this makes zero LLM or
+Unlike backfill_enrich.py (which uses LLM/search to fill gaps), this makes zero LLM or
 search calls. For every distinct source_url among plans missing a `url`, it
 refetches that one page, reads its JSON-LD (Event / ItemList), matches events to
 existing rows by title, and UPDATEs those exact rows in place by id — so it can
@@ -9,8 +9,8 @@ would insert new rows keyed on the event's own url as source_url).
 
 Run from the project root (same folder as main.py / data/):
 
-    python scripts/backfill_ld.py            # apply
-    python scripts/backfill_ld.py --dry-run   # show what would change, no writes
+    python scripts/backfill_jsonld.py            # apply
+    python scripts/backfill_jsonld.py --dry-run   # show what would change, no writes
 """
 
 import argparse

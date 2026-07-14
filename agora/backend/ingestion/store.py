@@ -288,7 +288,7 @@ def list_cinema_plans(key: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-# ── Maintenance (used by scripts/backfill_ld.py) ─────────
+# ── Maintenance (used by scripts/backfill_jsonld.py) ─────
 
 def get_plans_missing_url() -> list[dict]:
     with _conn() as conn:

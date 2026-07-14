@@ -9,10 +9,10 @@ search for missing URLs (SerpAPI) and generate missing short titles (LLM).
 
 Run from the project root (same folder as main.py / data/).
 
-    python backfill.py --no-llm --no-search   # cheapest: only scrape known event pages
-                                               # (no OpenAI/SerpAPI keys needed, just network)
-    python backfill.py --no-llm                # also web-search for the 65 rows missing a url
-    python backfill.py                         # everything (also LLM short titles)
+    python scripts/backfill_enrich.py --no-llm --no-search   # cheapest: only scrape known event pages
+                                                              # (no OpenAI/SerpAPI keys needed, just network)
+    python scripts/backfill_enrich.py --no-llm                # also web-search for the 65 rows missing a url
+    python scripts/backfill_enrich.py                         # everything (also LLM short titles)
 """
 
 import argparse
