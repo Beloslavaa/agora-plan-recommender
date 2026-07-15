@@ -541,7 +541,7 @@
     const p = state.selected;
     if (!p) return;
     const now = !state.saved[p.id];
-    if (now) { state.saved[p.id] = true; postInteraction(p.id, "attendance"); }
+    if (now) { state.saved[p.id] = true; postInteraction(p.id, "saved"); }
     else { delete state.saved[p.id]; }
     persistSaved();
     render();

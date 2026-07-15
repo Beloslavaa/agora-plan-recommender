@@ -71,18 +71,19 @@ def init_db() -> None:
                 id          SERIAL  PRIMARY KEY,
                 user_id     TEXT    NOT NULL,
                 plan_id     INTEGER NOT NULL REFERENCES plans(id),
-                interaction_type TEXT NOT NULL CHECK(interaction_type IN ('click', 'attendance', 'view_link')),
+                interaction_type TEXT NOT NULL CHECK(interaction_type IN ('click', 'saved', 'view_link')),
                 created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
                 UNIQUE(user_id, plan_id, interaction_type)
             )
         """)
-        # Migration: widen the CHECK constraint for databases created before
-        # 'view_link' existed (Postgres has no "ALTER CONSTRAINT" to add a value
-        # in place, so drop + recreate — cheap and idempotent at this table size).
+        # Migration: drop the CHECK before renaming data (Postgres validates ALL
+        # existing rows when a CHECK is (re)added, so 'attendance' rows would
+        # violate a constraint that no longer lists 'attendance' if renamed after).
         conn.execute("ALTER TABLE interactions DROP CONSTRAINT IF EXISTS interactions_interaction_type_check")
+        conn.execute("UPDATE interactions SET interaction_type = 'saved' WHERE interaction_type = 'attendance'")
         conn.execute(
             "ALTER TABLE interactions ADD CONSTRAINT interactions_interaction_type_check "
-            "CHECK (interaction_type IN ('click', 'attendance', 'view_link'))"
+            "CHECK (interaction_type IN ('click', 'saved', 'view_link'))"
         )
 
 
