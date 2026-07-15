@@ -71,11 +71,19 @@ def init_db() -> None:
                 id          SERIAL  PRIMARY KEY,
                 user_id     TEXT    NOT NULL,
                 plan_id     INTEGER NOT NULL REFERENCES plans(id),
-                interaction_type TEXT NOT NULL CHECK(interaction_type IN ('click', 'attendance')),
+                interaction_type TEXT NOT NULL CHECK(interaction_type IN ('click', 'attendance', 'view_link')),
                 created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
                 UNIQUE(user_id, plan_id, interaction_type)
             )
         """)
+        # Migration: widen the CHECK constraint for databases created before
+        # 'view_link' existed (Postgres has no "ALTER CONSTRAINT" to add a value
+        # in place, so drop + recreate — cheap and idempotent at this table size).
+        conn.execute("ALTER TABLE interactions DROP CONSTRAINT IF EXISTS interactions_interaction_type_check")
+        conn.execute(
+            "ALTER TABLE interactions ADD CONSTRAINT interactions_interaction_type_check "
+            "CHECK (interaction_type IN ('click', 'attendance', 'view_link'))"
+        )
 
 
 # ── Ingestion-side writes ────────────────────────────────

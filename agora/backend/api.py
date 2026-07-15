@@ -65,7 +65,7 @@ class PlanOut(BaseModel):
 class InteractionIn(BaseModel):
     user_id: str
     plan_id: int
-    interaction_type: str  # "click" | "attendance"
+    interaction_type: str  # "click" | "attendance" | "view_link"
 
 
 class RecommendationOut(BaseModel):
@@ -140,8 +140,8 @@ def get_plan(plan_id: int) -> PlanOut:
 
 @app.post("/interactions")
 def record_interaction(body: InteractionIn):
-    if body.interaction_type not in ("click", "attendance"):
-        raise HTTPException(status_code=422, detail="interaction_type must be 'click' or 'attendance'")
+    if body.interaction_type not in ("click", "attendance", "view_link"):
+        raise HTTPException(status_code=422, detail="interaction_type must be 'click', 'attendance', or 'view_link'")
     try:
         store.record_interaction(body.user_id, body.plan_id, body.interaction_type)
     except Exception as e:

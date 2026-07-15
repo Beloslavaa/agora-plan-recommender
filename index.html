@@ -714,7 +714,8 @@
       "margin-top:12px;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:12px;letter-spacing:0.07em;text-transform:uppercase;padding:15px;border:4px solid #121212;cursor:pointer;background:#E4BE55;color:#121212;text-decoration:none;box-shadow:5px 5px 0 0 #121212;" +
       (link ? "" : "opacity:0.5;pointer-events:none;"),
       { text: linkLabel,
-        attrs: link ? { href: link, target: "_blank", rel: "noopener noreferrer" } : { href: "#" } });
+        attrs: link ? { href: link, target: "_blank", rel: "noopener noreferrer" } : { href: "#" },
+        on: link ? { click: function () { postInteraction(p.id, "view_link"); } } : {} });
     a.className = "plainlink";
     body.appendChild(a);
 
