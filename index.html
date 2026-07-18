@@ -140,6 +140,15 @@
   // before it can render; refreshed from the real list once loadCitiesList()
   // resolves (in case more cities get added later without a frontend change).
   let CITIES_LIST = ["Madrid", "Barcelona"];
+  // city -> { feed, ids, offset, done } snapshot, so switching BACK to a city
+  // already loaded this session is instant instead of re-fetching everything
+  // (cinemas + recommendations + first /plans page) over the network again.
+  const cityFeedCache = {};
+  // Bumped on every boot/reload/city-switch — lets in-flight loadInitial/
+  // loadMore calls tell whether they've been superseded (see their `gen`
+  // param) instead of clobbering newer state (or a just-restored cache)
+  // once their stale response finally comes back.
+  let loadGeneration = 0;
 
   // ── network helpers ──────────────────────────────────────
   async function getJSON(path) {
@@ -158,9 +167,26 @@
   }
   function switchCity(city) {
     if (city === CITY) return;
+    // Stash the city we're leaving so coming back to it is instant.
+    cityFeedCache[CITY] = { feed: state.feed, ids: state.ids, offset: state.offset, done: state.done };
     CITY = city;
     try { localStorage.setItem("agora_city", CITY); } catch (e) {}
-    reloadFeed();
+
+    const cached = cityFeedCache[CITY];
+    if (cached) {
+      // Invalidate any still-in-flight load from the city we just left —
+      // its response would otherwise land after this restore and corrupt it.
+      ++loadGeneration;
+      state.feed = cached.feed;
+      state.ids = cached.ids;
+      state.offset = cached.offset;
+      state.done = cached.done;
+      state.loading = false;
+      if (state.view === "home") renderHome();
+    } else {
+      reloadFeed();   // reloadFeed() itself bumps loadGeneration
+    }
+    main.scrollTop = 0;
   }
   function postInteraction(planId, type) {
     // fire-and-forget; a failed interaction must never block the UI
@@ -539,9 +565,15 @@
   // Cinemas are grouped server-side (one row per chain, movies excluded from
   // /plans and /recommendations) — turn each into a card-shaped object so
   // buildCard/openPlan can handle it like any other feed item.
-  async function loadCinemas() {
+  // gen ties every load to the city-switch (or boot) that started it — if a
+  // newer switch/reload happens while one of these is still awaiting a
+  // response, the stale call sees loadGeneration has moved on and bails
+  // before touching `state`, instead of clobbering whatever the newer load
+  // (or a restored cache) just put there.
+  async function loadCinemas(gen) {
     try {
       const cinemas = await getJSON("/cinemas?city=" + encodeURIComponent(CITY));
+      if (gen !== loadGeneration) return;
       addPlans((cinemas || []).map(function (c) {
         return {
           id: "cinema:" + c.key,
@@ -560,28 +592,34 @@
     } catch (e) { /* no cinemas yet — fine, feed just won't lead with them */ }
   }
 
-  async function loadInitial() {
-    await loadCinemas();            // cinema cards lead the feed
+  async function loadInitial(gen) {
+    await loadCinemas(gen);          // cinema cards lead the feed
+    if (gen !== loadGeneration) return;
     // "For you" = popularity-ranked recommendations, then paginate the rest.
     try {
       const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?city=" + encodeURIComponent(CITY) + "&limit=50");
+      if (gen !== loadGeneration) return;
       addPlans(recs.map((r) => r.plan).filter(Boolean));
     } catch (e) { /* fall through to /plans */ }
-    await loadMore();               // top up with the general catalogue
+    if (gen !== loadGeneration) return;
+    await loadMore(gen);             // top up with the general catalogue
   }
-  async function loadMore() {
+  async function loadMore(gen) {
     if (state.loading || state.done) return;
     state.loading = true;
     try {
       const page = await getJSON("/plans?city=" + encodeURIComponent(CITY) + "&limit=" + PAGE + "&offset=" + state.offset);
+      if (gen !== loadGeneration) return;   // a city switch happened mid-flight
       state.offset += PAGE;
       if (!Array.isArray(page) || page.length < PAGE) state.done = true;
       addPlans(page || []);
     } catch (e) {
-      state.done = true;            // stop hammering a broken endpoint
+      if (gen === loadGeneration) state.done = true;   // stop hammering a broken endpoint
     } finally {
-      state.loading = false;
-      if (state.view === "home") renderHome();
+      if (gen === loadGeneration) {
+        state.loading = false;
+        if (state.view === "home") renderHome();
+      }
     }
   }
 
@@ -975,7 +1013,7 @@
   // ── infinite scroll ──────────────────────────────────────
   main.addEventListener("scroll", function () {
     if (state.view !== "home") return;
-    if (main.scrollTop + main.clientHeight > main.scrollHeight - 700) loadMore();
+    if (main.scrollTop + main.clientHeight > main.scrollHeight - 700) loadMore(loadGeneration);
   }, { passive: true });
 
   // ── wire nav ─────────────────────────────────────────────
@@ -985,25 +1023,28 @@
 
   // ── go ───────────────────────────────────────────────────
   function boot() {
+    const gen = ++loadGeneration;
     render();          // paint the home shell immediately (loading state) —
                         // the feed loads/scrolls even while awaitingAuth.
     loadCitiesList();
     loadSavedFromServer();
-    loadInitial();
+    loadInitial(gen);
     // Anton loads async and changes text metrics — re-fit once it's ready.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
   }
 
   function reloadFeed() {
-    // Re-fetch from scratch so a fresh login gets ITS OWN personalized
-    // recommendations and saved list, not the throwaway anon id's.
+    // Re-fetch from scratch so a fresh login/city gets ITS OWN personalized
+    // recommendations and feed, not whatever the previous one was loading.
+    const gen = ++loadGeneration;
     state.feed = [];
     state.ids = new Set();
     state.offset = 0;
     state.done = false;
+    state.loading = false;
     loadSavedFromServer();
     if (state.view === "home") renderHome();
-    loadInitial();
+    loadInitial(gen);
   }
 
   function unlockFeed() {
