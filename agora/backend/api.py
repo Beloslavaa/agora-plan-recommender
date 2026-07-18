@@ -168,6 +168,22 @@ def record_interaction(body: InteractionIn):
     return {"ok": True}
 
 
+@app.delete("/interactions")
+def delete_interaction(body: InteractionIn):
+    # Only "saved" is meant to be reversible — click/view_link are historical
+    # facts the recommender uses and aren't exposed as something to undo.
+    if body.interaction_type != "saved":
+        raise HTTPException(status_code=422, detail="Only 'saved' interactions can be removed")
+    store.remove_interaction(body.user_id, body.plan_id, body.interaction_type)
+    return {"ok": True}
+
+
+@app.get("/saved/{user_id}")
+def saved_plans(user_id: str) -> list[PlanOut]:
+    rows = store.get_saved_plans(user_id)
+    return [_row_to_plan(r) for r in rows]
+
+
 @app.get("/recommendations/{user_id}")
 def recommend(user_id: str, limit: int = Query(default=10, le=50)) -> list[RecommendationOut]:
     rows = store.get_recommendations(user_id, limit)

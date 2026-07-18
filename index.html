@@ -130,15 +130,6 @@
   let awaitingAuth = !UID;
   if (!UID) UID = randomAnonId();
 
-  // ── saved set (local; backend has no "my saved" endpoint) ─
-  function loadSaved() {
-    try { return JSON.parse(localStorage.getItem("agora_saved") || "{}") || {}; }
-    catch (e) { return {}; }
-  }
-  function persistSaved() {
-    try { localStorage.setItem("agora_saved", JSON.stringify(state.saved)); } catch (e) {}
-  }
-
   // ── network helpers ──────────────────────────────────────
   async function getJSON(path) {
     const r = await fetch(API + path, { headers: { "Accept": "application/json" } });
@@ -152,6 +143,25 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: UID, plan_id: planId, interaction_type: type }),
     }).catch(function () {});
+  }
+  function deleteInteraction(planId, type) {
+    fetch(API + "/interactions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: UID, plan_id: planId, interaction_type: type }),
+    }).catch(function () {});
+  }
+
+  // ── saved set: backend-owned (GET /saved/{UID}) so it follows the same
+  // login across browsers/devices, instead of living only in this
+  // browser's localStorage.
+  async function loadSavedFromServer() {
+    try {
+      const rows = await getJSON("/saved/" + encodeURIComponent(UID));
+      state.saved = {};
+      (rows || []).forEach(function (p) { state.saved[p.id] = true; remember(p); });
+      if (state.view === "saved") render();
+    } catch (e) { /* leave whatever state.saved already has on failure */ }
   }
 
   // ── url guards (defence-in-depth: data comes from scrapes) ─
@@ -479,7 +489,7 @@
     selected: null,     // current plan object in detail
     detailFrom: "home", // which view BACK should return to from detail: "home" | "cinema"
     cinema: null,       // { key, name, plans, loading } while state.view === "cinema"
-    saved: loadSaved(), // { [id]: true }
+    saved: {},          // { [id]: true } — populated from GET /saved/{UID}, see loadSavedFromServer
   };
 
   const main = document.getElementById("main");
@@ -595,8 +605,7 @@
     if (!p) return;
     const now = !state.saved[p.id];
     if (now) { state.saved[p.id] = true; postInteraction(p.id, "saved"); }
-    else { delete state.saved[p.id]; }
-    persistSaved();
+    else { delete state.saved[p.id]; deleteInteraction(p.id, "saved"); }
     render();
   }
 
@@ -935,6 +944,7 @@
   function boot() {
     render();          // paint the home shell immediately (loading state) —
                         // the feed loads/scrolls even while awaitingAuth.
+    loadSavedFromServer();
     loadInitial();
     // Anton loads async and changes text metrics — re-fit once it's ready.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
@@ -942,11 +952,12 @@
 
   function reloadFeed() {
     // Re-fetch from scratch so a fresh login gets ITS OWN personalized
-    // recommendations, not the ones loaded under the throwaway anon id.
+    // recommendations and saved list, not the throwaway anon id's.
     state.feed = [];
     state.ids = new Set();
     state.offset = 0;
     state.done = false;
+    loadSavedFromServer();
     if (state.view === "home") renderHome();
     loadInitial();
   }

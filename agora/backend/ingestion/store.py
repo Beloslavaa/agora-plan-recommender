@@ -237,6 +237,30 @@ def record_interaction(user_id: str, plan_id: int, interaction_type: str) -> Non
         )
 
 
+def remove_interaction(user_id: str, plan_id: int, interaction_type: str) -> None:
+    """Undo a 'saved' interaction so the plan drops out of get_saved_plans()."""
+    with _conn() as conn:
+        conn.execute(
+            "DELETE FROM interactions WHERE user_id = %s AND plan_id = %s AND interaction_type = %s",
+            (user_id, plan_id, interaction_type),
+        )
+
+
+def get_saved_plans(user_id: str) -> list[dict]:
+    """Plans this user has saved, most-recently-saved first — lets the Saved
+    list follow the same user_id across browsers/devices instead of living
+    only in that browser's localStorage."""
+    with _conn() as conn:
+        rows = conn.execute(
+            """SELECT p.* FROM plans p
+               JOIN interactions i ON i.plan_id = p.id
+               WHERE i.user_id = %s AND i.interaction_type = 'saved'
+               ORDER BY i.created_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_recommendations(user_id: str, limit: int = 10) -> list[dict]:
     """Popularity-ranked plans the user hasn't interacted with. Each dict carries a `score`."""
     with _conn() as conn:
