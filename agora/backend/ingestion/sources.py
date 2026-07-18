@@ -15,6 +15,7 @@ from agora.backend.ingestion.schemas import FixedSource
 
 logger = logging.getLogger(__name__)
 SOURCES_FILE = Path("data/fixed_sources.json")
+CITIES_FILE = Path("data/cities.json")
 
 # Events starting at/after this local time are treated as club/party listings
 # rather than shows, and dropped during ingestion.
@@ -98,11 +99,17 @@ def save_fixed_sources(sources: list[FixedSource]) -> None:
     )
 
 
-def promote_source(name: str, url: str, promoted_by: str | None = None) -> bool:
+def load_cities() -> list[str]:
+    if not CITIES_FILE.exists():
+        return []
+    return json.loads(CITIES_FILE.read_text())
+
+
+def promote_source(name: str, url: str, city: str, promoted_by: str | None = None) -> bool:
     sources = load_fixed_sources()
     if any(s.url == url for s in sources):
         return False
-    sources.append(FixedSource(name=name, url=url, promoted_by=promoted_by))
+    sources.append(FixedSource(name=name, url=url, city=city, promoted_by=promoted_by))
     save_fixed_sources(sources)
     return True
 

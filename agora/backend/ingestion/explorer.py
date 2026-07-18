@@ -42,7 +42,7 @@ PROMOTION_THRESHOLD = 2
 async def generate_queries(
     llm: LLMProvider,
     category: PlanCategory,
-    city: str = "Madrid",
+    city: str,
 ) -> list[str]:
     examples = "\n".join(f"- {e}" for e in CATEGORY_EXAMPLES[category])
     system = QUERY_SYSTEM.format(
@@ -65,6 +65,7 @@ async def _try_promote_base_domain(
     llm: LLMProvider,
     checked_domains: set[str],
     existing_domains: set[str | None],
+    city: str,
 ) -> list[PlanData]:
     """A search hit is often a single event's own page — that alone rarely
     clears PROMOTION_THRESHOLD, even when the site behind it runs an ongoing
@@ -104,7 +105,7 @@ async def _try_promote_base_domain(
         return []
 
     name = domain.removeprefix("www.").split(".")[0].title()
-    if promote_source(name=name, url=base_url, promoted_by=f"explorer/{category}"):
+    if promote_source(name=name, url=base_url, city=city, promoted_by=f"explorer/{category}"):
         logger.info("  ★ Promoted base domain to fixed sources: %s (%d events found)",
                     base_url, len(valid))
     return valid
@@ -112,8 +113,8 @@ async def _try_promote_base_domain(
 
 async def explore_for_plans(
     llm: LLMProvider,
+    city: str,
     search_provider: SearchProvider | None = None,
-    city: str = "Madrid",
     min_per_category: int = 3,
     max_per_category: int = 10,
     only_categories: set[PlanCategory] | None = None,
@@ -175,6 +176,7 @@ async def explore_for_plans(
                             if promote_source(
                                 name=name,
                                 url=result.url,
+                                city=city,
                                 promoted_by=f"explorer/{category}",
                             ):
                                 logger.info(
@@ -191,7 +193,7 @@ async def explore_for_plans(
                         if cat_count < max_per_category:
                             base_plans = await _try_promote_base_domain(
                                 result.url, category, llm,
-                                checked_domains, existing_domains,
+                                checked_domains, existing_domains, city,
                             )
                             if base_plans:
                                 plans.extend(base_plans)
@@ -208,4 +210,8 @@ async def explore_for_plans(
             logger.warning("  Only got %d plans for %s (wanted %d)",
                            cat_count, category.value, min_per_category)
 
+    # Stamped here (not asked of the LLM extractor) — this is the one place
+    # that knows which city this whole run targeted.
+    for p in plans:
+        p.city = city
     return plans

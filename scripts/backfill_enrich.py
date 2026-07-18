@@ -54,6 +54,7 @@ def _to_plan(row: dict) -> PlanData:
         category=row.get("category"),
         source_url=row["source_url"],
         source_type=row.get("source_type") or "fixed",
+        city=row.get("city") or "",
     )
 
 

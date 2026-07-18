@@ -66,6 +66,13 @@ def validate_plan(plan: PlanData) -> tuple[bool, str | None]:
     if not _is_valid_url(plan.source_url):
         issues.append("source_url invalid")
 
+    # ── City ─────────────────────────────────────
+    # Safety net: city is stamped by the ingestion orchestration layer
+    # (cli.py/explorer.py), never asked of the LLM — an empty one here means
+    # some call path forgot to stamp it, not a real data-quality issue.
+    if not plan.city or not plan.city.strip():
+        issues.append("city missing (ingestion pipeline bug, not scraped data)")
+
     # ── Ticket URL ───────────────────────────────
     if plan.ticket_url and not _is_valid_url(plan.ticket_url):
         issues.append("ticket_url invalid")

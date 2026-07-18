@@ -22,31 +22,35 @@ CATEGORY_LABELS: dict[PlanCategory, str] = {
     PlanCategory.cultural: "Cultural events and performances",
 }
 
+# These are style examples for the LLM (query phrasing), not target content —
+# the actual city is injected separately via {city} in explorer.QUERY_SYSTEM.
+# Deliberately no city name here, so they don't bias generation toward
+# whichever city happened to be used when these were written.
 CATEGORY_EXAMPLES: dict[PlanCategory, list[str]] = {
     PlanCategory.art_exhibitions: [
-        "contemporary art gallery opening madrid this month",
-        "emerging artists exhibition madrid this weekend",
+        "contemporary art gallery opening this month",
+        "emerging artists exhibition this weekend",
     ],
     PlanCategory.photography: [
-        "photography exhibition madrid this month",
-        "street photography show madrid upcoming",
+        "photography exhibition this month",
+        "street photography show upcoming",
     ],
     PlanCategory.cinema: [
-        "indie film screening madrid this weekend",
-        "film festival madrid upcoming",
+        "indie film screening this weekend",
+        "film festival upcoming",
     ],
     PlanCategory.music_concerts: [
-        "live concert madrid this month tickets",
-        "indie band playing madrid this weekend",
-        "jazz night madrid upcoming",
+        "live concert this month tickets",
+        "indie band playing this weekend",
+        "jazz night upcoming",
     ],
     PlanCategory.fashion: [
-        "clothing pop-up shop madrid this week",
-        "fashion market madrid upcoming",
+        "clothing pop-up shop this week",
+        "fashion market upcoming",
     ],
     PlanCategory.cultural: [
-        "cultural event madrid this month",
-        "theatre performance madrid upcoming",
+        "cultural event this month",
+        "theatre performance upcoming",
     ],
 }
 
@@ -54,6 +58,7 @@ CATEGORY_EXAMPLES: dict[PlanCategory, list[str]] = {
 class FixedSource(BaseModel):
     name: str
     url: str
+    city: str
     promoted_by: str | None = None
 
 
@@ -72,6 +77,11 @@ class PlanData(BaseModel):
     category: str | None = None
     source_url: str
     source_type: str  # "fixed" or "exploratory"
+    # Stamped by the ingestion orchestration layer (cli.py/explorer.py), never
+    # asked of the LLM extractor — always non-empty by the time a plan is
+    # validated/stored. Defaults "" only so PlanData stays constructible
+    # before that stamping happens.
+    city: str = ""
 
 
 class SearchResult(BaseModel):

@@ -67,6 +67,13 @@ def init_db() -> None:
         # Migration: add columns that may be missing in existing databases
         conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS short_title TEXT NOT NULL DEFAULT ''")
         conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS url TEXT")
+        # Migration: multi-city support. Backfill existing (pre-city) rows to
+        # 'Madrid' — the only city this app ever ingested before — then make
+        # the column NOT NULL so every future insert must supply one.
+        conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS city TEXT")
+        conn.execute("UPDATE plans SET city = 'Madrid' WHERE city IS NULL")
+        conn.execute("ALTER TABLE plans ALTER COLUMN city SET NOT NULL")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_plans_city ON plans(city)")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS interactions (
                 id          SERIAL  PRIMARY KEY,
@@ -106,8 +113,8 @@ _UPSERT_SQL = """
 INSERT INTO plans
     (title, short_title, description, start_date, end_date,
      url, ticket_url, location, image_url, price, tags, category,
-     source_url, source_type)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+     source_url, source_type, city)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT(title, source_url) DO UPDATE SET
     short_title = CASE WHEN plans.short_title IS NULL OR plans.short_title = ''
                        THEN excluded.short_title ELSE plans.short_title END,
@@ -122,7 +129,8 @@ ON CONFLICT(title, source_url) DO UPDATE SET
     price       = COALESCE(plans.price, excluded.price),
     tags        = CASE WHEN plans.tags IS NULL OR plans.tags = '' OR plans.tags = '[]'
                        THEN excluded.tags ELSE plans.tags END,
-    category    = COALESCE(plans.category, excluded.category)
+    category    = COALESCE(plans.category, excluded.category),
+    city        = COALESCE(plans.city, excluded.city)
 """
 
 
@@ -163,6 +171,7 @@ def upsert_plans(plans: list[PlanData]) -> int:
                             p.category,
                             p.source_url,
                             p.source_type,
+                            p.city,
                         ),
                     )
                 if existed is None:
@@ -190,6 +199,7 @@ def get_plan_count() -> int:
 
 
 def list_plans(
+    city: str | None = None,
     category: str | None = None,
     location: str | None = None,
     search: str | None = None,
@@ -199,6 +209,11 @@ def list_plans(
     where: list[str] = [_CINEMA_EXCLUDE_WHERE]
     params: list = list(_CINEMA_EXCLUDE_PARAMS)
 
+    if city:
+        # Exact match — this is a clean canonical value now, unlike the
+        # messy free-text `location` column below.
+        where.append("city = %s")
+        params.append(city)
     if category:
         placeholders = ",".join("%s" for _ in category.split(","))
         where.append(f"category IN ({placeholders})")
@@ -261,8 +276,9 @@ def get_saved_plans(user_id: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def get_recommendations(user_id: str, limit: int = 10) -> list[dict]:
-    """Popularity-ranked plans the user hasn't interacted with. Each dict carries a `score`."""
+def get_recommendations(user_id: str, city: str, limit: int = 10) -> list[dict]:
+    """Popularity-ranked plans (for the given city) the user hasn't
+    interacted with. Each dict carries a `score`."""
     with _conn() as conn:
         interacted = {
             r["plan_id"]
@@ -274,11 +290,11 @@ def get_recommendations(user_id: str, limit: int = 10) -> list[dict]:
             f"""SELECT p.*, COUNT(i.id) as score
                FROM plans p
                LEFT JOIN interactions i ON i.plan_id = p.id
-               WHERE {_CINEMA_EXCLUDE_WHERE}
+               WHERE {_CINEMA_EXCLUDE_WHERE} AND p.city = %s
                GROUP BY p.id
                ORDER BY score DESC, p.start_date ASC NULLS LAST
                LIMIT %s""",
-            (*_CINEMA_EXCLUDE_PARAMS, limit + len(interacted)),
+            (*_CINEMA_EXCLUDE_PARAMS, city, limit + len(interacted)),
         ).fetchall()
 
     out: list[dict] = []
@@ -297,13 +313,16 @@ def get_recommendations(user_id: str, limit: int = 10) -> list[dict]:
 # above and surfaced instead as one card per cinema (this section), which
 # opens out to the cinema's own movie list.
 
-def list_cinemas() -> list[dict]:
-    """One entry per cinema chain with at least one plan: name, a representative
-    image (soonest upcoming movie that has one), and how many movies it has."""
+def list_cinemas(city: str) -> list[dict]:
+    """One entry per cinema chain (for the given city) with at least one plan:
+    name, a representative image (soonest upcoming movie that has one), and
+    how many movies it has."""
     init_db()
     out: list[dict] = []
     with _conn() as conn:
-        for domain, name in CINEMA_SOURCES.items():
+        for domain, info in CINEMA_SOURCES.items():
+            if info["city"] != city:
+                continue
             rows = conn.execute(
                 "SELECT image_url FROM plans WHERE source_url ILIKE %s "
                 "ORDER BY start_date ASC NULLS LAST",
@@ -312,7 +331,7 @@ def list_cinemas() -> list[dict]:
             if not rows:
                 continue
             image_url = next((r["image_url"] for r in rows if r["image_url"]), None)
-            out.append({"key": domain, "name": name, "image_url": image_url, "movie_count": len(rows)})
+            out.append({"key": domain, "name": info["name"], "image_url": image_url, "movie_count": len(rows)})
     return out
 
 

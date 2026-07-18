@@ -203,7 +203,7 @@ async def _generate_description(plan: PlanData, llm: LLMProvider) -> str:
 async def _search_url(plan: PlanData, search: SearchProvider) -> str | None:
     """Search Google for the plan's dedicated event page."""
     title = plan.title.strip()
-    location = (plan.location or "").strip() or "Madrid"
+    location = (plan.location or "").strip() or plan.city
 
     query = f'"{title}" {location} tickets'
     if len(query) > 200:

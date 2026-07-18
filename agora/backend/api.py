@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from agora.backend.cinemas import CINEMA_SOURCES
 from agora.backend.config import settings
 from agora.backend.ingestion import store
+from agora.backend.ingestion.sources import load_cities
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class PlanOut(BaseModel):
     category: str | None = None
     source_url: str
     source_type: str
+    city: str
 
 
 class InteractionIn(BaseModel):
@@ -104,6 +106,7 @@ def _row_to_plan(row: dict) -> PlanOut:
         category=row["category"],
         source_url=row["source_url"],
         source_type=row["source_type"],
+        city=row["city"],
     )
 
 
@@ -135,8 +138,14 @@ def auth(body: AuthIn):
     return {"user_id": username}
 
 
+@app.get("/cities")
+def list_cities() -> list[str]:
+    return load_cities()
+
+
 @app.get("/plans")
 def list_plans(
+    city: str | None = None,
     category: str | None = None,
     location: str | None = None,
     search: str | None = None,
@@ -144,7 +153,7 @@ def list_plans(
     offset: int = Query(default=0, ge=0),
 ) -> list[PlanOut]:
     rows = store.list_plans(
-        category=category, location=location, search=search, limit=limit, offset=offset
+        city=city, category=category, location=location, search=search, limit=limit, offset=offset
     )
     return [_row_to_plan(r) for r in rows]
 
@@ -185,8 +194,8 @@ def saved_plans(user_id: str) -> list[PlanOut]:
 
 
 @app.get("/recommendations/{user_id}")
-def recommend(user_id: str, limit: int = Query(default=10, le=50)) -> list[RecommendationOut]:
-    rows = store.get_recommendations(user_id, limit)
+def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) -> list[RecommendationOut]:
+    rows = store.get_recommendations(user_id, city, limit)
     return [
         RecommendationOut(plan=_row_to_plan(r), score=float(r["score"]))
         for r in rows
@@ -194,8 +203,8 @@ def recommend(user_id: str, limit: int = Query(default=10, le=50)) -> list[Recom
 
 
 @app.get("/cinemas")
-def list_cinemas() -> list[CinemaOut]:
-    return [CinemaOut(**c) for c in store.list_cinemas()]
+def list_cinemas(city: str) -> list[CinemaOut]:
+    return [CinemaOut(**c) for c in store.list_cinemas(city)]
 
 
 @app.get("/cinemas/{key}/plans")

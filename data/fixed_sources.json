@@ -2,91 +2,109 @@
   {
     "name": "Film & Media Events in Madrid, Spain",
     "url": "https://www.eventbrite.com/b/spain--madrid/film-and-media/",
-    "promoted_by": "explorer/PlanCategory.cinema"
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "city": "Madrid"
   },
   {
     "name": "Songkick Madrid",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid/",
-    "promoted_by": "explorer/PlanCategory.music_concerts"
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "Rock Events & Tickets in Madrid, Spain - Music",
     "url": "https://www.eventbrite.com/b/spain--madrid/music/rock/",
-    "promoted_by": "explorer/PlanCategory.music_concerts"
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "Rock Tickets in Madrid - Music",
     "url": "https://www.ticketmaster.es/discover/madrid?language=en-us&categoryId=KZFzniwnSyZfZ7v7nJ&classificationId=KnvZfZ7vAeA",
-    "promoted_by": "explorer/PlanCategory.music_concerts"
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "The 20 must-see exhibitions in Madrid this June",
     "url": "https://madridsecreto.co/en/exhibitions-madrid/",
-    "promoted_by": "explorer/PlanCategory.art_exhibitions"
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "city": "Madrid"
   },
   {
     "name": "Madrid Concerts, Festivals, Tickets & Tour Dates 2026 & ...",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid",
-    "promoted_by": "explorer/PlanCategory.music_concerts"
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "Concerts in Spain",
     "url": "https://www.vividseats.com/geo/spain/concerts",
-    "promoted_by": "explorer/PlanCategory.music_concerts"
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "Discover Pop Up Events & Activities in Madrid, Spain",
     "url": "https://www.eventbrite.com/d/spain--madrid/pop-up/",
-    "promoted_by": "explorer/PlanCategory.fashion"
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "city": "Madrid"
   },
   {
     "name": "Madrid Events Calendar 2026",
     "url": "https://www.visitmadrid.es/en/madrid-events-calendar",
-    "promoted_by": "explorer/PlanCategory.cinema"
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "city": "Madrid"
   },
   {
     "name": "Things to Do in Madrid, Spain This Month - Events & Activities",
     "url": "https://www.eventbrite.com/d/spain--madrid/events--this-month/",
-    "promoted_by": "explorer/PlanCategory.cinema"
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "city": "Madrid"
   },
   {
     "name": "Fashion Events in Madrid, Spain - Clothing Fairs & ...",
     "url": "https://www.eventbrite.com/b/spain--madrid/fashion/",
-    "promoted_by": "explorer/PlanCategory.fashion"
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "city": "Madrid"
   },
   {
     "name": "Cibeles de Cine",
     "url": "https://www.cibelesdecine.com/es/",
-    "promoted_by": "manual/cinema"
+    "promoted_by": "manual/cinema",
+    "city": "Madrid"
   },
   {
     "name": "Sala Equis",
     "url": "https://salaequis.es/",
-    "promoted_by": "manual/cinema"
+    "promoted_by": "manual/cinema",
+    "city": "Madrid"
   },
   {
     "name": "Yelmo Cines Ideal",
     "url": "https://yelmocines.es/cartelera/madrid/ideal",
-    "promoted_by": "manual/cinema"
+    "promoted_by": "manual/cinema",
+    "city": "Madrid"
   },
   {
     "name": "Cinesa",
     "url": "https://www.cinesa.es/",
-    "promoted_by": "manual/cinema"
+    "promoted_by": "manual/cinema",
+    "city": "Madrid"
   },
   {
     "name": "Cines Renoir",
     "url": "https://www.cinesrenoir.com/",
-    "promoted_by": "manual/cinema"
+    "promoted_by": "manual/cinema",
+    "city": "Madrid"
   },
   {
     "name": "Dice Madrid",
     "url": "https://dice.fm/browse/madrid-5d8cef380de1e404dc962211",
-    "promoted_by": "manual/music_concerts"
+    "promoted_by": "manual/music_concerts",
+    "city": "Madrid"
   },
   {
     "name": "Condeduquemadrid",
     "url": "https://www.condeduquemadrid.es/",
-    "promoted_by": "explorer/PlanCategory.cultural"
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "city": "Madrid"
   }
 ]

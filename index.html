@@ -130,11 +130,37 @@
   let awaitingAuth = !UID;
   if (!UID) UID = randomAnonId();
 
+  // ── city: separate from login entirely — always switchable via a control
+  // in the feed header, not a one-time gate decision. Defaults to Madrid on
+  // a brand new visit, no blocking.
+  let CITY = null;
+  try { CITY = localStorage.getItem("agora_city"); } catch (e) {}
+  if (!CITY) CITY = "Madrid";
+  // Sane fallback so the switcher never has to wait on a network round-trip
+  // before it can render; refreshed from the real list once loadCitiesList()
+  // resolves (in case more cities get added later without a frontend change).
+  let CITIES_LIST = ["Madrid", "Barcelona"];
+
   // ── network helpers ──────────────────────────────────────
   async function getJSON(path) {
     const r = await fetch(API + path, { headers: { "Accept": "application/json" } });
     if (!r.ok) throw new Error("HTTP " + r.status + " for " + path);
     return r.json();
+  }
+  async function loadCitiesList() {
+    try {
+      const cities = await getJSON("/cities");
+      if (Array.isArray(cities) && cities.length) {
+        CITIES_LIST = cities;
+        if (state.view === "home") renderHome();
+      }
+    } catch (e) { /* keep the fallback list */ }
+  }
+  function switchCity(city) {
+    if (city === CITY) return;
+    CITY = city;
+    try { localStorage.setItem("agora_city", CITY); } catch (e) {}
+    reloadFeed();
   }
   function postInteraction(planId, type) {
     // fire-and-forget; a failed interaction must never block the UI
@@ -515,7 +541,7 @@
   // buildCard/openPlan can handle it like any other feed item.
   async function loadCinemas() {
     try {
-      const cinemas = await getJSON("/cinemas");
+      const cinemas = await getJSON("/cinemas?city=" + encodeURIComponent(CITY));
       addPlans((cinemas || []).map(function (c) {
         return {
           id: "cinema:" + c.key,
@@ -538,7 +564,7 @@
     await loadCinemas();            // cinema cards lead the feed
     // "For you" = popularity-ranked recommendations, then paginate the rest.
     try {
-      const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?limit=50");
+      const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?city=" + encodeURIComponent(CITY) + "&limit=50");
       addPlans(recs.map((r) => r.plan).filter(Boolean));
     } catch (e) { /* fall through to /plans */ }
     await loadMore();               // top up with the general catalogue
@@ -547,7 +573,7 @@
     if (state.loading || state.done) return;
     state.loading = true;
     try {
-      const page = await getJSON("/plans?limit=" + PAGE + "&offset=" + state.offset);
+      const page = await getJSON("/plans?city=" + encodeURIComponent(CITY) + "&limit=" + PAGE + "&offset=" + state.offset);
       state.offset += PAGE;
       if (!Array.isArray(page) || page.length < PAGE) state.done = true;
       addPlans(page || []);
@@ -611,7 +637,7 @@
 
   // ── renderers ────────────────────────────────────────────
   function feedHeader() {
-    const head = el("div", "position:relative;margin-bottom:24px;overflow:visible;");
+    const head = el("div", "position:relative;margin-bottom:36px;overflow:visible;");
     head.appendChild(el("div",
       "position:absolute;left:120px;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
       { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
@@ -628,6 +654,23 @@
     head.appendChild(el("div",
       "position:relative;margin-top:14px;max-width:230px;font-size:10.5px;line-height:1.55;color:#121212;",
       { text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
+
+    // City switcher: persistent, always editable here — NOT tied to login.
+    // Plain text, no boxes — a line above/below separates it from the title+
+    // blurb above and the plan feed below; the active city reads in red.
+    // Horizontally scrollable (not wrapping) so it stays one row even once
+    // more cities are added than fit on screen.
+    const switcher = el("div",
+      "position:relative;display:flex;gap:18px;margin-top:18px;padding:12px 0;border-top:3px solid #121212;border-bottom:3px solid #121212;overflow-x:auto;");
+    CITIES_LIST.forEach(function (c) {
+      const active = c === CITY;
+      switcher.appendChild(el("button",
+        "flex:none;white-space:nowrap;font-family:'Space Mono',monospace;font-weight:700;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;" +
+        "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? "#EA4632" : "#121212") + ";",
+        { text: c, on: { click: function () { switchCity(c); } } }));
+    });
+    head.appendChild(switcher);
+
     return head;
   }
 
@@ -944,6 +987,7 @@
   function boot() {
     render();          // paint the home shell immediately (loading state) —
                         // the feed loads/scrolls even while awaitingAuth.
+    loadCitiesList();
     loadSavedFromServer();
     loadInitial();
     // Anton loads async and changes text metrics — re-fit once it's ready.
