@@ -68,6 +68,11 @@ class InteractionIn(BaseModel):
     interaction_type: str  # "click" | "saved" | "view_link"
 
 
+class AuthIn(BaseModel):
+    username: str
+    password: str
+
+
 class RecommendationOut(BaseModel):
     plan: PlanOut
     score: float
@@ -115,6 +120,20 @@ def index():
 
 
 # ── Routes ───────────────────────────────────────────────
+
+@app.post("/auth")
+def auth(body: AuthIn):
+    username = body.username.strip()
+    if not username:
+        raise HTTPException(status_code=422, detail="Username is required")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    try:
+        store.authenticate_user(username, body.password)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    return {"user_id": username}
+
 
 @app.get("/plans")
 def list_plans(

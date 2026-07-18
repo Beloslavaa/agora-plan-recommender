@@ -9,5 +9,7 @@ uvicorn[standard]>=0.30.0
 # database (Supabase Postgres). >=3.2 needed for lazy pool construction (open=False).
 psycopg[binary]>=3.2
 psycopg-pool>=3.2
+# password hashing for login
+bcrypt>=4.0
 # optional: only if you set llm_provider=anthropic
 # anthropic>=0.40.0

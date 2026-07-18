@@ -1,5 +1,6 @@
 import json
 
+import bcrypt
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
@@ -85,6 +86,14 @@ def init_db() -> None:
             "ALTER TABLE interactions ADD CONSTRAINT interactions_interaction_type_check "
             "CHECK (interaction_type IN ('click', 'saved', 'view_link'))"
         )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id            SERIAL PRIMARY KEY,
+                username      TEXT   NOT NULL UNIQUE,
+                password_hash TEXT   NOT NULL,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
 
 
 # ── Ingestion-side writes ────────────────────────────────
@@ -295,6 +304,28 @@ def list_cinema_plans(key: str) -> list[dict]:
             (f"%{key}%",),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ── Auth (UI-only gate: username identifies the user consistently across
+# browsers, no session token — see AGENTS.md discussion) ──
+
+def authenticate_user(username: str, password: str) -> None:
+    """Signup-or-login in one step: unknown usernames are created on the spot,
+    known ones must match. Raises ValueError (caller maps to 401) on a wrong
+    password for an existing username."""
+    with _conn() as conn:
+        with conn.transaction():
+            row = conn.execute(
+                "SELECT password_hash FROM users WHERE username = %s", (username,)
+            ).fetchone()
+            if row is None:
+                password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                conn.execute(
+                    "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
+                    (username, password_hash),
+                )
+            elif not bcrypt.checkpw(password.encode(), row["password_hash"].encode()):
+                raise ValueError("Incorrect password")
 
 
 # ── Maintenance (used by scripts/backfill_jsonld.py) ─────

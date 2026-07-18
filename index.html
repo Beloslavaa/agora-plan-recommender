@@ -30,17 +30,19 @@
   .photo-bw { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;
               filter:grayscale(1) contrast(0.9) brightness(1.08); opacity:0.72; }
   .anton { font-family:'Anton', sans-serif; }
-  /* Titles keep the dense Anton treatment: condensed (scaleX 0.84 from the left),
-     tight leading (line-height ~0.82). Feed titles wrap naturally, always fill at
-     least 2 lines (min-height), stay a consistent 34px, and only auto-shrink if a
-     very long one would exceed ~3 lines (so nothing is cut with "…"). */
-  .card-title  { font-family:'Anton',sans-serif; font-size:34px; line-height:0.82; text-transform:uppercase;
-                 letter-spacing:-0.01em; color:#121212; overflow:hidden; overflow-wrap:break-word;
-                 min-height:56px; max-height:86px;
-                 transform:scaleX(0.84); transform-origin:left; text-align:left; }
-  .detail-title{ font-family:'Anton',sans-serif; font-size:62px; line-height:0.78; text-transform:uppercase;
-                 letter-spacing:-0.02em; color:#121212; word-break:break-word; overflow:hidden; max-height:204px;
-                 transform:scaleX(0.84); transform-origin:left; }
+  /* Titles keep the dense Anton treatment: condensed scaleX squash, and a
+     DELIBERATELY tight line-height so wrapped lines overlap each other —
+     that's the intended poster-type look, not a bug to avoid. Feed titles
+     ALWAYS render at the same 34px — no shrink-to-fit — so every card reads
+     with the same visual weight; longer titles just wrap onto more lines
+     (with the same overlap) and the card grows taller to hold them. */
+  .card-title  { font-family:'Anton',sans-serif; font-size:34px; line-height:0.78; text-transform:uppercase;
+                 letter-spacing:-0.01em; color:#121212; overflow-wrap:break-word;
+                 min-height:56px; padding-top:4px;
+                 transform:scaleX(0.85); transform-origin:left; text-align:left; }
+  .detail-title{ font-family:'Anton',sans-serif; font-size:30px; line-height:0.78; text-transform:uppercase;
+                 letter-spacing:-0.02em; color:#121212; word-break:break-word;
+                 transform:scaleX(0.95); transform-origin:left; }
   .saved-title { font-family:'Anton',sans-serif; font-size:26px; line-height:0.8; text-transform:uppercase;
                  color:#121212; word-break:break-word; overflow:hidden; max-height:64px;
                  transform:scaleX(0.84); transform-origin:left; }
@@ -54,6 +56,34 @@
 </head>
 <body>
 <div id="app">
+  <!-- LOGIN GATE (UI-only: identifies the user consistently across browsers,
+       not a security boundary — see AGENTS.md). Centered box, pinned over
+       the feed: it does not live inside #main, so main's scroll never
+       carries it away. The outer wrapper is pointer-events:none so wheel/
+       touch scrolling reaches #main underneath everywhere except the box
+       itself (pointer-events:auto), which is the only clickable part.
+       The feed underneath stays scrollable but not clickable while this is
+       up (pointer-events:none on the feed wrapper, see renderHome). -->
+  <div id="login-gate" style="display:none;position:absolute;inset:0;z-index:10;pointer-events:none;align-items:center;justify-content:center;">
+    <div style="pointer-events:auto;width:calc(100% - 64px);max-width:300px;">
+      <div class="anton" style="font-size:46px;line-height:0.82;color:#121212;transform:scaleX(0.84);transform-origin:center;text-align:center;margin-bottom:16px;">AGORA</div>
+      <div style="background:#FFFFFF;border:4px solid #121212;box-shadow:0 14px 34px rgba(0,0,0,0.28);padding:22px 20px 20px;">
+        <div style="font-weight:700;font-size:10px;letter-spacing:0.08em;color:#121212;margin-bottom:14px;line-height:1.5;text-align:center;">LOG IN TO KEEP YOUR RECOMMENDATIONS THE SAME ACROSS DEVICES</div>
+        <form id="login-form" style="display:flex;flex-direction:column;gap:10px;">
+          <input id="login-username" type="text" placeholder="USERNAME" autocomplete="username"
+                 style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
+          <input id="login-password" type="password" placeholder="PASSWORD (8+ CHARACTERS)" autocomplete="current-password"
+                 style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
+          <button id="login-submit" type="submit"
+                  style="font-weight:700;font-size:12px;letter-spacing:0.1em;padding:12px 14px;background:#EA4632;border:3px solid #121212;color:#121212;cursor:pointer;">ENTER</button>
+          <div id="login-error" style="min-height:14px;font-size:10px;color:#EA4632;letter-spacing:0.03em;text-align:center;"></div>
+          <button id="login-skip" type="button"
+                  style="background:none;border:none;text-decoration:underline;font-size:10px;letter-spacing:0.06em;color:#121212;opacity:0.65;cursor:pointer;padding:2px 0;text-align:center;">SKIP — BROWSE WITHOUT PERSONALIZATION</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <main id="main"></main>
 
   <!-- BOTTOM NAV -->
@@ -86,17 +116,19 @@
   const API = "";                 // '' → relative to wherever this page is served
   const PAGE = 15;                // /plans page size for infinite scroll
 
-  // ── per-browser anonymous user id (for interactions) ─────
-  function getUid() {
-    let id = null;
-    try { id = localStorage.getItem("agora_uid"); } catch (e) {}
-    if (!id) {
-      id = "anon_" + Math.random().toString(36).slice(2, 10);
-      try { localStorage.setItem("agora_uid", id); } catch (e) {}
-    }
-    return id;
+  // ── user id (logged-in username, or a throwaway anon id while the login
+  // banner is still up / after "skip") — kept for interactions ────
+  function getStoredUid() {
+    try { return localStorage.getItem("agora_uid"); } catch (e) { return null; }
   }
-  const UID = getUid();
+  function randomAnonId() {
+    return "anon_" + Math.random().toString(36).slice(2, 10);
+  }
+  let UID = getStoredUid();
+  // No stored identity yet: the feed still loads/scrolls under a temporary
+  // anon id, but stays un-clickable until the person logs in or skips.
+  let awaitingAuth = !UID;
+  if (!UID) UID = randomAnonId();
 
   // ── saved set (local; backend has no "my saved" endpoint) ─
   function loadSaved() {
@@ -173,10 +205,21 @@
 
   // Shrink a title's font-size until the full text fits its fixed-height box,
   // so long titles are never cut with "…". Runs once elements are in the DOM.
-  function fitTitle(node, maxPx, minPx) {
+  // Counts actual rendered lines via Range rects — NOT node.scrollHeight vs
+  // clientHeight. Anton's font metrics report a much taller "box" than its
+  // real ink (fontBoundingBox ~40px vs actual glyph ink ~23px at 34px size),
+  // so scrollHeight always exceeds clientHeight by a roughly constant
+  // fraction of font-size regardless of real line count — that comparison
+  // NEVER stops shrinking and silently drove every title down to its floor.
+  function countLines(node) {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    return range.getClientRects().length;
+  }
+  function fitTitle(node, maxPx, minPx, maxLines) {
     let size = maxPx, guard = 0;
     node.style.fontSize = size + "px";
-    while (node.scrollHeight > node.clientHeight + 1 && size > minPx && guard < 48) {
+    while (countLines(node) > maxLines && size > minPx && guard < 48) {
       size -= 1; guard++;
       node.style.fontSize = size + "px";
     }
@@ -184,9 +227,13 @@
   function fitAllTitles() {
     const root = document.getElementById("main");
     if (!root || !root.querySelectorAll) return;
-    root.querySelectorAll(".card-title").forEach((n) => fitTitle(n, 34, 28));
-    root.querySelectorAll(".detail-title").forEach((n) => fitTitle(n, 62, 28));
-    root.querySelectorAll(".saved-title").forEach((n) => fitTitle(n, 26, 15));
+    // .card-title and .detail-title are deliberately NOT shrink-to-fit — both
+    // stay at their fixed CSS font-size regardless of title length, so every
+    // card/plan reads with the same visual weight; longer titles just wrap
+    // onto more lines and the box grows to hold them.
+    requestAnimationFrame(function () {
+      root.querySelectorAll(".saved-title").forEach((n) => fitTitle(n, 26, 15, 2));
+    });
   }
 
   // ── signature: outward-only sine-wave rounded-rect border ─
@@ -504,6 +551,7 @@
 
   // ── navigation ───────────────────────────────────────────
   function openPlan(plan) {
+    if (awaitingAuth) return;   // feed is scroll-only until login/skip
     if (plan.isCinema) { openCinema(plan); return; }
     // Remember whether BACK from the detail page should return here or to
     // the cinema list it was opened from.
@@ -576,7 +624,10 @@
 
   function renderHome() {
     main.innerHTML = "";
-    const pad = el("div", "padding:22px 18px 26px;");
+    // Scroll-only until login/skip: the feed itself stays clickable to the
+    // browser, but we refuse the click at the source (openPlan) and grey/
+    // pointer-lock it here too so it visibly reads as inert.
+    const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""));
     pad.appendChild(feedHeader());
 
     if (!state.feed.length) {
@@ -881,10 +932,71 @@
   document.getElementById("nav-saved").addEventListener("click", goSaved);
 
   // ── go ───────────────────────────────────────────────────
-  render();          // paint the home shell immediately (loading state)
-  loadInitial();
-  // Anton loads async and changes text metrics — re-fit once it's ready.
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
+  function boot() {
+    render();          // paint the home shell immediately (loading state) —
+                        // the feed loads/scrolls even while awaitingAuth.
+    loadInitial();
+    // Anton loads async and changes text metrics — re-fit once it's ready.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
+  }
+
+  function reloadFeed() {
+    // Re-fetch from scratch so a fresh login gets ITS OWN personalized
+    // recommendations, not the ones loaded under the throwaway anon id.
+    state.feed = [];
+    state.ids = new Set();
+    state.offset = 0;
+    state.done = false;
+    if (state.view === "home") renderHome();
+    loadInitial();
+  }
+
+  function unlockFeed() {
+    awaitingAuth = false;
+    document.getElementById("login-gate").style.display = "none";
+    if (state.view === "home") renderHome();
+  }
+
+  function wireLoginBanner() {
+    const gate = document.getElementById("login-gate");
+    const form = document.getElementById("login-form");
+    const errorEl = document.getElementById("login-error");
+    const skipBtn = document.getElementById("login-skip");
+
+    gate.style.display = "flex";
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      errorEl.textContent = "";
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value;
+      try {
+        const r = await fetch(API + "/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username, password: password }),
+        });
+        const data = await r.json();
+        if (!r.ok) { errorEl.textContent = data.detail || "Login failed"; return; }
+        UID = data.user_id;
+        try { localStorage.setItem("agora_uid", UID); } catch (e) {}
+        unlockFeed();
+        reloadFeed();
+      } catch (err) {
+        errorEl.textContent = "Network error — try again";
+      }
+    });
+
+    skipBtn.addEventListener("click", function () {
+      // Keep browsing under the throwaway anon id already used to load the
+      // feed — just persist it so this "no personalization" choice sticks.
+      try { localStorage.setItem("agora_uid", UID); } catch (e) {}
+      unlockFeed();
+    });
+  }
+
+  boot();
+  if (awaitingAuth) wireLoginBanner();
 })();
 </script>
 </body>
