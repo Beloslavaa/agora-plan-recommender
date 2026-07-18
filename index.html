@@ -13,6 +13,14 @@
   ::-webkit-scrollbar { width: 0; height: 0; }
   @keyframes spinRing { to { transform: rotate(360deg); } }
   @keyframes grainShift { 0% { transform: translate(0,0); } 100% { transform: translate(-6%,-4%); } }
+  @keyframes dashSlideRight { to { background-position: 10px 0; } }
+  @keyframes dashSlideLeft { to { background-position: -10px 0; } }
+  /* Same dashed-and-moving language as the #ring around "FOR YOU" — same
+     3px thickness, tighter dash spacing — just a straight line can't spin,
+     so the dashes slide along it instead. */
+  .city-line { height:3px; background-image: repeating-linear-gradient(to right, #121212 0 6px, transparent 6px 10px); background-size: 10px 3px; }
+  .city-line-top { animation: dashSlideRight 1s linear infinite; }
+  .city-line-bottom { animation: dashSlideLeft 1s linear infinite; }
   /* 100dvh (not 100vh) so mobile browsers size #app against the actual visible
      viewport, not the address-bar-collapsed one — otherwise the bottom nav gets
      pushed below the fold and the OUTER page scrolls to reveal it, instead of
@@ -51,6 +59,7 @@
   @media (prefers-reduced-motion: reduce) {
     #ring { animation: none !important; }
     #grain { animation: none !important; }
+    .city-line-top, .city-line-bottom { animation: none !important; }
   }
 </style>
 </head>
@@ -694,20 +703,24 @@
       { text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
 
     // City switcher: persistent, always editable here — NOT tied to login.
-    // Plain text, no boxes — a line above/below separates it from the title+
-    // blurb above and the plan feed below; the active city reads in red.
+    // Plain text, no boxes — a thin dashed line above/below (sliding, like
+    // the #ring around FOR YOU) separates it from the title+blurb above and
+    // the plan feed below; the active city reads in red.
+    head.appendChild(el("div", "margin-top:18px;", { attrs: { class: "city-line city-line-top" } }));
+
     // Horizontally scrollable (not wrapping) so it stays one row even once
     // more cities are added than fit on screen.
-    const switcher = el("div",
-      "position:relative;display:flex;gap:18px;margin-top:18px;padding:12px 0;border-top:3px solid #121212;border-bottom:3px solid #121212;overflow-x:auto;");
+    const switcher = el("div", "position:relative;display:flex;gap:18px;padding:12px 0;overflow-x:auto;");
     CITIES_LIST.forEach(function (c) {
       const active = c === CITY;
       switcher.appendChild(el("button",
-        "flex:none;white-space:nowrap;font-family:'Space Mono',monospace;font-weight:700;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;" +
-        "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? "#EA4632" : "#121212") + ";",
+        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;" +
+        "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? CYAN : "#121212") +
+        (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
     });
     head.appendChild(switcher);
+    head.appendChild(el("div", "", { attrs: { class: "city-line city-line-bottom" } }));
 
     return head;
   }
