@@ -106,5 +106,17 @@
     "url": "https://www.condeduquemadrid.es/",
     "promoted_by": "explorer/PlanCategory.cultural",
     "city": "Madrid"
+  },
+  {
+    "name": "Time Out Madrid",
+    "url": "https://www.timeout.es/madrid/es",
+    "promoted_by": "manual/cultural",
+    "city": "Madrid"
+  },
+  {
+    "name": "Time Out Barcelona",
+    "url": "https://www.timeout.es/barcelona/es",
+    "promoted_by": "manual/cultural",
+    "city": "Barcelona"
   }
 ]
