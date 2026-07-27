@@ -12,6 +12,7 @@ from agora.backend.cinemas import CINEMA_SOURCES
 from agora.backend.config import settings
 from agora.backend.ingestion import store
 from agora.backend.ingestion.sources import load_cities
+from agora.backend.recommender import semantic
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,9 @@ app.add_middleware(
 # ── Response models ──────────────────────────────────────
 
 class PlanOut(BaseModel):
-    id: int
+    # A cinema hub card's id is "cinema:<domain>" (see semantic.py's
+    # _cinema_pseudo_plan) rather than a real plans.id, hence int | str.
+    id: int | str
     title: str
     short_title: str = ""
     description: str
@@ -62,6 +65,8 @@ class PlanOut(BaseModel):
     source_url: str
     source_type: str
     city: str
+    is_cinema: bool = False
+    cinema_key: str | None = None
 
 
 class InteractionIn(BaseModel):
@@ -107,6 +112,8 @@ def _row_to_plan(row: dict) -> PlanOut:
         source_url=row["source_url"],
         source_type=row["source_type"],
         city=row["city"],
+        is_cinema=bool(row.get("is_cinema", False)),
+        cinema_key=row.get("cinema_key"),
     )
 
 
@@ -195,7 +202,10 @@ def saved_plans(user_id: str) -> list[PlanOut]:
 
 @app.get("/recommendations/{user_id}")
 def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) -> list[RecommendationOut]:
-    rows = store.get_recommendations(user_id, city, limit)
+    # Semantic (Tier 1): cosine similarity between the user's taste profile
+    # and each candidate plan's text embedding. Falls back to popularity
+    # internally for users/cities with no usable signal yet.
+    rows = semantic.rank_for_user(user_id, city, limit)
     return [
         RecommendationOut(plan=_row_to_plan(r), score=float(r["score"]))
         for r in rows

@@ -74,6 +74,11 @@ def init_db() -> None:
         conn.execute("UPDATE plans SET city = 'Madrid' WHERE city IS NULL")
         conn.execute("ALTER TABLE plans ALTER COLUMN city SET NOT NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_plans_city ON plans(city)")
+        # Migration: semantic recommender (agora/backend/recommender/semantic.py).
+        # JSON-encoded float list rather than pgvector — plan counts are small
+        # enough (hundreds, not millions) that scoring in Python is plenty fast,
+        # and it avoids requiring the pgvector extension on Supabase.
+        conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS embedding TEXT")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS interactions (
                 id          SERIAL  PRIMARY KEY,
@@ -261,6 +266,34 @@ def remove_interaction(user_id: str, plan_id: int, interaction_type: str) -> Non
         )
 
 
+def get_user_interactions(user_id: str) -> list[dict]:
+    """Every interaction this user has recorded (any type), most recent first."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT plan_id, interaction_type, created_at FROM interactions "
+            "WHERE user_id = %s ORDER BY created_at DESC",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_user_interactions_with_embeddings(user_id: str) -> list[dict]:
+    """Same as get_user_interactions, but with each plan's embedding joined
+    in (NULL if that plan hasn't been embedded yet) — one query instead of
+    get_user_interactions + a separate get_embeddings_for_plans call, since
+    the recommender needs both on every single request (not cacheable, since
+    it must reflect interactions the instant they're recorded)."""
+    with _conn() as conn:
+        rows = conn.execute(
+            """SELECT i.plan_id, i.interaction_type, i.created_at, p.embedding
+               FROM interactions i JOIN plans p ON p.id = i.plan_id
+               WHERE i.user_id = %s
+               ORDER BY i.created_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_saved_plans(user_id: str) -> list[dict]:
     """Plans this user has saved, most-recently-saved first — lets the Saved
     list follow the same user_id across browsers/devices instead of living
@@ -306,6 +339,75 @@ def get_recommendations(user_id: str, city: str, limit: int = 10) -> list[dict]:
         if len(out) >= limit:
             break
     return out
+
+
+# ── Semantic recommender support (agora/backend/recommender/semantic.py) ─
+
+def get_plans_missing_embedding() -> list[dict]:
+    """Plans not yet embedded — a fresh scrape, or anything ingested before
+    the embedding column existed. Safe to call repeatedly/incrementally."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, title, description, category, tags FROM plans WHERE embedding IS NULL"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_plan_embedding(plan_id: int, embedding: list[float]) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "UPDATE plans SET embedding = %s WHERE id = %s",
+            (json.dumps(embedding), plan_id),
+        )
+
+
+def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
+    """id -> embedding, skipping any plan that hasn't been embedded yet."""
+    if not plan_ids:
+        return {}
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, embedding FROM plans WHERE id = ANY(%s) AND embedding IS NOT NULL",
+            (plan_ids,),
+        ).fetchall()
+    return {r["id"]: json.loads(r["embedding"]) for r in rows}
+
+
+def get_interaction_counts(plan_ids: list[int]) -> dict[int, int]:
+    """Total interactions (any type) per plan id — used to score a cinema
+    hub by its most-interacted-with movie when there's no taste profile to
+    compare against (see semantic.py's popularity-fallback branch)."""
+    if not plan_ids:
+        return {}
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT plan_id, COUNT(*) AS n FROM interactions WHERE plan_id = ANY(%s) GROUP BY plan_id",
+            (plan_ids,),
+        ).fetchall()
+    return {r["plan_id"]: r["n"] for r in rows}
+
+
+def get_plans_for_scoring(city: str) -> list[dict]:
+    """Every non-cinema plan in a city, embedding included (may be NULL for
+    plans not backfilled yet — the recommender skips those)."""
+    with _conn() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM plans WHERE {_CINEMA_EXCLUDE_WHERE} AND city = %s",
+            (*_CINEMA_EXCLUDE_PARAMS, city),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_all_city_plans(city: str) -> list[dict]:
+    """Every plan row for a city in ONE query — cinema movies included,
+    unlike get_plans_for_scoring. semantic.py splits the result into scoring
+    candidates vs. cinema-hub buckets in Python from this single fetch,
+    instead of one query for the main list plus one ILIKE query per cinema
+    chain (5 extra network round-trips to Supabase — the actual source of a
+    slow /recommendations call, not the similarity math)."""
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM plans WHERE city = %s", (city,)).fetchall()
+    return [dict(r) for r in rows]
 
 
 # ── Cinemas (grouped movie sources) ──────────────────────

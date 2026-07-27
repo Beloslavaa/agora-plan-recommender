@@ -16,6 +16,7 @@ from agora.backend.ingestion.sources import (
 from agora.backend.ingestion.enrich import enrich_plans
 from agora.backend.ingestion.validator import validate_and_filter
 from agora.backend.ingestion.store import get_plan_count, pool, upsert_plans
+from agora.backend.recommender.semantic import backfill_embeddings
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +204,10 @@ def main() -> None:
 
     total = get_plan_count()
     print(f"\nTotal in DB (all cities): {total}")
+
+    embedded = backfill_embeddings()
+    print(f"Embedded {embedded} plan(s) for the semantic recommender")
+
     pool.close()
 
 

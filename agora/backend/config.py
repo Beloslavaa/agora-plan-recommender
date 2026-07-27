@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     openai_base_url: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
     gemini_model: str = "gemini-2.0-flash"
+    # Used by the semantic recommender (agora/backend/recommender/semantic.py)
+    # to embed plans and build user taste profiles. Called through Gemini's
+    # OpenAI-compatible endpoint (same pattern as GeminiProvider in llm.py),
+    # independent of llm_provider — this is the embedding model specifically.
+    embedding_model: str = "gemini-embedding-001"
 
     # ── CORS ─────────────────────────────────────────────────
     # Comma-separated list of origins allowed to call the API.

@@ -189,15 +189,17 @@
     main.scrollTop = 0;
   }
   function postInteraction(planId, type) {
-    // fire-and-forget; a failed interaction must never block the UI
-    fetch(API + "/interactions", {
+    // Returns the fetch promise (still swallows errors — a failed interaction
+    // must never block the UI) so callers that need to know it's actually
+    // persisted before acting on it (see toggleSave) can await it.
+    return fetch(API + "/interactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: UID, plan_id: planId, interaction_type: type }),
     }).catch(function () {});
   }
   function deleteInteraction(planId, type) {
-    fetch(API + "/interactions", {
+    return fetch(API + "/interactions", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: UID, plan_id: planId, interaction_type: type }),
@@ -538,6 +540,7 @@
     offset: 0,          // /plans pagination cursor
     done: false,        // no more /plans pages
     loading: false,
+    reloading: false,   // true from reloadFeed() until its loadInitial settles
     selected: null,     // current plan object in detail
     detailFrom: "home", // which view BACK should return to from detail: "home" | "cinema"
     cinema: null,       // { key, name, plans, loading } while state.view === "cinema"
@@ -570,38 +573,19 @@
   // response, the stale call sees loadGeneration has moved on and bails
   // before touching `state`, instead of clobbering whatever the newer load
   // (or a restored cache) just put there.
-  async function loadCinemas(gen) {
-    try {
-      const cinemas = await getJSON("/cinemas?city=" + encodeURIComponent(CITY));
-      if (gen !== loadGeneration) return;
-      addPlans((cinemas || []).map(function (c) {
-        return {
-          id: "cinema:" + c.key,
-          isCinema: true,
-          cinemaKey: c.key,
-          title: c.name,
-          short_title: c.name,
-          description: "",
-          image_url: c.image_url,
-          tags: ["cinema"],
-          category: null,
-          start_date: null,
-          end_date: null,
-        };
-      }));
-    } catch (e) { /* no cinemas yet — fine, feed just won't lead with them */ }
-  }
-
   async function loadInitial(gen) {
-    await loadCinemas(gen);          // cinema cards lead the feed
-    if (gen !== loadGeneration) return;
-    // "For you" = popularity-ranked recommendations, then paginate the rest.
+    // "For you" = personalized (or popularity-fallback) recommendations,
+    // then paginate the rest. Cinema hub cards are scored by their single
+    // best-matching movie and merged in wherever that ranks (see
+    // agora/backend/recommender/semantic.py) — they no longer automatically
+    // lead the feed regardless of relevance.
     try {
       const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?city=" + encodeURIComponent(CITY) + "&limit=50");
       if (gen !== loadGeneration) return;
       addPlans(recs.map((r) => r.plan).filter(Boolean));
     } catch (e) { /* fall through to /plans */ }
     if (gen !== loadGeneration) return;
+    state.reloading = false;
     await loadMore(gen);             // top up with the general catalogue
   }
   async function loadMore(gen) {
@@ -626,7 +610,7 @@
   // ── navigation ───────────────────────────────────────────
   function openPlan(plan) {
     if (awaitingAuth) return;   // feed is scroll-only until login/skip
-    if (plan.isCinema) { openCinema(plan); return; }
+    if (plan.is_cinema) { openCinema(plan); return; }
     // Remember whether BACK from the detail page should return here or to
     // the cinema list it was opened from.
     state.detailFrom = state.view === "cinema" ? "cinema" : "home";
@@ -645,12 +629,12 @@
     main.scrollTop = 0;
   }
   async function openCinema(hub) {
-    state.cinema = { key: hub.cinemaKey, name: hub.short_title || hub.title, plans: [], loading: true };
+    state.cinema = { key: hub.cinema_key, name: hub.short_title || hub.title, plans: [], loading: true };
     state.view = "cinema";
     render();
     main.scrollTop = 0;
     try {
-      const plans = await getJSON("/cinemas/" + encodeURIComponent(hub.cinemaKey) + "/plans");
+      const plans = await getJSON("/cinemas/" + encodeURIComponent(hub.cinema_key) + "/plans");
       (plans || []).forEach(remember);
       state.cinema.plans = plans || [];
     } catch (e) {
@@ -664,13 +648,19 @@
     if (!state.feed.length) return;
     openPlan(state.feed[Math.floor(Math.random() * state.feed.length)]);
   }
-  function toggleSave() {
+  async function toggleSave() {
     const p = state.selected;
     if (!p) return;
     const now = !state.saved[p.id];
-    if (now) { state.saved[p.id] = true; postInteraction(p.id, "saved"); }
-    else { delete state.saved[p.id]; deleteInteraction(p.id, "saved"); }
+    // Optimistic: flip the heart instantly, don't make the click feel laggy.
+    if (now) state.saved[p.id] = true; else delete state.saved[p.id];
     render();
+    // `saved` is the strongest signal into the taste profile (see
+    // agora/backend/recommender/semantic.py), so once it's actually persisted,
+    // refresh "for you" so the ranking reflects it — awaited so the refetch
+    // can't race ahead of the write it depends on.
+    await (now ? postInteraction(p.id, "saved") : deleteInteraction(p.id, "saved"));
+    reloadFeed();
   }
 
   // ── renderers ────────────────────────────────────────────
@@ -724,10 +714,10 @@
       const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
       box.appendChild(el("div",
         "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
-        { text: state.loading ? "Loading\nplans" : "No plans\nyet" }));
+        { text: state.reloading ? "Your feed\nis reloading" : state.loading ? "Loading\nplans" : "No plans\nyet" }));
       box.appendChild(el("div",
         "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
-        { text: state.loading ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
+        { text: state.reloading ? "Refreshing your recommendations." : state.loading ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
       pad.appendChild(box);
     } else {
       state.feed.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
@@ -1042,6 +1032,7 @@
     state.offset = 0;
     state.done = false;
     state.loading = false;
+    state.reloading = true;
     loadSavedFromServer();
     if (state.view === "home") renderHome();
     loadInitial(gen);
