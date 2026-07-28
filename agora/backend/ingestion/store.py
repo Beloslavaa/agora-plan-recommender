@@ -79,6 +79,12 @@ def init_db() -> None:
         # enough (hundreds, not millions) that scoring in Python is plenty fast,
         # and it avoids requiring the pgvector extension on Supabase.
         conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS embedding TEXT")
+        # Migration: soft delete for the stale-plan cleanup cron. A flag rather
+        # than a hard DELETE — keeps interaction history intact for the
+        # recommender (and avoids the interactions.plan_id FK entirely) while
+        # still hiding expired plans from browsing/recommendations (see the
+        # "NOT is_stale" filters below and mark_stale_plans()).
+        conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS is_stale BOOLEAN NOT NULL DEFAULT FALSE")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS interactions (
                 id          SERIAL  PRIMARY KEY,
@@ -106,6 +112,15 @@ def init_db() -> None:
                 created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
             )
         """)
+        # Migration: lock down Supabase's auto-generated PostgREST API, which
+        # exposes every public-schema table to anyone with the project's anon
+        # key regardless of whether this app uses that API (it doesn't — we
+        # only ever connect directly via DATABASE_URL as the `postgres` role,
+        # which has BYPASSRLS, so this changes nothing for store.py itself).
+        # No policies added: nothing needs anon/authenticated REST access, so
+        # RLS-enabled-with-zero-policies is a correct default-deny.
+        for table in ("plans", "interactions", "users"):
+            conn.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
 
 
 # ── Ingestion-side writes ────────────────────────────────
@@ -211,7 +226,7 @@ def list_plans(
     limit: int = 50,
     offset: int = 0,
 ) -> list[dict]:
-    where: list[str] = [_CINEMA_EXCLUDE_WHERE]
+    where: list[str] = [_CINEMA_EXCLUDE_WHERE, "NOT is_stale"]
     params: list = list(_CINEMA_EXCLUDE_PARAMS)
 
     if city:
@@ -323,7 +338,7 @@ def get_recommendations(user_id: str, city: str, limit: int = 10) -> list[dict]:
             f"""SELECT p.*, COUNT(i.id) as score
                FROM plans p
                LEFT JOIN interactions i ON i.plan_id = p.id
-               WHERE {_CINEMA_EXCLUDE_WHERE} AND p.city = %s
+               WHERE {_CINEMA_EXCLUDE_WHERE} AND p.city = %s AND NOT p.is_stale
                GROUP BY p.id
                ORDER BY score DESC, p.start_date ASC NULLS LAST
                LIMIT %s""",
@@ -392,21 +407,23 @@ def get_plans_for_scoring(city: str) -> list[dict]:
     plans not backfilled yet — the recommender skips those)."""
     with _conn() as conn:
         rows = conn.execute(
-            f"SELECT * FROM plans WHERE {_CINEMA_EXCLUDE_WHERE} AND city = %s",
+            f"SELECT * FROM plans WHERE {_CINEMA_EXCLUDE_WHERE} AND city = %s AND NOT is_stale",
             (*_CINEMA_EXCLUDE_PARAMS, city),
         ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_all_city_plans(city: str) -> list[dict]:
-    """Every plan row for a city in ONE query — cinema movies included,
-    unlike get_plans_for_scoring. semantic.py splits the result into scoring
-    candidates vs. cinema-hub buckets in Python from this single fetch,
-    instead of one query for the main list plus one ILIKE query per cinema
-    chain (5 extra network round-trips to Supabase — the actual source of a
-    slow /recommendations call, not the similarity math)."""
+    """Every non-stale plan row for a city in ONE query — cinema movies
+    included, unlike get_plans_for_scoring. semantic.py splits the result into
+    scoring candidates vs. cinema-hub buckets in Python from this single
+    fetch, instead of one query for the main list plus one ILIKE query per
+    cinema chain (5 extra network round-trips to Supabase — the actual source
+    of a slow /recommendations call, not the similarity math)."""
     with _conn() as conn:
-        rows = conn.execute("SELECT * FROM plans WHERE city = %s", (city,)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM plans WHERE city = %s AND NOT is_stale", (city,)
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -426,7 +443,7 @@ def list_cinemas(city: str) -> list[dict]:
             if info["city"] != city:
                 continue
             rows = conn.execute(
-                "SELECT image_url FROM plans WHERE source_url ILIKE %s "
+                "SELECT image_url FROM plans WHERE source_url ILIKE %s AND NOT is_stale "
                 "ORDER BY start_date ASC NULLS LAST",
                 (f"%{domain}%",),
             ).fetchall()
@@ -445,10 +462,29 @@ def list_cinema_plans(key: str) -> list[dict]:
     init_db()
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM plans WHERE source_url ILIKE %s ORDER BY start_date ASC NULLS LAST",
+            "SELECT * FROM plans WHERE source_url ILIKE %s AND NOT is_stale "
+            "ORDER BY start_date ASC NULLS LAST",
             (f"%{key}%",),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def mark_stale_plans() -> int:
+    """Soft-delete plans whose run is fully over: COALESCE(end_date,
+    start_date) is before today. Plans with no date at all ("DATES TBA") are
+    left alone — an unknown date isn't a stale one. Flips is_stale rather than
+    deleting the row, so interaction history survives for the recommender;
+    every browse/recommendation-facing query filters on "NOT is_stale" to
+    keep these out of the feed. Returns the number of plans newly marked."""
+    init_db()
+    with _conn() as conn:
+        cur = conn.execute(
+            "UPDATE plans SET is_stale = TRUE "
+            "WHERE NOT is_stale "
+            "AND COALESCE(end_date, start_date) IS NOT NULL "
+            "AND COALESCE(end_date, start_date)::date < CURRENT_DATE"
+        )
+        return cur.rowcount
 
 
 # ── Auth (UI-only gate: username identifies the user consistently across

@@ -15,7 +15,7 @@ from agora.backend.ingestion.sources import (
 )
 from agora.backend.ingestion.enrich import enrich_plans
 from agora.backend.ingestion.validator import validate_and_filter
-from agora.backend.ingestion.store import get_plan_count, pool, upsert_plans
+from agora.backend.ingestion.store import get_plan_count, mark_stale_plans, pool, upsert_plans
 from agora.backend.recommender.semantic import backfill_embeddings
 
 logger = logging.getLogger(__name__)
@@ -207,6 +207,9 @@ def main() -> None:
 
     embedded = backfill_embeddings()
     print(f"Embedded {embedded} plan(s) for the semantic recommender")
+
+    staled = mark_stale_plans()
+    print(f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted")
 
     pool.close()
 
