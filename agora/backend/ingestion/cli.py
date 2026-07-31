@@ -48,7 +48,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                         extracted = await extract_plans_from_html(
                             html, page_url, "fixed", llm,
                         )
-                        return validate_and_filter(extracted)
+                        return extracted
                     except Exception as e:
                         logger.warning("  ✗ Extraction failed for %s: %s", page_url, e)
                         return []
@@ -70,10 +70,16 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
         except Exception as e:
             logger.warning("  ✗ Failed to scrape %s: %s", source.name, e)
     # Stamped here (not asked of the LLM extractor) — this is the one place
-    # that knows which city this whole run targeted.
+    # that knows which city this whole run targeted. Must happen BEFORE
+    # validate_and_filter: validator.py rejects any plan with an empty city as
+    # a pipeline-bug safety net, so validating per-page inside _extract()
+    # above (i.e. before this stamp existed) silently dropped 100% of every
+    # fixed source's plans, every run — the "city missing" issue just never
+    # surfaced because validate_and_filter only logs individual reasons at
+    # DEBUG, not the INFO level this CLI runs at.
     for p in plans:
         p.city = city
-    return plans
+    return validate_and_filter(plans)
 
 
 async def run_exploratory_pipeline(llm, city: str, only_categories: set[str] | None = None) -> list[PlanData]:

@@ -118,5 +118,11 @@
     "url": "https://www.timeout.es/barcelona/es",
     "promoted_by": "manual/cultural",
     "city": "Barcelona"
+  },
+  {
+    "name": "Comunidad de Madrid - Cultura",
+    "url": "https://www.comunidad.madrid/cultura",
+    "promoted_by": "manual/cultural",
+    "city": "Madrid"
   }
 ]
