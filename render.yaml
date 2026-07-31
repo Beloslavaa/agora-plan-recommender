@@ -9,31 +9,7 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  # Runs the full ingestion pipeline for every city in data/cities.json, then
-  # embeds any new plans and soft-deletes stale ones (see main.py /
-  # mark_stale_plans) — one unattended job covers both scrape and cleanup,
-  # no separate cron needed.
-  - type: cron
-    name: agora-ingestion
-    runtime: python
-    plan: free
-    schedule: "0 4 1,15 * *"   # twice a month: 1st and 15th, 04:00 UTC
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py --mode full
-    envVars:
-      # Mirrors .env.example: LLM_PROVIDER=openai, SEARCH_PROVIDER=serpapi,
-      # plus GEMINI_API_KEY (always needed — the recommender embeds through
-      # Gemini regardless of LLM_PROVIDER). Swap/add keys here if the actual
-      # provider config changes.
-      - key: DATABASE_URL
-        sync: false
-      - key: LLM_PROVIDER
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: SEARCH_PROVIDER
-        sync: false
-      - key: SERPAPI_KEY
-        sync: false
+# The ingestion schedule (scrape + embed + soft-delete stale plans, twice a
+# month) runs via GitHub Actions instead of a Render Cron Job — Render has no
+# free tier for cron (billed per run), while GitHub Actions' scheduled
+# workflows are free. See .github/workflows/ingestion.yml.

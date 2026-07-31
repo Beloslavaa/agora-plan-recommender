@@ -84,17 +84,26 @@ PYTHONPATH=. python scripts/smoke_test_recommender.py --title "..."  # save a pl
 
 ## Deployment
 
-`render.yaml` deploys this as a Render web service (`DATABASE_URL` set via
-Render's dashboard, not synced from the repo) plus a cron job
-(`agora-ingestion`, twice a month — the 1st and 15th) that runs `python
-main.py --mode full` for every city in `data/cities.json`. That single run
+`render.yaml` deploys this as a single Render web service (`DATABASE_URL` set
+via Render's dashboard, not synced from the repo).
+
+The ingestion schedule runs separately via a GitHub Actions workflow
+(`.github/workflows/ingestion.yml`), twice a month — the 1st and 15th —
+rather than a Render Cron Job, since Render has no free tier for cron
+(billed per run) while GitHub Actions' scheduled workflows are free. It runs
+`python main.py --mode full` for every city in `data/cities.json`, which
 does three things back to back: scrapes, embeds any new plans, and
 soft-deletes stale ones (`mark_stale_plans()` — anything whose end date, or
 start date if it has no end date, is in the past; undated "DATES TBA" plans
 are left alone). Soft delete just flips `plans.is_stale`, so interaction
 history is preserved for the recommender; every browse/recommendation query
-filters `NOT is_stale` to keep expired plans out of the feed. No separate
-cleanup cron is needed.
+filters `NOT is_stale` to keep expired plans out of the feed.
+
+The workflow needs these set as **GitHub repo secrets** (Settings → Secrets
+and variables → Actions): `DATABASE_URL`, `LLM_PROVIDER`, `OPENAI_API_KEY`,
+`GEMINI_API_KEY`, `SEARCH_PROVIDER`, `SERPAPI_KEY` — same values as `.env`.
+It can also be triggered manually from the repo's Actions tab
+(`workflow_dispatch`).
 
 ## Project state
 
