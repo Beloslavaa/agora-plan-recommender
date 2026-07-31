@@ -29,7 +29,11 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
     openai_base_url: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
-    gemini_model: str = "gemini-2.0-flash"
+    # "gemini-2.0-flash" was retired by Google (calls now 404 with "no longer
+    # available") — the -latest alias tracks whatever Google currently
+    # recommends instead of pinning a dated model name that can be sunset
+    # again later.
+    gemini_model: str = "gemini-flash-latest"
     # Used by the semantic recommender (agora/backend/recommender/semantic.py)
     # to embed plans and build user taste profiles. Called through Gemini's
     # OpenAI-compatible endpoint (same pattern as GeminiProvider in llm.py),
