@@ -178,13 +178,15 @@ class GeminiProvider(LLMProvider):
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            # gemini-2.5-flash spends part of max_tokens on invisible "thinking"
+            # Gemini flash models spend part of max_tokens on invisible "thinking"
             # tokens before writing the response, and the split is unpredictable
             # run to run (observed 11k-15k thinking tokens on the same prompt) —
             # that repeatedly ate almost the whole budget and truncated the
             # visible JSON mid-array. This task is plain extraction with no need
-            # for reasoning, so turn thinking off entirely.
-            reasoning_effort="none",
+            # for reasoning, so keep thinking minimal. "none" is listed as a
+            # valid enum value by the API but 400s in practice on gemini-flash-
+            # latest; "minimal" is the lowest value that actually works.
+            reasoning_effort="minimal",
         )
         return resp.choices[0].message.content or ""
 
