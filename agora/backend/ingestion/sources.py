@@ -19,7 +19,7 @@ CITIES_FILE = Path("data/cities.json")
 
 # Events starting at/after this local time are treated as club/party listings
 # rather than shows, and dropped during ingestion.
-_LATE_NIGHT_CUTOFF = _time(23, 45)
+_LATE_NIGHT_CUTOFF = _time(23, 29)
 
 
 def is_late_night(iso_datetime: str | None) -> bool:
@@ -43,6 +43,15 @@ def is_late_night(iso_datetime: str | None) -> bool:
 _SUSPICIOUS_URL_PATTERNS = re.compile(
     r"(data:|javascript:|vbscript:|file:|ftp:)",
     re.IGNORECASE,
+)
+
+# Songkick serves a shared blank placeholder avatar (105 bytes, verified) for
+# festival/series listings with no uploaded photo, at
+# .../profile_images/events/<id>/huge_avatar — a real, loadable image URL, so
+# nothing else here catches it. .../profile_images/artists/<id>/huge_avatar is
+# a real per-artist photo and is NOT matched by this.
+_SONGKICK_BLANK_IMAGE = re.compile(
+    r"sk-static\.com/images/media/profile_images/events/", re.IGNORECASE,
 )
 
 
@@ -103,6 +112,30 @@ def load_cities() -> list[str]:
     if not CITIES_FILE.exists():
         return []
     return json.loads(CITIES_FILE.read_text())
+
+
+def correct_city_from_location(plans: list, assumed_city: str) -> None:
+    """Override plan.city in place when the LLM-extracted location text
+    clearly names a DIFFERENT known city than the one this pipeline run
+    assumed.
+
+    A single source URL is sometimes a multi-city chain (e.g. a cinema chain
+    with branches in more than one city) scraped under only one city's fixed-
+    source/search run — every plan from it would otherwise get blanket-
+    stamped with that one assumed city regardless of which branch it's
+    actually at, even though location almost always names the real city.
+    """
+    others = [c for c in load_cities() if c.lower() != assumed_city.lower()]
+    for p in plans:
+        if not p.location:
+            continue
+        loc = p.location.lower()
+        if assumed_city.lower() in loc:
+            continue
+        for other in others:
+            if other.lower() in loc:
+                p.city = other
+                break
 
 
 def promote_source(name: str, url: str, city: str, promoted_by: str | None = None) -> bool:
@@ -232,7 +265,7 @@ def _parse_ld_event(obj: dict, base_url: str | None = None) -> dict | None:
         image = image.get("url")
     if image:
         image_url = normalise_url(image, base_url)
-        if image_url:
+        if image_url and not _SONGKICK_BLANK_IMAGE.search(image_url):
             out["image_url"] = image_url
 
     start = obj.get("startDate")

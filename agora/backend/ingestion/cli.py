@@ -9,6 +9,7 @@ from agora.backend.ingestion.llm import get_llm_provider
 from agora.backend.ingestion.schemas import PlanCategory, PlanData
 from agora.backend.ingestion.search import get_search_provider
 from agora.backend.ingestion.sources import (
+    correct_city_from_location,
     fetch_fixed_source_with_details,
     load_cities,
     load_fixed_sources,
@@ -79,6 +80,10 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
     # DEBUG, not the INFO level this CLI runs at.
     for p in plans:
         p.city = city
+    # Some fixed sources (e.g. a cinema chain with branches in more than one
+    # city) span cities under one URL scraped for only one of them — correct
+    # the ones whose actual location says otherwise before validating.
+    correct_city_from_location(plans, city)
     return validate_and_filter(plans)
 
 

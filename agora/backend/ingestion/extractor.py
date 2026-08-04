@@ -146,15 +146,19 @@ async def _apply_dice_details(plans: list[PlanData]) -> list[PlanData]:
     Dice's listing pages only ever show a date, never a time, and give the LLM
     nothing to write a real description or genre from — no schema.org markup,
     no meta description, nothing in the visible text. All of it has to come
-    from the event's own page. Dice always points ticket_url (and sometimes
-    url) at that page, so either one works as the fetch target.
+    from the event's own page. Prefer url over ticket_url as the fetch target —
+    ticket_url is sometimes a Cloudflare "cdn-cgi/content" redirect/tracking
+    link rather than the actual dice.fm event page, which has no
+    __NEXT_DATA__ at all; extract_dice_event_details then silently finds
+    nothing, so the late-night check below never runs and the plan (and its
+    real start time) simply gets kept unexamined.
 
     Real, promoter-authored data from Dice's own page is trusted over the
     LLM's guess the same way JSON-LD is trusted over it elsewhere in this
     module — description/tags are overwritten, not just filled in when empty.
     """
     async def _check(p: PlanData) -> PlanData | None:
-        link = p.ticket_url or p.url
+        link = p.url or p.ticket_url
         if not link or urlparse(link).hostname != "dice.fm":
             return p
         try:

@@ -12,6 +12,7 @@ from agora.backend.ingestion.schemas import (
 )
 from agora.backend.ingestion.search import SearchProvider, get_search_provider
 from agora.backend.ingestion.sources import (
+    correct_city_from_location,
     fetch_page_with_details,
     load_fixed_sources,
     promote_source,
@@ -214,4 +215,7 @@ async def explore_for_plans(
     # that knows which city this whole run targeted.
     for p in plans:
         p.city = city
+    # A search hit can land on a page describing a DIFFERENT city than the
+    # one this run searched for — correct city from location when it does.
+    correct_city_from_location(plans, city)
     return plans
