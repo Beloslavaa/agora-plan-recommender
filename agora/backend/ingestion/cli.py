@@ -54,7 +54,10 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
         try:
             logger.info("Scraping fixed source: %s", source.name)
             page_htmls = await fetch_fixed_source_with_details(source)
-            category = _category_from_promoted_by(source.promoted_by)
+            # Skip for a general listing — promoted_by only records which
+            # category search discovered it under, not what every event on
+            # a multi-category page actually is (see FixedSource docstring).
+            category = None if source.is_general_listing else _category_from_promoted_by(source.promoted_by)
 
             async def _extract(html: str, page_url: str) -> list[PlanData]:
                 async with _sem:

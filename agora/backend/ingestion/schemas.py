@@ -60,6 +60,15 @@ class FixedSource(BaseModel):
     url: str
     city: str
     promoted_by: str | None = None
+    # True for a source whose page mixes multiple event types (a general city
+    # "what's on" guide/calendar), as opposed to one that's inherently
+    # single-category (a cinema chain, an Eventbrite category page, a
+    # concerts-only platform like Songkick/Dice). promoted_by only records
+    # which category SEARCH discovered the source, not what every event ON
+    # it actually is — trusting it for a general listing would blanket-tag
+    # e.g. concerts and exhibitions scraped from it as whatever category
+    # happened to find it first. See cli.py's run_fixed_pipeline.
+    is_general_listing: bool = False
 
 
 class PlanData(BaseModel):

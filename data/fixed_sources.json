@@ -51,13 +51,15 @@
     "name": "Madrid Events Calendar 2026",
     "url": "https://www.visitmadrid.es/en/madrid-events-calendar",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "city": "Madrid"
+    "city": "Madrid",
+    "is_general_listing": true
   },
   {
     "name": "Things to Do in Madrid, Spain This Month - Events & Activities",
     "url": "https://www.eventbrite.com/d/spain--madrid/events--this-month/",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "city": "Madrid"
+    "city": "Madrid",
+    "is_general_listing": true
   },
   {
     "name": "Fashion Events in Madrid, Spain - Clothing Fairs & ...",
@@ -111,13 +113,15 @@
     "name": "Time Out Madrid",
     "url": "https://www.timeout.es/madrid/es",
     "promoted_by": "manual/cultural",
-    "city": "Madrid"
+    "city": "Madrid",
+    "is_general_listing": true
   },
   {
     "name": "Time Out Barcelona",
     "url": "https://www.timeout.es/barcelona/es",
     "promoted_by": "manual/cultural",
-    "city": "Barcelona"
+    "city": "Barcelona",
+    "is_general_listing": true
   },
   {
     "name": "Comunidad de Madrid - Cultura",
