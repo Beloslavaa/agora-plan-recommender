@@ -376,27 +376,6 @@ def set_plan_embedding(plan_id: int, embedding: list[float]) -> None:
         )
 
 
-# ── Category backfill support (scripts/backfill_categories.py) ──────────
-
-def get_plans_missing_category() -> list[dict]:
-    """Plans with no category — mainly older fixed-source scrapes from
-    before run_fixed_pipeline threaded the source's category through (see
-    cli.py's _category_from_promoted_by). Safe to call repeatedly."""
-    with _conn() as conn:
-        rows = conn.execute(
-            "SELECT id, title, description, tags FROM plans WHERE category IS NULL"
-        ).fetchall()
-    return [dict(r) for r in rows]
-
-
-def set_plan_category(plan_id: int, category: str) -> None:
-    with _conn() as conn:
-        conn.execute(
-            "UPDATE plans SET category = %s WHERE id = %s",
-            (category, plan_id),
-        )
-
-
 def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
     """id -> embedding, skipping any plan that hasn't been embedded yet."""
     if not plan_ids:
@@ -407,21 +386,6 @@ def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
             (plan_ids,),
         ).fetchall()
     return {r["id"]: json.loads(r["embedding"]) for r in rows}
-
-
-def get_all_interactions_for_city(city: str) -> list[dict]:
-    """Every (user_id, plan_id, interaction_type) edge for a city's plans —
-    the full bipartite graph LightGCN would train on. Used by graph-structure
-    diagnostics (scripts/inspect_interaction_graph.py) and, eventually, the
-    training notebook itself."""
-    with _conn() as conn:
-        rows = conn.execute(
-            """SELECT i.user_id, i.plan_id, i.interaction_type
-               FROM interactions i JOIN plans p ON p.id = i.plan_id
-               WHERE p.city = %s""",
-            (city,),
-        ).fetchall()
-    return [dict(r) for r in rows]
 
 
 def get_interaction_counts(plan_ids: list[int]) -> dict[int, int]:
