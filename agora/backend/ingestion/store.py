@@ -60,8 +60,7 @@ def init_db() -> None:
                 category    TEXT,
                 source_url  TEXT    NOT NULL,
                 source_type TEXT    NOT NULL,
-                created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-                UNIQUE(title, source_url)
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
             )
         """)
         # Migration: add columns that may be missing in existing databases
@@ -121,26 +120,40 @@ def init_db() -> None:
         # RLS-enabled-with-zero-policies is a correct default-deny.
         for table in ("plans", "interactions", "users"):
             conn.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        # Migration: dedup key moved from (title, source_url) to
+        # (title, city, start_date) — the same event scraped from many
+        # different listing pages (a chain's category pages, a search
+        # discovering it twice) has a different source_url every time, so the
+        # old key let every one of those in as a "new" row. NULL start_date
+        # (an undated plan) is normalised to a sentinel so two undated plans
+        # with the same title/city still collide instead of NULL != NULL
+        # silently letting them both through.
+        conn.execute("ALTER TABLE plans DROP CONSTRAINT IF EXISTS plans_title_source_url_key")
+        conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS plans_title_city_date_uniq
+            ON plans (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01'))
+        """)
 
 
 # ── Ingestion-side writes ────────────────────────────────
 
-# On a (title, source_url) conflict we BACKFILL: keep any value the stored row
-# already has, and only fill columns that are currently empty/NULL from the new
-# scrape. This is what lets a re-run pick up URLs/images/short titles that a
-# previous run missed, without clobbering good existing data.
+# On a (title, city, start_date) conflict we BACKFILL: keep any value the
+# stored row already has, and only fill columns that are currently empty/NULL
+# from the new scrape. This is what lets a re-run pick up URLs/images/short
+# titles that a previous run missed, without clobbering good existing data.
+# title/city/start_date themselves are never touched here — a conflict on
+# this key means those three are already identical between the two rows.
 _UPSERT_SQL = """
 INSERT INTO plans
     (title, short_title, description, start_date, end_date,
      url, ticket_url, location, image_url, price, tags, category,
      source_url, source_type, city)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT(title, source_url) DO UPDATE SET
+ON CONFLICT (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01')) DO UPDATE SET
     short_title = CASE WHEN plans.short_title IS NULL OR plans.short_title = ''
                        THEN excluded.short_title ELSE plans.short_title END,
     description = CASE WHEN plans.description IS NULL OR plans.description = ''
                        THEN excluded.description ELSE plans.description END,
-    start_date  = COALESCE(plans.start_date, excluded.start_date),
     end_date    = COALESCE(plans.end_date, excluded.end_date),
     url         = COALESCE(plans.url, excluded.url),
     ticket_url  = COALESCE(plans.ticket_url, excluded.ticket_url),
@@ -149,9 +162,57 @@ ON CONFLICT(title, source_url) DO UPDATE SET
     price       = COALESCE(plans.price, excluded.price),
     tags        = CASE WHEN plans.tags IS NULL OR plans.tags = '' OR plans.tags = '[]'
                        THEN excluded.tags ELSE plans.tags END,
-    category    = COALESCE(plans.category, excluded.category),
-    city        = COALESCE(plans.city, excluded.city)
+    category    = COALESCE(plans.category, excluded.category)
 """
+
+
+def _title_words(t: str) -> set[str]:
+    return set("".join(c for c in t.lower() if c.isalnum() or c.isspace()).split())
+
+
+def _same_event_by_title(a: str, b: str, threshold: float = 0.6) -> bool:
+    """True if the SHORTER title's words are mostly contained in the longer
+    one — catches "Artist" vs "Artist at Venue" style pairs. Deliberately
+    looser than an exact match (that's what the title/city/date key is for)
+    but still guards against merging two different things that happen to
+    share a url — see the module docstring on _merge_by_url below."""
+    wa, wb = _title_words(a), _title_words(b)
+    smaller, larger = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+    if not smaller:
+        return False
+    return len(smaller & larger) / len(smaller) >= threshold
+
+
+# Fields backfilled when a plan matches an existing row by url (see
+# _merge_by_url) — deliberately excludes title/start_date/end_date/tags,
+# which get their own handling in the caller.
+_URL_MERGE_FIELDS = (
+    "short_title", "description", "ticket_url", "location",
+    "image_url", "price", "category",
+)
+
+
+def _merge_by_url(conn: psycopg.connection.Connection, existing: dict, p: PlanData) -> None:
+    """Backfill `existing` in place from `p`, preferring the longer/more
+    descriptive title. Used when two plans share a url + city (same
+    canonical page) but arrived with different title text — e.g. a bare
+    artist name from one source vs "Artist at Venue" from another — which
+    the title/city/date key alone would treat as two different plans."""
+    updates: dict = {}
+    if len(p.title) > len(existing["title"]):
+        updates["title"] = p.title
+        if p.short_title:
+            updates["short_title"] = p.short_title
+    for field in _URL_MERGE_FIELDS:
+        if not existing.get(field) and getattr(p, field, None):
+            updates[field] = getattr(p, field)
+    if not existing.get("start_date") and p.start_date:
+        updates["start_date"] = p.start_date.isoformat()
+    if not existing.get("end_date") and p.end_date:
+        updates["end_date"] = p.end_date.isoformat()
+    if updates:
+        set_clause = ", ".join(f"{k} = %s" for k in updates)
+        conn.execute(f"UPDATE plans SET {set_clause} WHERE id = %s", (*updates.values(), existing["id"]))
 
 
 def upsert_plans(plans: list[PlanData]) -> int:
@@ -170,31 +231,53 @@ def upsert_plans(plans: list[PlanData]) -> int:
                 # transaction on any statement error, so without this a single bad
                 # row would silently kill every row after it in the batch.
                 with conn.transaction():
-                    existed = conn.execute(
-                        "SELECT 1 FROM plans WHERE title = %s AND source_url = %s",
-                        (p.title, p.source_url),
-                    ).fetchone()
-                    conn.execute(
-                        _UPSERT_SQL,
-                        (
-                            p.title,
-                            p.short_title or "",
-                            p.description or "",
-                            p.start_date.isoformat() if p.start_date else None,
-                            p.end_date.isoformat() if p.end_date else None,
-                            p.url,
-                            p.ticket_url,
-                            p.location,
-                            p.image_url,
-                            p.price,
-                            json.dumps(p.tags),
-                            p.category,
-                            p.source_url,
-                            p.source_type,
-                            p.city,
-                        ),
-                    )
-                if existed is None:
+                    # A url match catches same-event-different-title-text
+                    # duplicates (see _same_event_by_title) that the
+                    # title/city/date key below can't. Gated on word overlap
+                    # so a generic listing page shared by genuinely different
+                    # events (a cinema branch's whole showtimes page, say)
+                    # never gets treated as one plan.
+                    existing_by_url = None
+                    if p.url:
+                        existing_by_url = conn.execute(
+                            "SELECT id, title, short_title, description, ticket_url, "
+                            "location, image_url, price, category, start_date, end_date "
+                            "FROM plans WHERE url = %s AND city = %s",
+                            (p.url, p.city),
+                        ).fetchone()
+                        if existing_by_url and not _same_event_by_title(existing_by_url["title"], p.title):
+                            existing_by_url = None
+
+                    if existing_by_url:
+                        _merge_by_url(conn, existing_by_url, p)
+                        existed = True
+                    else:
+                        existed = conn.execute(
+                            "SELECT 1 FROM plans WHERE lower(btrim(title)) = lower(btrim(%s)) "
+                            "AND city = %s AND COALESCE(start_date, '0001-01-01') = COALESCE(%s, '0001-01-01')",
+                            (p.title, p.city, p.start_date.isoformat() if p.start_date else None),
+                        ).fetchone()
+                        conn.execute(
+                            _UPSERT_SQL,
+                            (
+                                p.title,
+                                p.short_title or "",
+                                p.description or "",
+                                p.start_date.isoformat() if p.start_date else None,
+                                p.end_date.isoformat() if p.end_date else None,
+                                p.url,
+                                p.ticket_url,
+                                p.location,
+                                p.image_url,
+                                p.price,
+                                json.dumps(p.tags),
+                                p.category,
+                                p.source_url,
+                                p.source_type,
+                                p.city,
+                            ),
+                        )
+                if not existed:
                     inserted += 1
             except Exception:
                 continue
@@ -376,6 +459,27 @@ def set_plan_embedding(plan_id: int, embedding: list[float]) -> None:
         )
 
 
+# ── Category backfill support (scripts/backfill_categories.py) ──────────
+
+def get_plans_missing_category() -> list[dict]:
+    """Plans with no category — mainly older fixed-source scrapes from
+    before run_fixed_pipeline threaded the source's category through (see
+    cli.py's _category_from_promoted_by). Safe to call repeatedly."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, title, description, tags FROM plans WHERE category IS NULL"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_plan_category(plan_id: int, category: str) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "UPDATE plans SET category = %s WHERE id = %s",
+            (category, plan_id),
+        )
+
+
 def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
     """id -> embedding, skipping any plan that hasn't been embedded yet."""
     if not plan_ids:
@@ -386,6 +490,21 @@ def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
             (plan_ids,),
         ).fetchall()
     return {r["id"]: json.loads(r["embedding"]) for r in rows}
+
+
+def get_all_interactions_for_city(city: str) -> list[dict]:
+    """Every (user_id, plan_id, interaction_type) edge for a city's plans —
+    the full bipartite graph LightGCN would train on. Used by graph-structure
+    diagnostics (scripts/inspect_interaction_graph.py) and, eventually, the
+    training notebook itself."""
+    with _conn() as conn:
+        rows = conn.execute(
+            """SELECT i.user_id, i.plan_id, i.interaction_type
+               FROM interactions i JOIN plans p ON p.id = i.plan_id
+               WHERE p.city = %s""",
+            (city,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_interaction_counts(plan_ids: list[int]) -> dict[int, int]:

@@ -110,11 +110,14 @@ def validate_plan(plan: PlanData) -> tuple[bool, str | None]:
 
 def validate_and_filter(plans: list[PlanData]) -> list[PlanData]:
     valid: list[PlanData] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, object]] = set()
 
     for plan in plans:
-        # dedup by (title, source_url)
-        key = (plan.title.lower().strip(), plan.source_url)
+        # Matches store.py's (title, city, start_date) DB key — the same
+        # event scraped from several different pages within one run (a
+        # chain's many category pages, say) has a different source_url each
+        # time, so keying dedup on that let every one of them through.
+        key = (plan.title.lower().strip(), plan.city, plan.start_date)
         if key in seen:
             logger.debug("  ✗ Duplicate: %s", plan.title)
             continue
