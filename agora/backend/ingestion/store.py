@@ -206,10 +206,24 @@ def _merge_by_url(conn: psycopg.connection.Connection, existing: dict, p: PlanDa
     for field in _URL_MERGE_FIELDS:
         if not existing.get(field) and getattr(p, field, None):
             updates[field] = getattr(p, field)
-    if not existing.get("start_date") and p.start_date:
-        updates["start_date"] = p.start_date.isoformat()
-    if not existing.get("end_date") and p.end_date:
-        updates["end_date"] = p.end_date.isoformat()
+    # start_date/end_date are REFRESHED here, not just backfilled-if-empty —
+    # unlike the title/city/date match path (where a match means the date is
+    # already identical by definition), a url match can be an evergreen
+    # per-item page (a movie's own listing) rescraped with a NEW current
+    # date each time. Backfill-only-if-empty froze it at whatever date was
+    # first captured, so the row silently went stale forever even while the
+    # real thing was still showing — confirmed on Cines Renoir movies still
+    # playing but stuck on their original scrape date. Reset is_stale too:
+    # a fresh scrape finding a current date means it isn't stale anymore,
+    # and mark_stale_plans() never un-marks it on its own.
+    new_start = p.start_date.isoformat() if p.start_date else None
+    if new_start and new_start != existing.get("start_date"):
+        updates["start_date"] = new_start
+        if existing.get("is_stale"):
+            updates["is_stale"] = False
+    new_end = p.end_date.isoformat() if p.end_date else None
+    if new_end and new_end != existing.get("end_date"):
+        updates["end_date"] = new_end
     if updates:
         set_clause = ", ".join(f"{k} = %s" for k in updates)
         conn.execute(f"UPDATE plans SET {set_clause} WHERE id = %s", (*updates.values(), existing["id"]))
@@ -241,7 +255,7 @@ def upsert_plans(plans: list[PlanData]) -> int:
                     if p.url:
                         existing_by_url = conn.execute(
                             "SELECT id, title, short_title, description, ticket_url, "
-                            "location, image_url, price, category, start_date, end_date "
+                            "location, image_url, price, category, start_date, end_date, is_stale "
                             "FROM plans WHERE url = %s AND city = %s",
                             (p.url, p.city),
                         ).fetchone()
@@ -575,15 +589,25 @@ def list_cinemas(city: str) -> list[dict]:
 
 def list_cinema_plans(key: str) -> list[dict]:
     """All plans for one cinema (identified by its CINEMA_SOURCES domain key),
-    soonest showing first."""
+    soonest showing first.
+
+    Scoped to the hub's own city — some chains (Cines Renoir) have branches
+    in more than one city under the same domain, and correct_city_from_
+    location() now tags those branches with their real city. Without this
+    filter, a hub only ever reachable from one city's view (list_cinemas
+    filters CINEMA_SOURCES by city) still pulled in every OTHER city's
+    showings sharing that domain, since this query never checked city at
+    all — invisible before that fix existed, since every plan from a chain
+    was blanket-tagged the hub's one city anyway.
+    """
     if key not in CINEMA_SOURCES:
         return []
     init_db()
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM plans WHERE source_url ILIKE %s AND NOT is_stale "
+            "SELECT * FROM plans WHERE source_url ILIKE %s AND city = %s AND NOT is_stale "
             "ORDER BY start_date ASC NULLS LAST",
-            (f"%{key}%",),
+            (f"%{key}%", CINEMA_SOURCES[key]["city"]),
         ).fetchall()
     return [dict(r) for r in rows]
 
