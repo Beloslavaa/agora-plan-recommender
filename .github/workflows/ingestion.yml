@@ -7,6 +7,9 @@ on:
     - cron: "0 4 1,15 * *"
   workflow_dispatch: {}   # lets you trigger a run manually from the Actions tab
 
+permissions:
+  contents: write   # needed to push data/fixed_sources.json back at the end
+
 jobs:
   ingest:
     runs-on: ubuntu-latest
@@ -28,3 +31,21 @@ jobs:
           SEARCH_PROVIDER: ${{ secrets.SEARCH_PROVIDER }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: python main.py --mode full
+
+      # The exploratory pipeline can promote newly-discovered sources into
+      # data/fixed_sources.json (see sources.py's promote_source), but that's
+      # just a local file write — without this step the update lives only on
+      # this ephemeral runner and is lost the moment the job ends, so every
+      # future run re-discovers from the same stale list. Guarded on an
+      # actual diff so a no-op run doesn't create an empty commit.
+      - name: Commit newly promoted fixed sources
+        run: |
+          if ! git diff --quiet -- data/fixed_sources.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/fixed_sources.json
+            git commit -m "Auto-promote newly discovered fixed sources"
+            git push
+          else
+            echo "No new fixed sources promoted this run."
+          fi
