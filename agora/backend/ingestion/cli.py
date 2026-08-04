@@ -25,6 +25,23 @@ logger = logging.getLogger(__name__)
 _sem = asyncio.Semaphore(5)
 
 
+def _category_from_promoted_by(promoted_by: str | None) -> str | None:
+    """Fixed sources record which category they were promoted under, e.g.
+    "explorer/PlanCategory.music_concerts" or "manual/cinema" (see
+    sources.promote_source and data/fixed_sources.json). Recover it so
+    run_fixed_pipeline can pass it to the extractor the same way the
+    exploratory pipeline already does — otherwise every plan scraped from a
+    fixed source comes in with category=None, since nothing else ever
+    infers a category from page content."""
+    if not promoted_by:
+        return None
+    token = promoted_by.rsplit(".", 1)[-1].rsplit("/", 1)[-1]
+    try:
+        return PlanCategory(token).value
+    except ValueError:
+        return None
+
+
 async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None) -> list[PlanData]:
     sources = [s for s in load_fixed_sources() if s.city == city]
     if not sources:
@@ -37,6 +54,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
         try:
             logger.info("Scraping fixed source: %s", source.name)
             page_htmls = await fetch_fixed_source_with_details(source)
+            category = _category_from_promoted_by(source.promoted_by)
 
             async def _extract(html: str, page_url: str) -> list[PlanData]:
                 async with _sem:
@@ -47,7 +65,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                         # broke the UI's "view source" link and the point of
                         # fetching detail pages at all.
                         extracted = await extract_plans_from_html(
-                            html, page_url, "fixed", llm,
+                            html, page_url, "fixed", llm, category=category,
                         )
                         return extracted
                     except Exception as e:
