@@ -58,7 +58,12 @@ async def _classify(plan: dict, llm: LLMProvider) -> str | None:
     )
     async with _sem:
         try:
-            data = await llm.parse_json(prompt, system=_CLASSIFY_SYSTEM, temperature=0.1, max_tokens=128)
+            # Gemini flash spends an unpredictable chunk of max_tokens on invisible
+            # "thinking" before writing the visible JSON (llm.py's GeminiProvider.
+            # complete() — observed 11k-15k thinking tokens run-to-run on the same
+            # prompt). 128 was too tight a margin: it happened to survive one run
+            # and then truncated almost everything on the next.
+            data = await llm.parse_json(prompt, system=_CLASSIFY_SYSTEM, temperature=0.1, max_tokens=2048)
             category = (data.get("category") or "").strip()
             return PlanCategory(category).value
         except Exception as e:
