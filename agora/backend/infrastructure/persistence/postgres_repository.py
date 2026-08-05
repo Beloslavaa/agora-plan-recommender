@@ -5,9 +5,10 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from agora.backend.cinemas import CINEMA_SOURCES
-from agora.backend.config import settings
-from agora.backend.ingestion.schemas import PlanData
+from agora.backend.domain.cinemas import CINEMA_SOURCES
+from agora.backend.domain.plan_matching import compute_url_merge_updates, same_event_by_title
+from agora.backend.domain.schemas import PlanData
+from agora.backend.infrastructure.config import settings
 
 # Movies from cinema sources get grouped into one "cinema" card each (see
 # list_cinemas/list_cinema_plans) rather than appearing individually in the
@@ -166,64 +167,10 @@ ON CONFLICT (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01')) DO U
 """
 
 
-def _title_words(t: str) -> set[str]:
-    return set("".join(c for c in t.lower() if c.isalnum() or c.isspace()).split())
-
-
-def _same_event_by_title(a: str, b: str, threshold: float = 0.6) -> bool:
-    """True if the SHORTER title's words are mostly contained in the longer
-    one — catches "Artist" vs "Artist at Venue" style pairs. Deliberately
-    looser than an exact match (that's what the title/city/date key is for)
-    but still guards against merging two different things that happen to
-    share a url — see the module docstring on _merge_by_url below."""
-    wa, wb = _title_words(a), _title_words(b)
-    smaller, larger = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
-    if not smaller:
-        return False
-    return len(smaller & larger) / len(smaller) >= threshold
-
-
-# Fields backfilled when a plan matches an existing row by url (see
-# _merge_by_url) — deliberately excludes title/start_date/end_date/tags,
-# which get their own handling in the caller.
-_URL_MERGE_FIELDS = (
-    "short_title", "description", "ticket_url", "location",
-    "image_url", "price", "category",
-)
-
-
 def _merge_by_url(conn: psycopg.connection.Connection, existing: dict, p: PlanData) -> None:
-    """Backfill `existing` in place from `p`, preferring the longer/more
-    descriptive title. Used when two plans share a url + city (same
-    canonical page) but arrived with different title text — e.g. a bare
-    artist name from one source vs "Artist at Venue" from another — which
-    the title/city/date key alone would treat as two different plans."""
-    updates: dict = {}
-    if len(p.title) > len(existing["title"]):
-        updates["title"] = p.title
-        if p.short_title:
-            updates["short_title"] = p.short_title
-    for field in _URL_MERGE_FIELDS:
-        if not existing.get(field) and getattr(p, field, None):
-            updates[field] = getattr(p, field)
-    # start_date/end_date are REFRESHED here, not just backfilled-if-empty —
-    # unlike the title/city/date match path (where a match means the date is
-    # already identical by definition), a url match can be an evergreen
-    # per-item page (a movie's own listing) rescraped with a NEW current
-    # date each time. Backfill-only-if-empty froze it at whatever date was
-    # first captured, so the row silently went stale forever even while the
-    # real thing was still showing — confirmed on Cines Renoir movies still
-    # playing but stuck on their original scrape date. Reset is_stale too:
-    # a fresh scrape finding a current date means it isn't stale anymore,
-    # and mark_stale_plans() never un-marks it on its own.
-    new_start = p.start_date.isoformat() if p.start_date else None
-    if new_start and new_start != existing.get("start_date"):
-        updates["start_date"] = new_start
-        if existing.get("is_stale"):
-            updates["is_stale"] = False
-    new_end = p.end_date.isoformat() if p.end_date else None
-    if new_end and new_end != existing.get("end_date"):
-        updates["end_date"] = new_end
+    """Persist the domain merge decision (see plan_matching.compute_url_merge_updates)
+    for two plans sharing a url + city."""
+    updates = compute_url_merge_updates(existing, p)
     if updates:
         set_clause = ", ".join(f"{k} = %s" for k in updates)
         conn.execute(f"UPDATE plans SET {set_clause} WHERE id = %s", (*updates.values(), existing["id"]))
@@ -246,11 +193,11 @@ def upsert_plans(plans: list[PlanData]) -> int:
                 # row would silently kill every row after it in the batch.
                 with conn.transaction():
                     # A url match catches same-event-different-title-text
-                    # duplicates (see _same_event_by_title) that the
-                    # title/city/date key below can't. Gated on word overlap
-                    # so a generic listing page shared by genuinely different
-                    # events (a cinema branch's whole showtimes page, say)
-                    # never gets treated as one plan.
+                    # duplicates (see plan_matching.same_event_by_title) that
+                    # the title/city/date key below can't. Gated on word
+                    # overlap so a generic listing page shared by genuinely
+                    # different events (a cinema branch's whole showtimes
+                    # page, say) never gets treated as one plan.
                     existing_by_url = None
                     if p.url:
                         existing_by_url = conn.execute(
@@ -259,7 +206,7 @@ def upsert_plans(plans: list[PlanData]) -> int:
                             "FROM plans WHERE url = %s AND city = %s",
                             (p.url, p.city),
                         ).fetchone()
-                        if existing_by_url and not _same_event_by_title(existing_by_url["title"], p.title):
+                        if existing_by_url and not same_event_by_title(existing_by_url["title"], p.title):
                             existing_by_url = None
 
                     if existing_by_url:

@@ -8,11 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from agora.backend.cinemas import CINEMA_SOURCES
-from agora.backend.config import settings
-from agora.backend.ingestion import store
-from agora.backend.ingestion.sources import load_cities
-from agora.backend.recommender import semantic
+from agora.backend.application import recommendation
+from agora.backend.domain.cinemas import CINEMA_SOURCES
+from agora.backend.infrastructure.config import settings
+from agora.backend.infrastructure.persistence import postgres_repository as repository
+from agora.backend.infrastructure.persistence.json_files import load_cities
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +20,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup: open the DB pool eagerly so a bad DATABASE_URL fails the boot
-    # instead of the first request, then let store own the schema (plans + interactions)
-    store.pool.open()
-    store.init_db()
+    # instead of the first request, then let the repository own the schema (plans + interactions)
+    repository.pool.open()
+    repository.init_db()
     logger.info("Agora API started — DB ready")
     yield
-    store.pool.close()
+    repository.pool.close()
 
 
 app = FastAPI(title="Agora Plan Recommender", version="0.1.0", lifespan=lifespan)
@@ -47,8 +47,8 @@ app.add_middleware(
 # ── Response models ──────────────────────────────────────
 
 class PlanOut(BaseModel):
-    # A cinema hub card's id is "cinema:<domain>" (see semantic.py's
-    # _cinema_pseudo_plan) rather than a real plans.id, hence int | str.
+    # A cinema hub card's id is "cinema:<domain>" (see domain/ranking.py's
+    # cinema_pseudo_plan) rather than a real plans.id, hence int | str.
     id: int | str
     title: str
     short_title: str = ""
@@ -139,7 +139,7 @@ def auth(body: AuthIn):
     if len(body.password) < 8:
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     try:
-        store.authenticate_user(username, body.password)
+        repository.authenticate_user(username, body.password)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
     return {"user_id": username}
@@ -159,7 +159,7 @@ def list_plans(
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[PlanOut]:
-    rows = store.list_plans(
+    rows = repository.list_plans(
         city=city, category=category, location=location, search=search, limit=limit, offset=offset
     )
     return [_row_to_plan(r) for r in rows]
@@ -167,7 +167,7 @@ def list_plans(
 
 @app.get("/plans/{plan_id}")
 def get_plan(plan_id: int) -> PlanOut:
-    row = store.get_plan(plan_id)
+    row = repository.get_plan(plan_id)
     if not row:
         raise HTTPException(status_code=404, detail="Plan not found")
     return _row_to_plan(row)
@@ -178,7 +178,7 @@ def record_interaction(body: InteractionIn):
     if body.interaction_type not in ("click", "saved", "view_link"):
         raise HTTPException(status_code=422, detail="interaction_type must be 'click', 'saved', or 'view_link'")
     try:
-        store.record_interaction(body.user_id, body.plan_id, body.interaction_type)
+        repository.record_interaction(body.user_id, body.plan_id, body.interaction_type)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"ok": True}
@@ -190,13 +190,13 @@ def delete_interaction(body: InteractionIn):
     # facts the recommender uses and aren't exposed as something to undo.
     if body.interaction_type != "saved":
         raise HTTPException(status_code=422, detail="Only 'saved' interactions can be removed")
-    store.remove_interaction(body.user_id, body.plan_id, body.interaction_type)
+    repository.remove_interaction(body.user_id, body.plan_id, body.interaction_type)
     return {"ok": True}
 
 
 @app.get("/saved/{user_id}")
 def saved_plans(user_id: str) -> list[PlanOut]:
-    rows = store.get_saved_plans(user_id)
+    rows = repository.get_saved_plans(user_id)
     return [_row_to_plan(r) for r in rows]
 
 
@@ -205,7 +205,7 @@ def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) ->
     # Semantic (Tier 1): cosine similarity between the user's taste profile
     # and each candidate plan's text embedding. Falls back to popularity
     # internally for users/cities with no usable signal yet.
-    rows = semantic.rank_for_user(user_id, city, limit)
+    rows = recommendation.rank_for_user(user_id, city, limit)
     return [
         RecommendationOut(plan=_row_to_plan(r), score=float(r["score"]))
         for r in rows
@@ -214,12 +214,12 @@ def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) ->
 
 @app.get("/cinemas")
 def list_cinemas(city: str) -> list[CinemaOut]:
-    return [CinemaOut(**c) for c in store.list_cinemas(city)]
+    return [CinemaOut(**c) for c in repository.list_cinemas(city)]
 
 
 @app.get("/cinemas/{key}/plans")
 def cinema_plans(key: str) -> list[PlanOut]:
     if key not in CINEMA_SOURCES:
         raise HTTPException(status_code=404, detail="Unknown cinema")
-    rows = store.list_cinema_plans(key)
+    rows = repository.list_cinema_plans(key)
     return [_row_to_plan(r) for r in rows]

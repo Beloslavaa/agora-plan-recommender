@@ -1,23 +1,22 @@
-import argparse
+"""Use-cases for running the ingestion pipeline: scrape fixed sources,
+explore for new ones, or both, then validate the results. Orchestrates the
+LLM/search/http ports plus domain validation — see infrastructure/cli/
+ingest_cli.py for the CLI adapter that drives this."""
+
 import asyncio
 import logging
 
-from agora.backend.config import settings
-from agora.backend.ingestion.explorer import explore_for_plans
-from agora.backend.ingestion.extractor import extract_plans_from_html
-from agora.backend.ingestion.llm import get_llm_provider
-from agora.backend.ingestion.schemas import PlanCategory, PlanData
-from agora.backend.ingestion.search import get_search_provider
-from agora.backend.ingestion.sources import (
-    correct_city_from_location,
-    fetch_fixed_source_with_details,
-    load_cities,
-    load_fixed_sources,
-)
-from agora.backend.ingestion.enrich import enrich_plans
-from agora.backend.ingestion.validator import validate_and_filter
-from agora.backend.ingestion.store import get_plan_count, mark_stale_plans, pool, upsert_plans
-from agora.backend.recommender.semantic import backfill_embeddings
+from agora.backend.application.enrichment import enrich_plans
+from agora.backend.application.explorer import explore_for_plans
+from agora.backend.application.extraction import extract_plans_from_html
+from agora.backend.application.sources_admin import correct_city_from_location
+from agora.backend.domain.schemas import PlanCategory, PlanData
+from agora.backend.domain.validation import validate_and_filter
+from agora.backend.infrastructure.config import settings
+from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details
+from agora.backend.infrastructure.llm.providers import get_llm_provider
+from agora.backend.infrastructure.persistence.json_files import load_fixed_sources
+from agora.backend.infrastructure.search.providers import get_search_provider
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +27,10 @@ _sem = asyncio.Semaphore(5)
 def _category_from_promoted_by(promoted_by: str | None) -> str | None:
     """Fixed sources record which category they were promoted under, e.g.
     "explorer/PlanCategory.music_concerts" or "manual/cinema" (see
-    sources.promote_source and data/fixed_sources.json). Recover it so
-    run_fixed_pipeline can pass it to the extractor the same way the
-    exploratory pipeline already does — otherwise every plan scraped from a
-    fixed source comes in with category=None, since nothing else ever
+    application.sources_admin.promote_source and data/fixed_sources.json).
+    Recover it so run_fixed_pipeline can pass it to the extractor the same
+    way the exploratory pipeline already does — otherwise every plan scraped
+    from a fixed source comes in with category=None, since nothing else ever
     infers a category from page content."""
     if not promoted_by:
         return None
@@ -93,12 +92,12 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
             logger.warning("  ✗ Failed to scrape %s: %s", source.name, e)
     # Stamped here (not asked of the LLM extractor) — this is the one place
     # that knows which city this whole run targeted. Must happen BEFORE
-    # validate_and_filter: validator.py rejects any plan with an empty city as
-    # a pipeline-bug safety net, so validating per-page inside _extract()
-    # above (i.e. before this stamp existed) silently dropped 100% of every
-    # fixed source's plans, every run — the "city missing" issue just never
-    # surfaced because validate_and_filter only logs individual reasons at
-    # DEBUG, not the INFO level this CLI runs at.
+    # validate_and_filter: domain/validation.py rejects any plan with an
+    # empty city as a pipeline-bug safety net, so validating per-page inside
+    # _extract() above (i.e. before this stamp existed) silently dropped
+    # 100% of every fixed source's plans, every run — the "city missing"
+    # issue just never surfaced because validate_and_filter only logs
+    # individual reasons at DEBUG, not the INFO level this CLI runs at.
     for p in plans:
         p.city = city
     # Some fixed sources (e.g. a cinema chain with branches in more than one
@@ -133,7 +132,7 @@ async def run_full_pipeline(city: str) -> list[PlanData]:
     return validate_and_filter(fixed + exploratory)
 
 
-async def _run_one_city(
+async def run_one_city(
     mode: str,
     city: str,
     only_categories: list[str] | None,
@@ -141,9 +140,9 @@ async def _run_one_city(
 ) -> list[PlanData]:
     """Run the selected mode for a single city, then enrich the results.
 
-    Split out from main() so a multi-city (cron) run can call this once per
-    configured city, in its own try/except — one city's failure must never
-    abort the rest of the run.
+    Split out so a multi-city (cron) run can call this once per configured
+    city, in its own try/except — one city's failure must never abort the
+    rest of the run.
     """
     llm = get_llm_provider()
     if mode == "fixed":
@@ -155,96 +154,3 @@ async def _run_one_city(
 
     search_provider = get_search_provider()
     return await enrich_plans(plans, llm=llm, search=search_provider)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Agora ingestion pipeline")
-    parser.add_argument(
-        "--mode",
-        choices=["explorer", "fixed", "full"],
-        default="explorer",
-        help="explorer (default): search categories & promote good sources | "
-             "fixed: scrape promoted sources | "
-             "full: both",
-    )
-    parser.add_argument(
-        "--city",
-        nargs="*",
-        help="Only run for these cities (e.g. --city Madrid Barcelona). Omit "
-             "to run every city listed in data/cities.json — that's what an "
-             "unattended/cron run should use.",
-    )
-    parser.add_argument(
-        "--only",
-        nargs="*",
-        choices=[c.value for c in PlanCategory],
-        help="Only run specific categories (e.g. --only music_concerts fashion)",
-    )
-    parser.add_argument(
-        "--source",
-        nargs="*",
-        help="Only scrape specific fixed sources by name (e.g. --source 'Cinesa' 'Sala Equis')",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Print what would be done without calling external services",
-    )
-    args = parser.parse_args()
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s %(message)s",
-    )
-
-    cities = args.city if args.city else load_cities()
-    if not cities:
-        print("No cities configured — add some to data/cities.json (or pass --city).")
-        return
-
-    if args.dry_run:
-        print(f"Would run for {len(cities)} cities: {', '.join(cities)}")
-        for city in cities:
-            print(f"\n[{city}]")
-            if args.mode in ("explorer", "full"):
-                cats = [PlanCategory(c) for c in args.only] if args.only else list(PlanCategory)
-                print(f"  Would explore {len(cats)} categories:")
-                for cat in cats:
-                    print(f"    · {cat.value}")
-            if args.mode in ("fixed", "full"):
-                sources = [s for s in load_fixed_sources() if s.city == city]
-                if args.source:
-                    sources = [s for s in sources if s.name in args.source]
-                print(f"  Would scrape {len(sources)} fixed sources:")
-                for s in sources:
-                    print(f"    · {s.name} — {s.url}")
-        return
-
-    only_names = set(args.source) if args.source else None
-    for city in cities:
-        try:
-            plans = asyncio.run(_run_one_city(args.mode, city, args.only, only_names))
-        except Exception as e:
-            # One city's bad source / LLM hiccup must not take down the rest
-            # of an unattended multi-city run.
-            logger.error("[%s] pipeline failed: %s", city, e)
-            continue
-        inserted = upsert_plans(plans)
-        print(f"\n[{city}] New: {inserted}  Scraped this run: {len(plans)}")
-        for p in plans:
-            print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
-
-    total = get_plan_count()
-    print(f"\nTotal in DB (all cities): {total}")
-
-    embedded = backfill_embeddings()
-    print(f"Embedded {embedded} plan(s) for the semantic recommender")
-
-    staled = mark_stale_plans()
-    print(f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted")
-
-    pool.close()
-
-
-if __name__ == "__main__":
-    main()

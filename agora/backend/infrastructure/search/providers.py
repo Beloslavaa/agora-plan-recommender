@@ -1,19 +1,12 @@
-from abc import ABC, abstractmethod
-
 import logging
 
 import httpx
 
-from agora.backend.config import settings
-from agora.backend.ingestion.schemas import SearchResult
+from agora.backend.application.ports import SearchProvider
+from agora.backend.domain.schemas import SearchResult
+from agora.backend.infrastructure.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-class SearchProvider(ABC):
-    @abstractmethod
-    async def search(self, query: str, max_results: int = 10) -> list[SearchResult]:
-        ...
 
 
 class DuckDuckGoSearch(SearchProvider):

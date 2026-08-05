@@ -19,10 +19,10 @@ import re
 from html import unescape
 from urllib.parse import urlparse
 
-from agora.backend.ingestion.llm import LLMProvider
-from agora.backend.ingestion.schemas import PlanData
-from agora.backend.ingestion.search import SearchProvider
-from agora.backend.ingestion.sources import fetch_page, normalise_url
+from agora.backend.application.ports import LLMProvider, SearchProvider
+from agora.backend.domain.schemas import PlanData
+from agora.backend.domain.url_safety import normalise_url
+from agora.backend.infrastructure.http.fetcher import fetch_page
 
 logger = logging.getLogger(__name__)
 

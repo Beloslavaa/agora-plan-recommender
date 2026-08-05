@@ -10,12 +10,16 @@ original source.
 
 ## How it's put together
 
+Structured hexagonal-ish: `domain/` (entities + pure business rules, no I/O),
+`application/` (use-cases that orchestrate domain + infrastructure), and
+`infrastructure/` (DB, HTTP, LLM/search/embedding providers, the FastAPI and
+CLI adapters).
+
 | Layer | Where | What it does |
 |---|---|---|
-| Ingestion | `agora/backend/ingestion/` | LLM-driven scraping — a fixed list of known sources (`data/fixed_sources.json`) plus an exploratory search pipeline that discovers and promotes new ones. Extracts structured plans from raw HTML via an LLM (OpenAI / Gemini / Anthropic, configurable). |
-| Storage | Supabase (Postgres) | `plans`, `interactions` (click / saved / view_link), `users` — schema owned entirely by `store.py`'s `init_db()`. |
-| API | `agora/backend/api.py` | FastAPI: plans, auth, interactions, recommendations, cinema groupings. |
-| Recommender | `agora/backend/recommender/` | See below. |
+| Domain | `agora/backend/domain/` | Entities (`schemas.py`), dedup rules (`plan_matching.py`), URL/content safety (`url_safety.py`), JSON-LD/dice.fm parsing (`event_parsing.py`), plan validation (`validation.py`), recommender scoring math (`ranking.py`). No I/O. |
+| Application | `agora/backend/application/` | Use-cases: `extraction.py`/`explorer.py`/`enrichment.py`/`sources_admin.py`/`ingestion.py` (the scraping pipeline) and `recommendation.py` (ranking for a user). Orchestrates domain rules + infrastructure ports. |
+| Infrastructure | `agora/backend/infrastructure/` | `persistence/postgres_repository.py` (Supabase — `plans`, `interactions`, `users`, schema owned by `init_db()`), `persistence/json_files.py` (fixed sources/cities), `llm/`, `search/`, `embeddings/` (provider adapters), `http/fetcher.py` (SSRF-guarded fetching), `web/api.py` (FastAPI), `cli/ingest_cli.py` (ingestion CLI). |
 | Frontend | `index.html` | Single-file vanilla HTML/JS UI, served directly by the API — no build step. |
 
 ## Recommender
@@ -56,7 +60,7 @@ Fill in `.env`:
 ## Running it
 
 ```bash
-uvicorn agora.backend.api:app --reload
+uvicorn agora.backend.infrastructure.web.api:app --reload
 ```
 
 Open `http://localhost:8000`.
@@ -71,16 +75,6 @@ python main.py --city Madrid Barcelona   # omit to run every city in data/cities
 ```
 
 Newly-scraped plans are embedded automatically at the end of the run.
-
-## Utility scripts
-
-Run from the repo root with `PYTHONPATH=.` (they're standalone, not part of
-the package's normal import path):
-
-```bash
-PYTHONPATH=. python scripts/backfill_embeddings.py           # embed any plan missing one
-PYTHONPATH=. python scripts/smoke_test_recommender.py --title "..."  # save a plan, see what ranks close to it, clean up after itself
-```
 
 ## Deployment
 

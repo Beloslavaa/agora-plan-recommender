@@ -2,7 +2,7 @@ import logging
 from datetime import date, timedelta
 from urllib.parse import unquote, urlparse
 
-from agora.backend.ingestion.schemas import PlanData
+from agora.backend.domain.schemas import PlanData
 
 logger = logging.getLogger(__name__)
 

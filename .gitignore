@@ -5,3 +5,4 @@ __pycache__/
 agora.db
 .DS_Store
 .claude/
+scripts/

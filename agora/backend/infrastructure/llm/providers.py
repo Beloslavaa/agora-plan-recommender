@@ -1,76 +1,9 @@
-import json
 import logging
-from abc import ABC, abstractmethod
 
-from agora.backend.config import settings
+from agora.backend.application.ports import LLMProvider
+from agora.backend.infrastructure.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-class LLMProvider(ABC):
-    @abstractmethod
-    async def complete(
-        self,
-        prompt: str,
-        system: str | None = None,
-        temperature: float = 0.1,
-        max_tokens: int = 4096,
-    ) -> str:
-        ...
-
-    @abstractmethod
-    async def parse_json(
-        self,
-        prompt: str,
-        system: str | None = None,
-        temperature: float = 0.1,
-        max_tokens: int = 4096,
-    ):
-        ...
-
-    @staticmethod
-    def _parse_json_safe(raw: str):
-        raw = raw.strip()
-
-        # Strip markdown fences
-        for fence in ("```json", "```"):
-            if raw.startswith(fence):
-                raw = raw[len(fence):]
-            if raw.endswith(fence):
-                raw = raw[:-len(fence)]
-        raw = raw.strip()
-
-        # Try strict parse first
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            pass
-
-        # Use raw_decode to find the first valid JSON value and its boundary.
-        # This handles trailing text after the JSON (e.g. venue descriptions).
-        # Only decode from whichever bracket ("[" or "{") appears FIRST in the
-        # response — trying the other bracket as a fallback after a failure is
-        # wrong: on a truncated array response, raw.index("{") lands on the
-        # opening brace of the array's first (complete) element, and raw_decode
-        # happily parses just that nested object as if it were the whole
-        # response. That silently drops every other item instead of surfacing
-        # the truncation as an error the caller can retry on.
-        decoder = json.JSONDecoder()
-        candidates = [i for i in (raw.find("["), raw.find("{")) if i != -1]
-        if candidates:
-            idx = min(candidates)
-            try:
-                obj, _ = decoder.raw_decode(raw, idx)
-                return obj
-            except (ValueError, json.JSONDecodeError, IndexError):
-                pass
-
-        raise json.JSONDecodeError(
-            f"Could not parse JSON from LLM response (possibly truncated). "
-            f"First 300 chars: {raw[:300]}",
-            raw,
-            0,
-        )
 
 
 class AnthropicProvider(LLMProvider):

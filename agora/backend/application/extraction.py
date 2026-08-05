@@ -4,15 +4,11 @@ import re
 from datetime import date
 from urllib.parse import urlparse
 
-from agora.backend.ingestion.llm import LLMProvider
-from agora.backend.ingestion.schemas import PlanData
-from agora.backend.ingestion.sources import (
-    extract_dice_event_details,
-    extract_ld_events,
-    fetch_page,
-    is_late_night,
-    normalise_url,
-)
+from agora.backend.application.ports import LLMProvider
+from agora.backend.domain.event_parsing import extract_dice_event_details, extract_ld_events
+from agora.backend.domain.schemas import PlanData
+from agora.backend.domain.url_safety import is_late_night, normalise_url
+from agora.backend.infrastructure.http.fetcher import fetch_page
 
 logger = logging.getLogger(__name__)
 # A bit larger than before because we now keep link/image URLs inline in the text.

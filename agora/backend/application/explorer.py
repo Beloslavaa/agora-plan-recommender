@@ -3,21 +3,18 @@ import logging
 from datetime import date
 from urllib.parse import urlparse
 
-from agora.backend.ingestion.llm import LLMProvider
-from agora.backend.ingestion.schemas import (
+from agora.backend.application.ports import LLMProvider, SearchProvider
+from agora.backend.application.sources_admin import correct_city_from_location, promote_source
+from agora.backend.domain.schemas import (
     CATEGORY_EXAMPLES,
     CATEGORY_LABELS,
     PlanCategory,
     PlanData,
 )
-from agora.backend.ingestion.search import SearchProvider, get_search_provider
-from agora.backend.ingestion.sources import (
-    correct_city_from_location,
-    fetch_page_with_details,
-    load_fixed_sources,
-    promote_source,
-)
-from agora.backend.ingestion.validator import validate_and_filter
+from agora.backend.domain.validation import validate_and_filter
+from agora.backend.infrastructure.http.fetcher import fetch_page_with_details
+from agora.backend.infrastructure.persistence.json_files import load_fixed_sources
+from agora.backend.infrastructure.search.providers import get_search_provider
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +85,7 @@ async def _try_promote_base_domain(
     checked_domains.add(domain)
     base_url = f"{parsed.scheme}://{domain}/"
 
-    from agora.backend.ingestion.extractor import extract_plans_from_html
+    from agora.backend.application.extraction import extract_plans_from_html
 
     try:
         pages = await fetch_page_with_details(base_url)
@@ -154,7 +151,7 @@ async def explore_for_plans(
                     break
                 continue
 
-            from agora.backend.ingestion.extractor import extract_plans_from_html
+            from agora.backend.application.extraction import extract_plans_from_html
 
             for result in results:
                 if cat_count >= max_per_category:
