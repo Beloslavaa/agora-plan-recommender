@@ -1,5 +1,7 @@
 # Agora — Plan Recommender
 
+**Live: [agora-plan-recommender.onrender.com](https://agora-plan-recommender.onrender.com/)**
+
 A curated gallery of things to do — concerts, art exhibitions, cinema,
 fashion events, and more — scraped from a mix of fixed and discovered
 sources, deduplicated, and ranked per user. Each city gets its own separate,
