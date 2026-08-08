@@ -2,131 +2,148 @@
   {
     "name": "Film & Media Events in Madrid, Spain",
     "url": "https://www.eventbrite.com/b/spain--madrid/film-and-media/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Songkick Madrid",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Rock Events & Tickets in Madrid, Spain - Music",
     "url": "https://www.eventbrite.com/b/spain--madrid/music/rock/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Rock Tickets in Madrid - Music",
     "url": "https://www.ticketmaster.es/discover/madrid?language=en-us&categoryId=KZFzniwnSyZfZ7v7nJ&classificationId=KnvZfZ7vAeA",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "The 20 must-see exhibitions in Madrid this June",
     "url": "https://madridsecreto.co/en/exhibitions-madrid/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Madrid Concerts, Festivals, Tickets & Tour Dates 2026 & ...",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Concerts in Spain",
     "url": "https://www.vividseats.com/geo/spain/concerts",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Discover Pop Up Events & Activities in Madrid, Spain",
     "url": "https://www.eventbrite.com/d/spain--madrid/pop-up/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Madrid Events Calendar 2026",
     "url": "https://www.visitmadrid.es/en/madrid-events-calendar",
-    "promoted_by": "explorer/PlanCategory.cinema",
     "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": true
   },
   {
     "name": "Things to Do in Madrid, Spain This Month - Events & Activities",
     "url": "https://www.eventbrite.com/d/spain--madrid/events--this-month/",
-    "promoted_by": "explorer/PlanCategory.cinema",
     "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": true
   },
   {
     "name": "Fashion Events in Madrid, Spain - Clothing Fairs & ...",
     "url": "https://www.eventbrite.com/b/spain--madrid/fashion/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Cibeles de Cine",
     "url": "https://www.cibelesdecine.com/es/",
+    "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Sala Equis",
     "url": "https://salaequis.es/",
+    "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Yelmo Cines Ideal",
     "url": "https://yelmocines.es/cartelera/madrid/ideal",
+    "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Cinesa",
     "url": "https://www.cinesa.es/",
+    "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Cines Renoir",
     "url": "https://www.cinesrenoir.com/",
+    "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Dice Madrid",
     "url": "https://dice.fm/browse/madrid-5d8cef380de1e404dc962211",
+    "city": "Madrid",
     "promoted_by": "manual/music_concerts",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Condeduquemadrid",
     "url": "https://www.condeduquemadrid.es/",
+    "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "city": "Madrid"
+    "is_general_listing": false
   },
   {
     "name": "Time Out Madrid",
     "url": "https://www.timeout.es/madrid/es",
-    "promoted_by": "manual/cultural",
     "city": "Madrid",
+    "promoted_by": "manual/cultural",
     "is_general_listing": true
   },
   {
     "name": "Time Out Barcelona",
     "url": "https://www.timeout.es/barcelona/es",
-    "promoted_by": "manual/cultural",
     "city": "Barcelona",
+    "promoted_by": "manual/cultural",
     "is_general_listing": true
   },
   {
     "name": "Comunidad de Madrid - Cultura",
     "url": "https://www.comunidad.madrid/cultura",
+    "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "city": "Madrid"
+    "is_general_listing": false
   }
 ]
