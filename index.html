@@ -631,7 +631,11 @@
     } finally {
       if (gen === loadGeneration) {
         state.loading = false;
-        if (state.view === "home") renderHome();
+        // render(), not renderHome() — a save/unsave triggered from the
+        // cinema list or detail view should refresh what's actually on
+        // screen, not silently update state.feed in the background while
+        // the visible view never reflects it.
+        render();
       }
     }
   }
@@ -1094,7 +1098,10 @@
     state.loading = false;
     state.reloading = true;
     loadSavedFromServer();
-    if (state.view === "home") renderHome();
+    // render(), not renderHome() — a save/unsave from the cinema list or
+    // detail view should visibly refresh, not just silently update
+    // state.feed in the background (see loadMore()'s finally block above).
+    render();
     loadInitial(gen);
   }
 
