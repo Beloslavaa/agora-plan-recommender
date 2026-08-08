@@ -240,6 +240,36 @@
     return "DATES TBA";
   }
 
+  // ── "days to finish" (saved list) ────────────────────────
+  // Mirrors the backend's own stale definition (end_date, or start_date if
+  // no end_date, in the past — see mark_stale_plans) so "expired" here means
+  // the same thing it does everywhere else in the app.
+  function planTimeInfo(p) {
+    if (!p) return { hasDate: false, expired: false, days: null };
+    const basis = parseD(p.end_date) || parseD(p.start_date);
+    if (!basis) return { hasDate: false, expired: false, days: null };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.round((basis.getTime() - today.getTime()) / 86400000);
+    return { hasDate: true, expired: days < 0, days: days };
+  }
+  function timeLabel(info) {
+    if (!info.hasDate) return "";
+    if (info.expired) return "EXPIRED";
+    if (info.days === 0) return "TODAY";
+    if (info.days === 1) return "1 DAY LEFT";
+    return info.days + " DAYS LEFT";
+  }
+  // Ascending sort key: soonest-to-finish upcoming plans first, then expired
+  // ones (most recently expired first), then plans with no date at all —
+  // "least time to most time", with the undated/expired stragglers pushed
+  // to the back rather than mixed into the ranking.
+  function planSortKey(info) {
+    if (!info.hasDate) return 2e9;
+    if (info.expired) return 1e9 - info.days; // days is negative → biggest for oldest
+    return info.days;
+  }
+
   // Tags come from the DB `tags` field (LLM-extracted from scraped pages), so
   // they can be noisy — age ratings, advisories, full sentences. Keep only
   // short, topical keywords; fall back to the category if nothing survives.
@@ -894,10 +924,39 @@
       return;
     }
 
-    ids.forEach(function (id) {
+    // Resolve every id to its plan (cache hit, almost always — loadSavedFromServer
+    // already primed the cache with full rows) before sorting: ordering by
+    // days-to-finish needs the date up front, unlike the old patch-in-place
+    // approach which could leave rows out of order until their fetch landed.
+    let pending = 0;
+    const items = ids.map(function (id) {
       const p = state.cache[id];
+      if (!p) {
+        pending++;
+        getJSON("/plans/" + encodeURIComponent(id)).then(function (plan) {
+          remember(plan);
+        }).catch(function () {
+          // leave unresolved — row below falls back to a bare "PLAN #id"
+        }).finally(function () {
+          pending--;
+          if (pending === 0 && state.view === "saved") render();
+        });
+      }
+      return { id: id, plan: p };
+    });
+    items.sort(function (a, b) { return planSortKey(planTimeInfo(a.plan)) - planSortKey(planTimeInfo(b.plan)); });
+
+    items.forEach(function (item) {
+      const id = item.id, p = item.plan;
+      const info = planTimeInfo(p);
+      // Expired: same thick pink, but as vertical stripes instead of a flat
+      // fill — a distinct texture rather than a different color, so it still
+      // reads as "this was a saved plan" at a glance, just an inactive one.
+      const bg = info.expired
+        ? "repeating-linear-gradient(90deg,#E3A5CE 0,#E3A5CE 10px,#FFFFFF 10px,#FFFFFF 20px)"
+        : "#E3A5CE";
       const row = el("div",
-        "position:relative;display:flex;align-items:stretch;min-height:104px;background:#E3A5CE;border:4px solid #121212;margin-bottom:14px;cursor:pointer;overflow:hidden;box-shadow:5px 5px 0 0 #EA4632;");
+        "position:relative;display:flex;align-items:stretch;min-height:104px;background:" + bg + ";border:4px solid #121212;margin-bottom:14px;cursor:pointer;overflow:hidden;box-shadow:5px 5px 0 0 #EA4632;");
 
       // Photo slot goes first (left). `display:contents` lets its child become
       // the flex item, so we can fill it now or after an async fetch without
@@ -908,11 +967,20 @@
       const titleEl = el("div",
         "",
         { text: p ? (cleanTitle(p.title) || "UNTITLED") : "…", attrs: { class: "saved-title" } });
+      const dateRow = el("div", "display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;");
       const dateEl = el("div",
         "font-weight:700;font-size:10px;letter-spacing:0.03em;color:#121212;",
         { text: p ? formatDates(p.start_date, p.end_date) : "" });
+      dateRow.appendChild(dateEl);
+      const label = timeLabel(info);
+      if (label) {
+        dateRow.appendChild(el("div",
+          "font-weight:700;font-size:10px;letter-spacing:0.05em;" +
+          (info.expired ? "color:#121212;opacity:0.6;" : "color:#EA4632;"),
+          { text: "· " + label }));
+      }
       contentCol.appendChild(titleEl);
-      contentCol.appendChild(dateEl);
+      contentCol.appendChild(dateRow);
 
       row.appendChild(photoSlot);
       row.appendChild(contentCol);
@@ -934,14 +1002,7 @@
         attachPhoto(p);
         row.addEventListener("click", function () { openPlan(p); });
       } else {
-        // not in cache (e.g. after a reload) → fetch it, then fill in
-        getJSON("/plans/" + encodeURIComponent(id)).then(function (plan) {
-          remember(plan);
-          titleEl.textContent = cleanTitle(plan.title) || "UNTITLED";
-          dateEl.textContent = formatDates(plan.start_date, plan.end_date);
-          attachPhoto(plan);
-          row.addEventListener("click", function () { openPlan(plan); });
-        }).catch(function () { titleEl.textContent = "PLAN #" + id; });
+        titleEl.textContent = "PLAN #" + id;
       }
       box.appendChild(row);
     });
