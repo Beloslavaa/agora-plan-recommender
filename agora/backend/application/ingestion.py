@@ -6,7 +6,7 @@ ingest_cli.py for the CLI adapter that drives this."""
 import asyncio
 import logging
 
-from agora.backend.application.enrichment import enrich_plans
+from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
 from agora.backend.application.explorer import explore_for_plans
 from agora.backend.application.extraction import extract_plans_from_html
 from agora.backend.application.sources_admin import correct_city_from_location
@@ -138,7 +138,7 @@ async def run_one_city(
     only_categories: list[str] | None,
     only_names: set[str] | None,
 ) -> list[PlanData]:
-    """Run the selected mode for a single city, then enrich the results.
+    """Run the selected mode for a single city, then classify/enrich the results.
 
     Split out so a multi-city (cron) run can call this once per configured
     city, in its own try/except — one city's failure must never abort the
@@ -151,6 +151,15 @@ async def run_one_city(
         plans = await run_exploratory_pipeline(llm, city, only_categories=only_categories)
     else:
         plans = await run_full_pipeline(city)
+
+    # Neither pipeline guesses a category for every plan (see
+    # enrichment.classify_missing_categories) — fixed-source general
+    # listings and every exploratory-sourced plan reach here with
+    # category=None. Classify from content before this batch is ever
+    # written to the DB, instead of leaving it null for a separate manual
+    # backfill run (scripts/backfill_categories.py remains for the
+    # pre-existing backlog only).
+    await classify_missing_categories(plans, llm)
 
     search_provider = get_search_provider()
     return await enrich_plans(plans, llm=llm, search=search_provider)

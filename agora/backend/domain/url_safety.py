@@ -47,6 +47,27 @@ SONGKICK_BLANK_IMAGE = re.compile(
 )
 
 
+_BASE_HREF = re.compile(r'<base\b[^>]*\bhref\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+
+
+def effective_base_url(html: str, fetched_url: str) -> str:
+    """A page's own <base href> tag, when present, overrides ITS OWN URL as
+    the base browsers resolve every relative link/image on that page
+    against. cibelesdecine.com is a real example: pages live under
+    /es/some-page but declare <base href="https://www.cibelesdecine.com/">,
+    so a relative image src like "fr-400x400-data/fotos/40.png" resolves to
+    the site ROOT, not to /es/fr-400x400-data/... — resolving against the
+    fetched page's own URL (ignoring <base>) silently produced dead (404)
+    image URLs for that entire source. Falls back to the fetched page's own
+    URL when there's no <base> tag, which is what a browser does too."""
+    m = _BASE_HREF.search(html)
+    if m:
+        base = normalise_url(m.group(1), base_url=fetched_url)
+        if base:
+            return base
+    return fetched_url
+
+
 def normalise_url(raw: str | None, base_url: str | None = None) -> str | None:
     """Validate and sanitise a URL extracted by the LLM.
 

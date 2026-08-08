@@ -1,11 +1,11 @@
 """One-off (and re-runnable) backfill: classify every plan missing a
 `category`.
 
-Needed for plans scraped by the fixed-source pipeline before it threaded
-each source's known category through to extraction (see application/
-ingestion.py's _category_from_promoted_by) — those rows were never assigned one, since
-nothing else ever infers category from page content. New scrapes no longer
-need this; this is purely for the backlog.
+Needed only for the pre-existing backlog — run_one_city (application/
+ingestion.py) now classifies every fresh scrape's missing categories
+automatically at ingestion time (enrichment.classify_missing_categories),
+for both fixed-source general listings and exploratory-sourced plans. This
+script exists for rows already in the DB from before that was wired in.
 
 Run from the project root (same folder as main.py / data/):
 
@@ -18,8 +18,8 @@ import asyncio
 import json
 import logging
 
+from agora.backend.application.enrichment import classify_category_from_text
 from agora.backend.application.ports import LLMProvider
-from agora.backend.domain.schemas import CATEGORY_LABELS, PlanCategory
 from agora.backend.infrastructure.llm.providers import get_llm_provider
 from agora.backend.infrastructure.persistence.postgres_repository import (
     get_plans_missing_category,
@@ -32,49 +32,13 @@ logger = logging.getLogger(__name__)
 
 _sem = asyncio.Semaphore(5)
 
-_CATEGORY_OPTIONS = "\n".join(f"- {c.value}: {label}" for c, label in CATEGORY_LABELS.items())
-
-_CLASSIFY_SYSTEM = f"""\
-You classify a cultural/entertainment event into exactly one category, based \
-only on the title/description/tags given.
-
-Categories:
-{_CATEGORY_OPTIONS}
-
-Respond with JSON only: {{"category": "<one of the category keys above>"}}
-If nothing fits well, pick the closest one — never invent a new category name.
-"""
-
-
-def _clean(s: str | None) -> str:
-    return str(s or "").replace("<DATA>", " ").replace("</DATA>", " ")
-
 
 async def _classify(plan: dict, llm: LLMProvider) -> str | None:
     tags = plan.get("tags") or []
     if isinstance(tags, str):
         tags = json.loads(tags) if tags else []
-
-    prompt = (
-        "<DATA>\n"
-        f"title: {_clean(plan['title'])}\n"
-        f"description: {_clean(plan.get('description'))[:500]}\n"
-        f"tags: {_clean(', '.join(tags))}\n"
-        "</DATA>"
-    )
     async with _sem:
-        try:
-            # Gemini flash spends an unpredictable chunk of max_tokens on invisible
-            # "thinking" before writing the visible JSON (llm.py's GeminiProvider.
-            # complete() — observed 11k-15k thinking tokens run-to-run on the same
-            # prompt). 128 was too tight a margin: it happened to survive one run
-            # and then truncated almost everything on the next.
-            data = await llm.parse_json(prompt, system=_CLASSIFY_SYSTEM, temperature=0.1, max_tokens=2048)
-            category = (data.get("category") or "").strip()
-            return PlanCategory(category).value
-        except Exception as e:
-            logger.warning("  ~ classification failed for %r: %s", plan["title"][:50], e)
-            return None
+        return await classify_category_from_text(plan["title"], plan.get("description"), tags, llm)
 
 
 async def backfill(dry_run: bool) -> tuple[int, int]:

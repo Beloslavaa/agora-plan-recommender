@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from agora.backend.application.ports import LLMProvider
 from agora.backend.domain.event_parsing import extract_dice_event_details, extract_ld_events
 from agora.backend.domain.schemas import PlanData
-from agora.backend.domain.url_safety import is_late_night, normalise_url
+from agora.backend.domain.url_safety import effective_base_url, is_late_night, normalise_url
 from agora.backend.infrastructure.http.fetcher import fetch_page
 
 logger = logging.getLogger(__name__)
@@ -189,12 +189,20 @@ async def extract_plans_from_html(
     llm: LLMProvider,
     category: str | None = None,
 ) -> list[PlanData]:
+    # A page can declare <base href> to override its own URL as the base for
+    # every relative link/image on it (see url_safety.effective_base_url) —
+    # resolve against THAT, not the raw page URL, or a site using it (e.g.
+    # cibelesdecine.com) yields dead image/ticket URLs. `source_url` itself
+    # (the field stored on the resulting plans, used for dedup/logging below)
+    # stays untouched.
+    resolve_base = effective_base_url(html, source_url)
+
     # JSON-LD (schema.org Event / ItemList) is structured, first-party data —
     # when a page has it, trust it over an LLM's guess from flattened text.
     # This is what actually gets the *specific* event url and its real image
     # (Eventbrite, Songkick, etc. all publish this), instead of falling back
     # to the listing/source URL. The LLM only runs for pages without it.
-    ld_events = extract_ld_events(html, base_url=source_url)
+    ld_events = extract_ld_events(html, base_url=resolve_base)
     if ld_events:
         plans = [
             _plan_from_ld_event(ev, source_url, source_type, category)
@@ -210,7 +218,7 @@ async def extract_plans_from_html(
         open=_FENCE_OPEN,
         close=_FENCE_CLOSE,
     )
-    trimmed = _html_to_text(html, base_url=source_url)
+    trimmed = _html_to_text(html, base_url=resolve_base)
     # Neutralise any fence markers the page itself contains, so it can't break
     # out of the DATA region and pose as trusted instructions.
     safe = trimmed.replace(_FENCE_OPEN, "").replace(_FENCE_CLOSE, "")
@@ -236,10 +244,10 @@ async def extract_plans_from_html(
             end_date=item.get("end_date") or None,
             # Resolve/validate URLs against the page they came from (drops relative
             # or junk URLs, turns "/event/x" into an absolute URL).
-            url=normalise_url(item.get("url"), base_url=source_url),
-            ticket_url=normalise_url(item.get("ticket_url"), base_url=source_url),
+            url=normalise_url(item.get("url"), base_url=resolve_base),
+            ticket_url=normalise_url(item.get("ticket_url"), base_url=resolve_base),
             location=item.get("location") or None,
-            image_url=normalise_url(item.get("image_url"), base_url=source_url),
+            image_url=normalise_url(item.get("image_url"), base_url=resolve_base),
             price=item.get("price"),
             tags=item.get("tags") or [],
             category=category,

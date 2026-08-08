@@ -91,8 +91,16 @@ async def _try_promote_base_domain(
         pages = await fetch_page_with_details(base_url)
         extracted: list[PlanData] = []
         for html, page_url in pages:
+            # category=None, not category.value — this is the site's ROOT,
+            # a near-certain multi-category page (same reasoning as
+            # FixedSource.is_general_listing). Stamping the category this
+            # search happened to be looking for onto whatever it finds here
+            # blanket-mistags anything off-category (see AGENTS.md/git
+            # history: bcb487b fixed this for run_fixed_pipeline's general
+            # listings, but never for the exploratory pipeline). Left None,
+            # backfill_categories.py classifies it from actual content later.
             extracted.extend(await extract_plans_from_html(
-                html, page_url, "exploratory", llm, category=category.value,
+                html, page_url, "exploratory", llm, category=None,
             ))
     except Exception as e:
         logger.debug("  Base-domain check failed for %s: %s", base_url, e)
@@ -164,9 +172,17 @@ async def explore_for_plans(
                     pages = await fetch_page_with_details(result.url)
                     extracted: list[PlanData] = []
                     for html, page_url in pages:
+                        # category=None, not category.value — a query built
+                        # to find `category` content doesn't guarantee every
+                        # page it surfaces actually IS that category (e.g. a
+                        # "cinema" search once surfaced a live orchestral
+                        # tribute concert page, mistagged "cinema" as a
+                        # result). Same fix as bcb487b applied to
+                        # run_fixed_pipeline's general listings; backfill_
+                        # categories.py classifies these from real content.
                         extracted.extend(await extract_plans_from_html(
                             html, page_url, "exploratory", llm,
-                            category=category.value,
+                            category=None,
                         ))
                     if cat_count < max_per_category and extracted:
                         if len(extracted) >= PROMOTION_THRESHOLD:
