@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from agora.backend.application import recommendation
+from agora.backend.application import graph_recommendation, recommendation
 from agora.backend.domain.cinemas import CINEMA_SOURCES
 from agora.backend.infrastructure.config import settings
 from agora.backend.infrastructure.persistence import postgres_repository as repository
@@ -202,10 +202,11 @@ def saved_plans(user_id: str) -> list[PlanOut]:
 
 @app.get("/recommendations/{user_id}")
 def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) -> list[RecommendationOut]:
-    # Semantic (Tier 1): cosine similarity between the user's taste profile
-    # and each candidate plan's text embedding. Falls back to popularity
-    # internally for users/cities with no usable signal yet.
-    rows = recommendation.rank_for_user(user_id, city, limit)
+    # Tier 2 (graph): blends the LightGCN graph score with Tier 1's semantic
+    # score. Falls back to Tier 1 (and, through it, popularity) internally
+    # for users/cities with no usable graph signal yet — see
+    # graph_recommendation.py's module docstring.
+    rows = graph_recommendation.rank_for_user(user_id, city, limit)
     return [
         RecommendationOut(plan=_row_to_plan(r), score=float(r["score"]))
         for r in rows

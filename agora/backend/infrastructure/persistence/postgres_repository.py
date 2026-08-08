@@ -85,6 +85,13 @@ def init_db() -> None:
         # still hiding expired plans from browsing/recommendations (see the
         # "NOT is_stale" filters below and mark_stale_plans()).
         conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS is_stale BOOLEAN NOT NULL DEFAULT FALSE")
+        # Migration: LightGCN graph recommender (notebooks/train_lightgcn.ipynb).
+        # Trained offline; the backend only ever reads this column. Plans with
+        # too few interactions to train a real embedding get one synthesized
+        # at export time (semantic-neighbor average — see the notebook's
+        # cold-start section); NULL means neither exists yet, so callers fall
+        # back to the semantic-only score for that plan.
+        conn.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS graph_embedding TEXT")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS interactions (
                 id          SERIAL  PRIMARY KEY,
@@ -112,6 +119,23 @@ def init_db() -> None:
                 created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
             )
         """)
+        # Trained LightGCN user embeddings (notebooks/train_lightgcn.ipynb).
+        # Keyed by interactions.user_id (a free-text id — anon/synthetic users
+        # included, not just rows in `users`) and city, since a graph is
+        # trained per-city and a user embedding is only meaningful within the
+        # graph it came from. No row here means this user wasn't in the graph
+        # at last training time — callers fall back to folding the user in
+        # live from their interacted plans' graph_embedding, or to the
+        # semantic-only score if even that's unavailable.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_embeddings (
+                user_id     TEXT NOT NULL,
+                city        TEXT NOT NULL,
+                embedding   TEXT NOT NULL,
+                updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                PRIMARY KEY (user_id, city)
+            )
+        """)
         # Migration: lock down Supabase's auto-generated PostgREST API, which
         # exposes every public-schema table to anyone with the project's anon
         # key regardless of whether this app uses that API (it doesn't — we
@@ -119,7 +143,7 @@ def init_db() -> None:
         # which has BYPASSRLS, so this changes nothing for store.py itself).
         # No policies added: nothing needs anon/authenticated REST access, so
         # RLS-enabled-with-zero-policies is a correct default-deny.
-        for table in ("plans", "interactions", "users"):
+        for table in ("plans", "interactions", "users", "user_embeddings"):
             conn.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
         # Migration: dedup key moved from (title, source_url) to
         # (title, city, start_date) — the same event scraped from many
@@ -337,14 +361,15 @@ def get_user_interactions(user_id: str) -> list[dict]:
 
 
 def get_user_interactions_with_embeddings(user_id: str) -> list[dict]:
-    """Same as get_user_interactions, but with each plan's embedding joined
-    in (NULL if that plan hasn't been embedded yet) — one query instead of
-    get_user_interactions + a separate get_embeddings_for_plans call, since
-    the recommender needs both on every single request (not cacheable, since
-    it must reflect interactions the instant they're recorded)."""
+    """Same as get_user_interactions, but with each plan's semantic AND
+    graph embedding joined in (NULL if not set) — one query instead of
+    separate calls, since Tier 1 needs the former and Tier 2
+    (graph_recommendation.py) needs the latter on every single request (not
+    cacheable, since it must reflect interactions the instant they're
+    recorded)."""
     with _conn() as conn:
         rows = conn.execute(
-            """SELECT i.plan_id, i.interaction_type, i.created_at, p.embedding
+            """SELECT i.plan_id, i.interaction_type, i.created_at, p.embedding, p.graph_embedding
                FROM interactions i JOIN plans p ON p.id = i.plan_id
                WHERE i.user_id = %s
                ORDER BY i.created_at DESC""",
@@ -456,8 +481,8 @@ def get_embeddings_for_plans(plan_ids: list[int]) -> dict[int, list[float]]:
 def get_all_interactions_for_city(city: str) -> list[dict]:
     """Every (user_id, plan_id, interaction_type) edge for a city's plans —
     the full bipartite graph LightGCN would train on. Used by graph-structure
-    diagnostics (scripts/inspect_interaction_graph.py) and, eventually, the
-    training notebook itself."""
+    diagnostics (scripts/inspect_interaction_graph.py) and the training
+    notebook itself."""
     with _conn() as conn:
         rows = conn.execute(
             """SELECT i.user_id, i.plan_id, i.interaction_type
@@ -466,6 +491,65 @@ def get_all_interactions_for_city(city: str) -> list[dict]:
             (city,),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def set_plan_graph_embeddings_bulk(rows: list[tuple[int, list[float]]]) -> None:
+    """Write every plan's trained (or cold-start-synthesized) graph embedding
+    in ONE round trip — one UPDATE per row would mean hundreds of individual
+    network round trips to Supabase (this is what made
+    generate_synthetic_interactions.py's plain per-row record_interaction
+    calls slow; not repeating that here)."""
+    if not rows:
+        return
+    with _conn() as conn:
+        conn.execute(
+            """UPDATE plans SET graph_embedding = data.embedding
+               FROM (SELECT * FROM unnest(%s::int[], %s::text[]) AS t(id, embedding)) AS data
+               WHERE plans.id = data.id""",
+            ([r[0] for r in rows], [json.dumps(r[1]) for r in rows]),
+        )
+
+
+def upsert_user_embeddings_bulk(city: str, rows: list[tuple[str, list[float]]]) -> None:
+    """Write every trained user embedding for a city in ONE round trip (see
+    set_plan_graph_embeddings_bulk for why bulk matters here)."""
+    if not rows:
+        return
+    with _conn() as conn:
+        conn.execute(
+            """INSERT INTO user_embeddings (user_id, city, embedding, updated_at)
+               SELECT * FROM unnest(%s::text[], %s::text[], %s::text[], array_fill(now(), ARRAY[%s]))
+               ON CONFLICT (user_id, city) DO UPDATE
+               SET embedding = EXCLUDED.embedding, updated_at = EXCLUDED.updated_at""",
+            (
+                [r[0] for r in rows],
+                [city] * len(rows),
+                [json.dumps(r[1]) for r in rows],
+                len(rows),
+            ),
+        )
+
+
+def get_plan_graph_embeddings(plan_ids: list[int]) -> dict[int, list[float]]:
+    """id -> graph_embedding, skipping any plan that doesn't have one
+    (never trained, or too new for the last export's cold-start pass)."""
+    if not plan_ids:
+        return {}
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, graph_embedding FROM plans WHERE id = ANY(%s) AND graph_embedding IS NOT NULL",
+            (plan_ids,),
+        ).fetchall()
+    return {r["id"]: json.loads(r["graph_embedding"]) for r in rows}
+
+
+def get_user_embedding(user_id: str, city: str) -> list[float] | None:
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT embedding FROM user_embeddings WHERE user_id = %s AND city = %s",
+            (user_id, city),
+        ).fetchone()
+    return json.loads(row["embedding"]) if row else None
 
 
 def get_interaction_counts(plan_ids: list[int]) -> dict[int, int]:

@@ -49,7 +49,7 @@ _CACHE_TTL_SECONDS = 60.0
 _city_plans_cache: dict[str, tuple[float, tuple[list[dict], dict[str, tuple[dict, list[dict]]]]]] = {}
 
 
-def _cached_city_plans(
+def cached_city_plans(
     city: str, repository: PlanRepository = _default_repository,
 ) -> tuple[list[dict], dict[str, tuple[dict, list[dict]]]]:
     """(scoring_candidates, {domain: (info, movies)}) for a city, from ONE
@@ -81,7 +81,7 @@ def _rank_with_semantic(
     profile: list[float], city: str, limit: int, interacted_ids: set[int],
     repository: PlanRepository = _default_repository,
 ) -> list[dict]:
-    candidates, cinemas = _cached_city_plans(city, repository)
+    candidates, cinemas = cached_city_plans(city, repository)
     scored: list[tuple[float, dict]] = []
     for plan in candidates:
         if plan["id"] in interacted_ids or not plan.get("embedding"):
@@ -114,7 +114,7 @@ def _rank_with_semantic(
 def _rank_with_popularity(
     user_id: str, city: str, limit: int, repository: PlanRepository = _default_repository,
 ) -> list[dict]:
-    _, cinemas = _cached_city_plans(city, repository)
+    _, cinemas = cached_city_plans(city, repository)
     # Headroom so merging in cinema candidates doesn't crowd out plans that
     # would otherwise have made the cut (mirrors get_recommendations' own
     # `limit + len(interacted)` overfetch for the same reason).

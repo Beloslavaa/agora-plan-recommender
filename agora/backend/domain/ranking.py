@@ -23,20 +23,19 @@ def cosine(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def user_profile(rows: list[dict]) -> list[float] | None:
-    """Weighted average of the embeddings of plans this user has interacted
-    with (rows carrying an "embedding" JSON string and "interaction_type").
-    None if none of those plans have an embedding yet — the caller falls
-    back to popularity."""
-    embedded = [r for r in rows if r.get("embedding")]
+def _weighted_profile(rows: list[dict], field: str) -> list[float] | None:
+    """Weighted average of a JSON-list vector field across interacted plans,
+    weighted the same way for any vector space (saved > view_link > click).
+    None if no row has that field yet."""
+    embedded = [r for r in rows if r.get(field)]
     if not embedded:
         return None
 
-    dim = len(json.loads(embedded[0]["embedding"]))
+    dim = len(json.loads(embedded[0][field]))
     profile = [0.0] * dim
     total_weight = 0.0
     for r in embedded:
-        vector = json.loads(r["embedding"])
+        vector = json.loads(r[field])
         weight = INTERACTION_WEIGHT.get(r["interaction_type"], 1.0)
         for d in range(dim):
             profile[d] += vector[d] * weight
@@ -45,6 +44,27 @@ def user_profile(rows: list[dict]) -> list[float] | None:
     if total_weight == 0:
         return None
     return [v / total_weight for v in profile]
+
+
+def user_profile(rows: list[dict]) -> list[float] | None:
+    """Weighted average of the semantic embeddings of plans this user has
+    interacted with (rows carrying an "embedding" JSON string and
+    "interaction_type"). None if none of those plans have an embedding yet
+    — the caller falls back to popularity."""
+    return _weighted_profile(rows, "embedding")
+
+
+def fold_in_user_embedding(rows: list[dict]) -> list[float] | None:
+    """Weighted average of the GRAPH embeddings (not semantic) of plans this
+    user has interacted with — a one-hop proxy for a user who wasn't in the
+    bipartite graph at last training time (see
+    notebooks/train_lightgcn.ipynb). Shallower than a properly trained
+    embedding (no reciprocal gradient update, no multi-hop propagation of
+    its own), but the plans' embeddings already carry real co-consumption
+    structure from whoever trained alongside them, so this is still real
+    graph signal, not just semantic. None if none of those plans have a
+    graph embedding either — caller falls back further, to semantic-only."""
+    return _weighted_profile(rows, "graph_embedding")
 
 
 def cinema_pseudo_plan(domain: str, info: dict, movies: list[dict]) -> dict:
