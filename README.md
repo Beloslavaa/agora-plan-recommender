@@ -36,10 +36,39 @@ with no usable signal yet. Cinema hub cards are scored by their single
 best-matching movie rather than automatically leading the feed regardless of
 relevance.
 
-**Planned:** a LightGCN-based graph recommender (co-consumption — "the same
-crowd attends plan A and B" — rather than text similarity), once there's
-enough real multi-user interaction volume for it to learn anything
-meaningful. See `AGENTS.md` for the fuller design rationale.
+**Tier 2 (live):** a LightGCN graph recommender on the bipartite user-plan
+interaction graph — co-consumption ("the same crowd attends plan A and B")
+rather than text similarity. Trained offline
+(`notebooks/train_lightgcn.ipynb`), initialized from and regularized toward
+Tier 1's semantic embeddings, then exported to `plans.graph_embedding` /
+`user_embeddings`. `/recommendations/{user_id}` blends the graph score with
+Tier 1's semantic score, folding in a live embedding for users not yet in
+the trained graph, and falling back through Tier 1 then popularity when
+there's no graph signal at all. Real interaction volume is still low, so the
+graph is currently bootstrapped mostly with synthetic archetype users
+(`scripts/generate_synthetic_interactions.py`) — useful for validating the
+pipeline end to end, not yet evidence the graph model beats Tier 1 on real
+taste. See `AGENTS.md` for the fuller design rationale.
+
+**Cold-start plans:** a plan with zero interactions never becomes a node in
+the trained graph, so it has no learned embedding of its own. The training
+notebook's export step proxies one instead: embed the plan's text, find its
+5 nearest neighbors in semantic space among plans that *were* trained, and
+take the similarity-weighted average of those neighbors' trained graph
+embeddings. It inherits a hint of whatever crowd its closest analogues
+attracted, not just what its own text says about it.
+
+**New users get tuned live, no retraining required:** a user who joined (or
+started interacting) after the last training run has no row in
+`user_embeddings` yet. Rather than wait for the next retrain,
+`/recommendations/{user_id}` folds one in on the spot — a weighted average
+of the *trained* graph embeddings of whatever plans that user has already
+interacted with (`ranking.py`'s `fold_in_user_embedding`), recomputed fresh
+on every request. Every new interaction sharpens it immediately. It's still
+a shallower proxy than a properly trained embedding, though — it never gets
+the reciprocal, multi-hop refinement real training provides, and the plan
+embeddings themselves never move in response to it. Only the next full run
+of `notebooks/train_lightgcn.ipynb` does that.
 
 ## Setup
 
@@ -80,26 +109,10 @@ Newly-scraped plans are embedded automatically at the end of the run.
 
 ## Deployment
 
-`render.yaml` deploys this as a single Render web service (`DATABASE_URL` set
-via Render's dashboard, not synced from the repo).
-
-The ingestion schedule runs separately via a GitHub Actions workflow
-(`.github/workflows/ingestion.yml`), twice a month — the 1st and 15th —
-rather than a Render Cron Job, since Render has no free tier for cron
-(billed per run) while GitHub Actions' scheduled workflows are free. It runs
-`python main.py --mode full` for every city in `data/cities.json`, which
-does three things back to back: scrapes, embeds any new plans, and
-soft-deletes stale ones (`mark_stale_plans()` — anything whose end date, or
-start date if it has no end date, is in the past; undated "DATES TBA" plans
-are left alone). Soft delete just flips `plans.is_stale`, so interaction
-history is preserved for the recommender; every browse/recommendation query
-filters `NOT is_stale` to keep expired plans out of the feed.
-
-The workflow needs these set as **GitHub repo secrets** (Settings → Secrets
-and variables → Actions): `DATABASE_URL`, `LLM_PROVIDER`, `OPENAI_API_KEY`,
-`GEMINI_API_KEY`, `SEARCH_PROVIDER`, `SERPAPI_KEY` — same values as `.env`.
-It can also be triggered manually from the repo's Actions tab
-(`workflow_dispatch`).
+`render.yaml` deploys this as a single Render web service. Ingestion runs
+separately on a schedule via GitHub Actions
+(`.github/workflows/ingestion.yml`), twice a month, and can also be
+triggered manually from the repo's Actions tab.
 
 ## Project state
 
