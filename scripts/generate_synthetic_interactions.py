@@ -21,9 +21,12 @@ Run from the project root (same folder as main.py / data/):
 """
 
 import argparse
+import json
 import logging
 import random
 from collections import Counter
+
+import numpy as np  # already a project dependency (requirements.txt, via torch)
 
 from agora.backend.infrastructure.persistence.postgres_repository import (
     get_all_city_plans,
@@ -122,6 +125,31 @@ INTERACTION_WEIGHTS = [0.55, 0.25, 0.20]
 MIN_INTERACTIONS_PER_USER = 5
 MAX_INTERACTIONS_PER_USER = 40
 
+# A user's first pick in a category is unconstrained (nothing established
+# yet to compare against), but subsequent same-category picks are drawn
+# from that user's own top-SAME_CATEGORY_TOP_K_FRAC most semantically
+# similar remaining candidates in it, instead of uniform-random across the
+# whole category. Without this, one synthetic user's "cultural" interactions
+# (currently ~47% of Madrid's catalog, everything from flamenco shows to
+# escape rooms to spa treatments) end up scattered across totally unrelated
+# plans purely by chance. LightGCN then learns that random scatter as if it
+# were real co-attendance, pulling unrelated plans' embeddings together on
+# nothing but sampling noise.
+#
+# Rank-based, not raw-cosine-weighted: measured directly against this
+# project's actual Gemini embeddings, within-category similarity is
+# compressed into a narrow band (e.g. "cultural" plans: median pairwise
+# cosine 0.65, barely above the CROSS-category cultural-vs-fashion mean of
+# 0.61) — probably because `category` itself is one of the embedded text
+# fields (gemini_embeddings.plan_text), which dominates over the more
+# fine-grained title/description content. Weighting by raw cosine value
+# barely moved anything (measured: 0.647 -> 0.652 mean intra-user
+# coherence); picking from the top-K% by RANK instead exploits whatever
+# fine-grained ordering survives that compression even when the absolute
+# differences are tiny (measured: 0.647 -> 0.792).
+SAME_CATEGORY_TOP_K_FRAC = 0.1
+SAME_CATEGORY_TOP_K_MIN = 3  # floor for small categories (e.g. photography, ~20 plans)
+
 
 def _pick_archetype(rng: random.Random) -> str:
     names = list(ARCHETYPES)
@@ -132,6 +160,39 @@ def _pick_archetype(rng: random.Random) -> str:
 def _is_workshop(plan: dict) -> bool:
     text = f"{plan.get('title', '')} {plan.get('description', '')}".lower()
     return any(kw in text for kw in WORKSHOP_KEYWORDS)
+
+
+def _plan_vectors(plans: list[dict]) -> dict[int, np.ndarray]:
+    """Normalized semantic embedding per plan (skips any plan without one —
+    picking within a category just falls back to uniform for those)."""
+    vecs = {}
+    for p in plans:
+        emb = p.get("embedding")
+        if not emb:
+            continue
+        v = np.array(json.loads(emb), dtype=np.float64)
+        norm = np.linalg.norm(v)
+        if norm > 0:
+            vecs[p["id"]] = v / norm
+    return vecs
+
+
+def _pick_in_category(
+    rng: random.Random, candidates: list[dict], taste_vec: np.ndarray | None, plan_vec: dict[int, np.ndarray],
+) -> dict:
+    """Uniform random for a user's first pick in this category (nothing
+    established yet). Once taste_vec exists (the running-average embedding
+    of this user's earlier picks in this SAME category), pick uniformly
+    among the top-SAME_CATEGORY_TOP_K_FRAC candidates ranked by similarity
+    to it — see the comment on that constant for why rank, not raw value."""
+    if taste_vec is None:
+        return rng.choice(candidates)
+    ranked = sorted(
+        candidates,
+        key=lambda p: -float(plan_vec[p["id"]] @ taste_vec) if p["id"] in plan_vec else 1.0,
+    )
+    k = max(SAME_CATEGORY_TOP_K_MIN, int(len(ranked) * SAME_CATEGORY_TOP_K_FRAC))
+    return rng.choice(ranked[:k])
 
 
 def _user_category_weights(archetype: str, rng: random.Random) -> dict[str, float]:
@@ -160,6 +221,8 @@ def generate(city: str, n_users: int, seed: int | None, dry_run: bool) -> Counte
         logger.warning("No plans for category(ies) %s in %s — those weights go unused.", empty, city)
     if not any(by_category.values()):
         raise SystemExit(f"No categorized plans found for {city!r}. Nothing to generate against.")
+
+    plan_vec = _plan_vectors(plans)
 
     workshop_plans = [p for p in plans if _is_workshop(p)]
     if not workshop_plans:
@@ -190,13 +253,25 @@ def generate(city: str, n_users: int, seed: int | None, dry_run: bool) -> Counte
 
         n_interactions = rng.randint(MIN_INTERACTIONS_PER_USER, MAX_INTERACTIONS_PER_USER)
         seen: set[tuple[int, str]] = set()
+        # Running (sum, count) per category, for this user only — lets each
+        # subsequent same-category pick lean toward this user's own earlier
+        # picks in it. Reset per user, never shared across users.
+        cat_taste_sum: dict[str, np.ndarray] = {}
+        cat_taste_count: dict[str, int] = {}
         for _ in range(n_interactions):
             if pool_plans and rng.random() < POOL_BIAS:
                 plan = rng.choice(pool_plans)
                 category = plan.get("category") or "uncategorized"
             else:
                 category = rng.choices(available_cats, weights=cat_weights, k=1)[0]
-                plan = rng.choice(by_category[category])
+                taste_vec = (
+                    cat_taste_sum[category] / cat_taste_count[category]
+                    if cat_taste_count.get(category) else None
+                )
+                plan = _pick_in_category(rng, by_category[category], taste_vec, plan_vec)
+                if plan["id"] in plan_vec:
+                    cat_taste_sum[category] = cat_taste_sum.get(category, 0) + plan_vec[plan["id"]]
+                    cat_taste_count[category] = cat_taste_count.get(category, 0) + 1
             interaction_type = rng.choices(INTERACTION_TYPES, weights=INTERACTION_WEIGHTS, k=1)[0]
             key = (plan["id"], interaction_type)
             if key in seen:
