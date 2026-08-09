@@ -459,9 +459,16 @@ def get_plans_missing_category() -> list[dict]:
 
 
 def set_plan_category(plan_id: int, category: str) -> None:
+    """Also nulls the semantic embedding: it's computed from title +
+    CATEGORY + tags + description (gemini_embeddings.plan_text), so an
+    embedding computed under the old category is stale the moment this
+    changes it. get_plans_missing_embedding()/backfill_embeddings() picks
+    up the null and re-embeds on the next run — this is the only writer of
+    `category` for an existing row, so there's no case where nulling it
+    here is wrong."""
     with _conn() as conn:
         conn.execute(
-            "UPDATE plans SET category = %s WHERE id = %s",
+            "UPDATE plans SET category = %s, embedding = NULL WHERE id = %s",
             (category, plan_id),
         )
 
