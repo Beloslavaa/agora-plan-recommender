@@ -95,6 +95,24 @@ ARCHETYPES: dict[str, dict] = {
         },
         "pool": "popular",
     },
+    # workshop_learner/trend_chaser above prove the pool mechanism already
+    # solves cross-user clustering for keyword-matched content; these two
+    # apply the same idea to "cultural" specifically — currently ~47% of
+    # Madrid's catalog and, on its own, too broad and heterogeneous
+    # (flamenco shows next to water parks next to escape rooms) for
+    # category-weighted sampling alone to produce meaningful co-attendance.
+    # Splitting it via ARCHETYPE rather than adding real DB categories keeps
+    # this entirely inside the synthetic generator — no reclassification.
+    "trip_lover": {
+        "share": 2,
+        "weights": {"cultural": 3},
+        "pool": "trip",
+    },
+    "afterwork_guru": {
+        "share": 2,
+        "weights": {"cultural": 3, "music_concerts": 1},
+        "pool": "afterwork",
+    },
 }
 
 ALL_CATEGORIES = ["art_exhibitions", "photography", "cinema", "music_concerts", "fashion", "cultural"]
@@ -110,6 +128,21 @@ NOISE_FLOOR = 0.4
 POOL_BIAS = 0.7
 
 WORKSHOP_KEYWORDS = ("workshop", "taller", "clase", "curso", "class")
+
+# Heuristic, same spirit/limitations as WORKSHOP_KEYWORDS — simple substring
+# matching on title+description, not a real classifier. Both cut across
+# `cultural` (and a bit beyond) to carve out two sub-themes that category
+# alone can't separate.
+TRIP_KEYWORDS = (
+    "toledo", "segovia", "aquopolis", "aquarium", "acuario", "excursion",
+    "excursión", "water park", "zoo", "ávila", "avila", "burgos", "globo",
+    "hiking", "horseback", "a caballo", "en caballo", "barranquismo", "day trip",
+)
+AFTERWORK_KEYWORDS = (
+    "escape room", "flamenco", "candlelight", "murder mystery", "comedy",
+    "monólogo", "monologue", "pub crawl", "cocktail", "karaoke", "cabaret",
+    "tablao", "impro", "stand-up", "quiz room", "trivia",
+)
 
 # No real popularity signal exists right after a fresh regenerate (every
 # plan starts at 0 interactions), so trend_chaser draws from a seeded
@@ -157,9 +190,9 @@ def _pick_archetype(rng: random.Random) -> str:
     return rng.choices(names, weights=shares, k=1)[0]
 
 
-def _is_workshop(plan: dict) -> bool:
+def _matches_keywords(plan: dict, keywords: tuple[str, ...]) -> bool:
     text = f"{plan.get('title', '')} {plan.get('description', '')}".lower()
-    return any(kw in text for kw in WORKSHOP_KEYWORDS)
+    return any(kw in text for kw in keywords)
 
 
 def _plan_vectors(plans: list[dict]) -> dict[int, np.ndarray]:
@@ -224,11 +257,23 @@ def generate(city: str, n_users: int, seed: int | None, dry_run: bool) -> Counte
 
     plan_vec = _plan_vectors(plans)
 
-    workshop_plans = [p for p in plans if _is_workshop(p)]
+    workshop_plans = [p for p in plans if _matches_keywords(p, WORKSHOP_KEYWORDS)]
     if not workshop_plans:
         logger.warning(
             "No plans match workshop keywords %s in %s — workshop_learner falls back to category weights.",
             WORKSHOP_KEYWORDS, city,
+        )
+    trip_plans = [p for p in plans if _matches_keywords(p, TRIP_KEYWORDS)]
+    if not trip_plans:
+        logger.warning(
+            "No plans match trip keywords %s in %s — trip_lover falls back to category weights.",
+            TRIP_KEYWORDS, city,
+        )
+    afterwork_plans = [p for p in plans if _matches_keywords(p, AFTERWORK_KEYWORDS)]
+    if not afterwork_plans:
+        logger.warning(
+            "No plans match afterwork keywords %s in %s — afterwork_guru falls back to category weights.",
+            AFTERWORK_KEYWORDS, city,
         )
 
     # Seeded pseudo-random "hyped" subset per category — see POPULAR_SHARE.
@@ -237,7 +282,10 @@ def generate(city: str, n_users: int, seed: int | None, dry_run: bool) -> Counte
         for cat, ps in by_category.items() if ps
         for p in rng.sample(ps, max(1, round(len(ps) * POPULAR_SHARE)))
     ]
-    pools = {"workshop": workshop_plans, "popular": popular_plans}
+    pools = {
+        "workshop": workshop_plans, "popular": popular_plans,
+        "trip": trip_plans, "afterwork": afterwork_plans,
+    }
 
     stats = Counter()
     for i in range(n_users):
