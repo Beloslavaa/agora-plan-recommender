@@ -41,9 +41,33 @@ def _conn() -> psycopg.connection.Connection:
     return pool.connection()
 
 
+# Bump this whenever a statement is added to (or changed in) the migration
+# block below. init_db() is called on every process boot AND on nearly every
+# write/list call in this module (upsert_plans, list_cinemas, ...) — before
+# this gate existed it re-ran all ~25 migration statements as ~25 sequential
+# round-trips to Supabase every single time, which is most of what made cold
+# starts (and every /cinemas request) slow. The gate below turns the
+# steady-state cost into 2 round-trips (create-if-missing + version check)
+# once a deploy has run the migrations once, at the cost of remembering to
+# bump this number when the block changes — forgetting only means a change
+# silently doesn't apply until the next manual bump, which get_plan_count()-
+# style smoke testing after a schema change will catch immediately.
+_SCHEMA_VERSION = 1
+
+
 def init_db() -> None:
     """Create every table this app owns. This is the ONE place the schema lives."""
     with _conn() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                id      BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id),
+                version INTEGER NOT NULL
+            )
+        """)
+        row = conn.execute("SELECT version FROM schema_migrations").fetchone()
+        if row and row["version"] >= _SCHEMA_VERSION:
+            return
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS plans (
                 id          SERIAL  PRIMARY KEY,
@@ -158,6 +182,12 @@ def init_db() -> None:
             CREATE UNIQUE INDEX IF NOT EXISTS plans_title_city_date_uniq
             ON plans (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01'))
         """)
+
+        conn.execute(
+            "INSERT INTO schema_migrations (id, version) VALUES (TRUE, %s) "
+            "ON CONFLICT (id) DO UPDATE SET version = EXCLUDED.version",
+            (_SCHEMA_VERSION,),
+        )
 
 
 # ── Ingestion-side writes ────────────────────────────────
