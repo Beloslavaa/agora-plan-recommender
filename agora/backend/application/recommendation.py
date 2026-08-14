@@ -20,7 +20,13 @@ import time
 
 from agora.backend.application.ports import PlanRepository
 from agora.backend.domain.cinemas import CINEMA_SOURCES
-from agora.backend.domain.ranking import cinema_domain, cinema_pseudo_plan, cosine, user_profile
+from agora.backend.domain.ranking import (
+    cinema_domain,
+    cinema_pseudo_plan,
+    prepare_scoring_items,
+    score_candidates,
+    user_profile,
+)
 from agora.backend.infrastructure.embeddings.gemini_embeddings import embed_texts, plan_text
 from agora.backend.infrastructure.persistence import postgres_repository as _default_repository
 
@@ -78,15 +84,15 @@ def cached_city_plans(
 
 
 def _rank_with_semantic(
-    profile: list[float], city: str, limit: int, interacted_ids: set[int],
-    repository: PlanRepository = _default_repository,
+    profile: list[float], items: list[tuple[float, list[float]]], city: str, limit: int,
+    interacted_ids: set[int], repository: PlanRepository = _default_repository,
 ) -> list[dict]:
     candidates, cinemas = cached_city_plans(city, repository)
-    scored: list[tuple[float, dict]] = []
-    for plan in candidates:
-        if plan["id"] in interacted_ids or not plan.get("embedding"):
-            continue
-        scored.append((cosine(profile, json.loads(plan["embedding"])), plan))
+
+    scoreable = [p for p in candidates if p["id"] not in interacted_ids and p.get("embedding")]
+    embeddings = [json.loads(p["embedding"]) for p in scoreable]
+    scores = score_candidates(profile, items, embeddings)
+    scored: list[tuple[float, dict]] = list(zip(scores.tolist(), scoreable))
 
     # Score a cinema by its single best-matching movie — "if we'd recommend
     # one movie from here, show the cinema card" — rather than pinning every
@@ -99,8 +105,8 @@ def _rank_with_semantic(
         embedded = [m for m in movies if m.get("embedding") and m["id"] not in interacted_ids]
         if not embedded:
             continue
-        best = max(cosine(profile, json.loads(m["embedding"])) for m in embedded)
-        scored.append((best, cinema_pseudo_plan(domain, info, movies)))
+        movie_scores = score_candidates(profile, items, [json.loads(m["embedding"]) for m in embedded])
+        scored.append((float(movie_scores.max()), cinema_pseudo_plan(domain, info, movies)))
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     out = []
@@ -150,7 +156,8 @@ def rank_for_user(
     if profile is None:
         return _rank_with_popularity(user_id, city, limit, repository)
 
-    ranked = _rank_with_semantic(profile, city, limit, interacted_ids, repository)
+    items = prepare_scoring_items(rows, "embedding")
+    ranked = _rank_with_semantic(profile, items, city, limit, interacted_ids, repository)
     if not ranked:
         return _rank_with_popularity(user_id, city, limit, repository)
     return ranked

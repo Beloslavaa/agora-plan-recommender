@@ -3,6 +3,10 @@ pydantic-settings>=2.7.0
 openai>=1.55.0
 httpx>=0.28.0
 duckduckgo_search>=6.2.0
+# vectorized recommender scoring (domain/ranking.py) — was previously only a
+# transitive dep via torch below; made explicit since the live API now
+# imports it directly, not just the offline training notebook.
+numpy>=2.0
 # web server (needed to run the API / serve the UI)
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0

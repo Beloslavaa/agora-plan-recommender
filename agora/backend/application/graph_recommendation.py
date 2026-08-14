@@ -17,10 +17,18 @@ plan, rather than dropping the whole request to Tier 1.
 import json
 import logging
 
+import numpy as np
+
 from agora.backend.application import recommendation
 from agora.backend.application.ports import PlanRepository
 from agora.backend.application.recommendation import cached_city_plans
-from agora.backend.domain.ranking import cinema_pseudo_plan, cosine, fold_in_user_embedding, user_profile
+from agora.backend.domain.ranking import (
+    cinema_pseudo_plan,
+    fold_in_user_embedding,
+    prepare_scoring_items,
+    score_candidates,
+    user_profile,
+)
 from agora.backend.infrastructure.persistence import postgres_repository as _default_repository
 
 logger = logging.getLogger(__name__)
@@ -36,22 +44,37 @@ logger = logging.getLogger(__name__)
 ALPHA = 0.5
 
 
-def _blend(user_graph: list[float] | None, semantic_profile: list[float] | None, plan: dict) -> float | None:
-    graph_score = None
-    if user_graph is not None and plan.get("graph_embedding"):
-        graph_score = cosine(user_graph, json.loads(plan["graph_embedding"]))
+def _field_scores(
+    profile: list[float] | None, items: list[tuple[float, list[float]]], plans: list[dict], field: str,
+) -> np.ndarray:
+    """score_candidates (see its docstring) over *plans*, but NaN at any
+    position where that plan doesn't carry *field* at all — rather than
+    scoring it against a meaningless placeholder vector. NaN is also what
+    score_candidates itself returns when *profile* is None and *items* is
+    empty, i.e. this user has no signal in this embedding space at all; both
+    cases get resolved together in _blend_scores below."""
+    n = len(plans)
+    out = np.full(n, np.nan)
+    idx = [i for i, p in enumerate(plans) if p.get(field)]
+    if not idx:
+        return out
+    embeddings = [json.loads(plans[i][field]) for i in idx]
+    out[idx] = score_candidates(profile, items, embeddings)
+    return out
 
-    semantic_score = None
-    if semantic_profile is not None and plan.get("embedding"):
-        semantic_score = cosine(semantic_profile, json.loads(plan["embedding"]))
 
-    if graph_score is None and semantic_score is None:
-        return None
-    if graph_score is None:
-        return semantic_score
-    if semantic_score is None:
-        return graph_score
-    return ALPHA * graph_score + (1 - ALPHA) * semantic_score
+def _blend_scores(graph_scores: np.ndarray, semantic_scores: np.ndarray) -> np.ndarray:
+    """Vectorized equivalent of the old scalar _blend's None-handling:
+    ALPHA*graph + (1-ALPHA)*semantic where a plan has both, whichever one
+    it has where it only has one, NaN (excluded downstream) where it has
+    neither."""
+    g_nan = np.isnan(graph_scores)
+    s_nan = np.isnan(semantic_scores)
+    blended = ALPHA * np.where(g_nan, 0.0, graph_scores) + (1 - ALPHA) * np.where(s_nan, 0.0, semantic_scores)
+    result = np.where(g_nan & ~s_nan, semantic_scores, blended)
+    result = np.where(s_nan & ~g_nan, graph_scores, result)
+    result = np.where(g_nan & s_nan, np.nan, result)
+    return result
 
 
 def rank_for_user(
@@ -71,28 +94,37 @@ def rank_for_user(
     if user_graph is None and semantic_profile is None:
         return recommendation.rank_for_user(user_id, city, limit, repository)
 
+    # Parsed ONCE per request — scoring runs once per candidate plan (hundreds
+    # per city), so this must not re-parse the same handful of saved items'
+    # embeddings from JSON on every single call (see prepare_scoring_items).
+    graph_items = prepare_scoring_items(rows, "graph_embedding")
+    semantic_items = prepare_scoring_items(rows, "embedding")
+
     candidates, cinemas = cached_city_plans(city, repository)
-    scored: list[tuple[float, dict]] = []
-    for plan in candidates:
-        if plan["id"] in interacted_ids:
-            continue
-        score = _blend(user_graph, semantic_profile, plan)
-        if score is not None:
-            scored.append((score, plan))
+
+    scoreable = [p for p in candidates if p["id"] not in interacted_ids]
+    graph_scores = _field_scores(user_graph, graph_items, scoreable, "graph_embedding")
+    semantic_scores = _field_scores(semantic_profile, semantic_items, scoreable, "embedding")
+    final_scores = _blend_scores(graph_scores, semantic_scores)
+    scored: list[tuple[float, dict]] = [
+        (float(final_scores[i]), scoreable[i])
+        for i in range(len(scoreable))
+        if not np.isnan(final_scores[i])
+    ]
 
     # Same "score a cinema by its single best-matching movie" trick Tier 1
     # uses — see recommendation.py's _rank_with_semantic for the rationale.
     for domain, (info, movies) in cinemas.items():
-        movie_scores = []
-        for m in movies:
-            if m["id"] in interacted_ids:
-                continue
-            score = _blend(user_graph, semantic_profile, m)
-            if score is not None:
-                movie_scores.append(score)
-        if not movie_scores:
+        embedded = [m for m in movies if m["id"] not in interacted_ids]
+        if not embedded:
             continue
-        scored.append((max(movie_scores), cinema_pseudo_plan(domain, info, movies)))
+        g_scores = _field_scores(user_graph, graph_items, embedded, "graph_embedding")
+        s_scores = _field_scores(semantic_profile, semantic_items, embedded, "embedding")
+        movie_scores = _blend_scores(g_scores, s_scores)
+        movie_scores = movie_scores[~np.isnan(movie_scores)]
+        if movie_scores.size == 0:
+            continue
+        scored.append((float(movie_scores.max()), cinema_pseudo_plan(domain, info, movies)))
 
     if not scored:
         return recommendation.rank_for_user(user_id, city, limit, repository)

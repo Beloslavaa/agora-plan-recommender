@@ -4,7 +4,8 @@ application/recommendation.py for the use-case that fetches candidates and
 calls this, and infrastructure/embeddings/ for the embedding provider."""
 
 import json
-import math
+
+import numpy as np
 
 from agora.backend.domain.cinemas import CINEMA_SOURCES
 
@@ -14,13 +15,13 @@ from agora.backend.domain.cinemas import CINEMA_SOURCES
 INTERACTION_WEIGHT = {"saved": 3.0, "view_link": 2.0, "click": 1.0}
 
 
-def cosine(a: list[float], b: list[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b))
-    norm_a = math.sqrt(sum(x * x for x in a))
-    norm_b = math.sqrt(sum(y * y for y in b))
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return dot / (norm_a * norm_b)
+def _row_normalise(m: np.ndarray) -> np.ndarray:
+    """L2-normalise along the last axis; an all-zero row stays zero instead
+    of dividing by zero (matches the old scalar cosine()'s "norm 0 → score
+    0" behaviour)."""
+    norms = np.linalg.norm(m, axis=-1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return m / norms
 
 
 def _weighted_profile(rows: list[dict], field: str) -> list[float] | None:
@@ -65,6 +66,74 @@ def fold_in_user_embedding(rows: list[dict]) -> list[float] | None:
     graph signal, not just semantic. None if none of those plans have a
     graph embedding either — caller falls back further, to semantic-only."""
     return _weighted_profile(rows, "graph_embedding")
+
+
+def prepare_scoring_items(rows: list[dict], field: str) -> list[tuple[float, list[float]]]:
+    """Parse *field* out of every interacted-plan row ONCE, as (weight, vector)
+    pairs, for score_candidates to score every candidate against. Call this
+    once per request (in the use-case, before the candidate loop) — not once
+    per candidate plan (hundreds per city), which turned a request that used
+    to be sub-second into one that hung for minutes at real embedding sizes
+    (3072-dim, ~800 candidates)."""
+    items = []
+    for r in rows:
+        if not r.get(field):
+            continue
+        weight = INTERACTION_WEIGHT.get(r["interaction_type"], 1.0)
+        items.append((weight, json.loads(r[field])))
+    return items
+
+
+def score_candidates(
+    profile: list[float] | None,
+    items: list[tuple[float, list[float]]],
+    candidate_embeddings: list[list[float]],
+) -> np.ndarray:
+    """max(cosine-to-averaged-profile, cosine-to-single-closest-past-pick)
+    for EVERY candidate at once — matrix ops instead of a per-candidate
+    Python loop. NaN for every candidate if neither *profile* nor *items*
+    has anything to compare against (the vectorized stand-in for the old
+    scalar functions returning None); otherwise a real score per candidate.
+
+    Why "best single match" at all, not just cosine-to-profile: a user with
+    several genuinely distinct interests (photography AND arthouse cinema
+    AND indie gigs, say) has embeddings that sit far apart from each other —
+    their weighted AVERAGE (*profile*) lands in the empty space between
+    those clusters, resembling none of them, and systematically loses to
+    generically-worded content that (for the opposite reason) also sits in
+    that same unspecific middle ground. Scoring by the single best match
+    instead credits a candidate for resembling ANY one real past pick — the
+    same trick cinema_pseudo_plan's caller already uses to score a cinema by
+    its single best-matching movie rather than the catalogue average.
+    *items* are weighted the same way user_profile is (saved > view_link >
+    click), normalised against the top weight so both scores stay on the
+    same ~cosine scale and can be safely combined with max().
+
+    Why vectorized: the equivalent scalar per-candidate loop, at real data
+    sizes (3072-dim embeddings, ~800 candidates, a dozen-ish saved items),
+    measured at 15s of CPU PER REQUEST — this does the identical math as a
+    couple of matrix multiplications, in milliseconds."""
+    n = len(candidate_embeddings)
+    if n == 0:
+        return np.zeros(0)
+    if profile is None and not items:
+        return np.full(n, np.nan)
+
+    cand = _row_normalise(np.asarray(candidate_embeddings, dtype=np.float64))
+    parts = []
+
+    if profile is not None:
+        p = _row_normalise(np.asarray(profile, dtype=np.float64)[None, :])[0]
+        parts.append(cand @ p)
+
+    if items:
+        top_weight = INTERACTION_WEIGHT["saved"]
+        weights = np.asarray([w / top_weight for w, _ in items], dtype=np.float64)
+        item_vecs = _row_normalise(np.asarray([v for _, v in items], dtype=np.float64))
+        item_sims = (item_vecs @ cand.T) * weights[:, None]  # (n_items, n_candidates)
+        parts.append(item_sims.max(axis=0))
+
+    return np.maximum.reduce(parts)
 
 
 def cinema_pseudo_plan(domain: str, info: dict, movies: list[dict]) -> dict:
