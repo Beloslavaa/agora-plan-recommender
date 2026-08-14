@@ -71,6 +71,23 @@ ARCHETYPES: dict[str, dict] = {
             "music_concerts": 1, "fashion": 1, "cultural": 1,
         },
     },
+    # culture_vulture/cinephile/music_head above are each real, but
+    # deliberately kept SEPARATE from each other (see the module docstring's
+    # `share` comment) — none of them co-attend across photography, cinema,
+    # AND music together. eclectic_browser looks like it should cover that,
+    # but its near-flat weights make its category spread pure noise, not a
+    # repeated pattern LightGCN can learn from (verified: it doesn't create
+    # a real photography+cinema+music cluster — cross-category co-attendance
+    # among eclectic_browser users looks the same whether you check
+    # photography+cinema+music or photography+fashion+cultural or any other
+    # combination). This archetype is the deliberate difference: same
+    # mechanism as culture_vulture etc. (plain category weights, no pool),
+    # but weighted to co-attend across all four SPECIFICALLY and repeatedly,
+    # so the graph gets one real learnable cluster for it.
+    "culture_omnivore": {
+        "share": 3,
+        "weights": {"photography": 4, "cinema": 4, "art_exhibitions": 3, "music_concerts": 3},
+    },
     "workshop_learner": {
         "share": 2,
         # Fallback tilt only — actual picks come from the workshop keyword
