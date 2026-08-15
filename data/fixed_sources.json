@@ -145,5 +145,103 @@
     "city": "Madrid",
     "promoted_by": "manual/cultural",
     "is_general_listing": false
+  },
+  {
+    "name": "Exhibitions in Madrid",
+    "url": "https://www.esmadrid.com/en/whats-on-exhibitions-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Cinema - Madrid",
+    "url": "https://www.capitolgranvia.com/en/cine/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false
+  },
+  {
+    "name": "Movies in English at cinemas in Madrid",
+    "url": "https://englishcinemamadrid.com/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false
+  },
+  {
+    "name": "Best Pop Up Stores in Madrid",
+    "url": "https://app.gopopup.com/en/collection/pop-up-stores-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false
+  },
+  {
+    "name": "Madrid Events Calendar: 2026",
+    "url": "https://www.esmadrid.com/en/events-calendar",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false
+  },
+  {
+    "name": "Exhibitions Barcelona \u2013 Digital & Modern Art at ...",
+    "url": "https://www.mocomuseum.com/exhibitions/barcelona/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Find all Barcelona exhibitions on one page: Information 2026",
+    "url": "https://www.museos.com/en/barcelona/barcelona-exhibitions/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Photography Exhibitions in Barcelona",
+    "url": "https://kbr.fundacionmapfre.org/en/exhibitions/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false
+  },
+  {
+    "name": "Photography Exhibitions in Barcelona 2026",
+    "url": "https://expo-barcelona.com/exhibitions/photography",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false
+  },
+  {
+    "name": "Movies in English at cinemas in Barcelona",
+    "url": "https://englishcinemabarcelona.com/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false
+  },
+  {
+    "name": "Barcelona Concerts, Festivals, Tickets & Tour Dates 2026 ...",
+    "url": "https://www.songkick.com/metro-areas/28714-spain-barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "is_general_listing": false
+  },
+  {
+    "name": "Markets and pop ups - Barcelona - Book Style",
+    "url": "https://www.bookstyle.net/en/sugerencias/barcelona/markets-and-pop-ups",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false
+  },
+  {
+    "name": "Fashion Events in Barcelona, Spain - Clothing Fairs & ...",
+    "url": "https://www.eventbrite.com/b/spain--barcelona/fashion/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false
+  },
+  {
+    "name": "Upcoming Events",
+    "url": "https://www.barcelona-metropolitan.com/search/event/upcoming-events/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false
   }
 ]
