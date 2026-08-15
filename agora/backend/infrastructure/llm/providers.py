@@ -116,10 +116,13 @@ class GeminiProvider(LLMProvider):
             # run to run (observed 11k-15k thinking tokens on the same prompt) —
             # that repeatedly ate almost the whole budget and truncated the
             # visible JSON mid-array. This task is plain extraction with no need
-            # for reasoning, so keep thinking minimal. "none" is listed as a
-            # valid enum value by the API but 400s in practice on gemini-flash-
-            # latest; "minimal" is the lowest value that actually works.
-            reasoning_effort="minimal",
+            # for reasoning, so keep thinking off via "none". (Historically
+            # "none" 400d on gemini-flash-latest while "minimal" worked; as of
+            # 2026-08 that flipped — gemini-flash-latest now rejects "minimal"
+            # ("Thinking level MINIMAL is not supported for this model") while
+            # "none" works. "none" is confirmed to work on both gemini-flash-
+            # latest and the pinned gemini-2.5-flash, so it's the safe choice.)
+            reasoning_effort="none",
         )
         return resp.choices[0].message.content or ""
 
