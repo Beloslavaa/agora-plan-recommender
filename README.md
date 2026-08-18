@@ -47,6 +47,21 @@ the trained graph, and falling back through Tier 1 then popularity when
 there's no graph signal at all. See `AGENTS.md` for the fuller design
 rationale.
 
+**Blending by rank, not raw cosine value:** the graph and semantic scores
+have different absolute scales that don't reflect relevance — a densely
+connected, high-volume category (`cultural`, ~44% of the catalog) runs
+structurally higher raw graph scores than a niche one (`photography`)
+regardless of which actually matches a given user. Measured on a real user:
+a genuinely strong photography match (graph=0.822, semantic=0.859) lost to a
+generic cultural item (graph=0.912, semantic=0.786) under a raw 50/50 blend,
+purely because cultural's graph-score edge outweighed photography's
+semantic-score edge in absolute terms. `graph_recommendation.py` now
+converts both scores to percentile rank within the pooled candidate set
+(main list + all cinema movies together, so cinemas don't get an unfair
+rank boost from their own small catalogue) before blending — same weights,
+same underlying scores, just decided by relative standing instead of raw
+magnitude.
+
 **Cold-start plans:** a plan with zero interactions never becomes a node in
 the trained graph, so it has no learned embedding of its own. The training
 notebook's export step proxies one in two stages: first a similarity floor —
