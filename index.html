@@ -115,6 +115,8 @@
   // ── API base (same origin as the FastAPI app) ────────────
   const API = "";                 // '' → relative to wherever this page is served
   const PAGE = 15;                // /plans page size for infinite scroll
+  const MAX_LOAD_RETRIES = 3;     // loadMore backoff attempts before giving up
+  const RETRY_BASE_MS = 800;      // backoff base — 800ms, 1.6s, 3.2s
 
   // ── user id (logged-in username, or a throwaway anon id while the login
   // banner is still up / after "skip") — kept for interactions ────
@@ -569,6 +571,11 @@
     offset: 0,          // /plans pagination cursor
     done: false,        // no more /plans pages
     loading: false,
+    // true from boot() until the initial /recommendations + /plans sequence
+    // settles — without this, the empty-state box falls through to "No
+    // plans yet" for the whole /recommendations round-trip, since
+    // state.loading isn't set until loadMore() starts (after it returns)
+    booting: true,
     reloading: false,   // true from reloadFeed() until its loadInitial settles
     selected: null,     // current plan object in detail
     detailFrom: "home", // which view BACK should return to from detail: "home" | "cinema"
@@ -617,9 +624,15 @@
     state.reloading = false;
     await loadMore(gen);             // top up with the general catalogue
   }
-  async function loadMore(gen) {
-    if (state.loading || state.done) return;
+  async function loadMore(gen, attempt) {
+    attempt = attempt || 0;
+    if (state.done) return;
+    // only the initiating call is blocked by an in-flight load — a
+    // scheduled retry (attempt > 0) IS the in-flight load continuing, so it
+    // must not bail out on the state.loading flag it itself is holding
+    if (attempt === 0 && state.loading) return;
     state.loading = true;
+    let retrying = false;
     try {
       const page = await getJSON("/plans?city=" + encodeURIComponent(CITY) + "&limit=" + PAGE + "&offset=" + state.offset);
       if (gen !== loadGeneration) return;   // a city switch happened mid-flight
@@ -627,10 +640,20 @@
       if (!Array.isArray(page) || page.length < PAGE) state.done = true;
       addPlans(page || []);
     } catch (e) {
-      if (gen === loadGeneration) state.done = true;   // stop hammering a broken endpoint
+      if (gen !== loadGeneration) return;
+      // transient failure (e.g. a still-booting backend) — back off and
+      // retry a few times instead of permanently setting state.done and
+      // stranding the feed on "No plans yet"
+      if (attempt < MAX_LOAD_RETRIES) {
+        retrying = true;
+        setTimeout(function () { loadMore(gen, attempt + 1); }, RETRY_BASE_MS * Math.pow(2, attempt));
+      } else {
+        state.done = true;   // stop hammering a broken endpoint after retries are exhausted
+      }
     } finally {
-      if (gen === loadGeneration) {
+      if (gen === loadGeneration && !retrying) {
         state.loading = false;
+        state.booting = false;
         // render(), not renderHome() — a save/unsave triggered from the
         // cinema list or detail view should refresh what's actually on
         // screen, not silently update state.feed in the background while
@@ -747,10 +770,10 @@
       const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
       box.appendChild(el("div",
         "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
-        { text: state.reloading ? "Your feed\nis reloading" : state.loading ? "Loading\nplans" : "No plans\nyet" }));
+        { text: state.reloading ? "Your feed\nis reloading" : (state.loading || state.booting) ? "Loading\nplans" : "No plans\nyet" }));
       box.appendChild(el("div",
         "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
-        { text: state.reloading ? "Refreshing your recommendations." : state.loading ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
+        { text: state.reloading ? "Refreshing your recommendations." : (state.loading || state.booting) ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
       pad.appendChild(box);
     } else {
       state.feed.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
