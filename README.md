@@ -42,42 +42,43 @@ rather than text similarity. Trained offline
 (`notebooks/train_lightgcn.ipynb`), initialized from and regularized toward
 Tier 1's semantic embeddings, then exported to `plans.graph_embedding` /
 `user_embeddings`. `/recommendations/{user_id}` blends the graph score with
-Tier 1's semantic score, folding in a live embedding for users not yet in
-the trained graph, and falling back through Tier 1 then popularity when
+Tier 1's semantic score, falling back through Tier 1 then popularity when
 there's no graph signal at all. Both scores are converted to percentile
 rank within the pooled candidate set before blending, so a structurally
 higher-scoring but less relevant category (e.g. `cultural`, ~44% of the
 catalog) can't win on raw scale alone against a genuinely better niche
 match. See `AGENTS.md` for the fuller design rationale.
 
-**Cold-start plans:** a plan with zero interactions never becomes a node in
-the trained graph, so it has no learned embedding of its own. The training
-notebook's export step proxies one in two stages: first a similarity floor —
-its nearest neighbors in semantic space, among plans that *were* trained —
-then, within that shortlist, a preference for the more confidently-trained
-ones (weighted by how many real interactions each neighbor has, not just how
-similar it looks, since a neighbor trained on only 2-3 interactions can look
-close by pure coincidence). The proxy is the confidence-weighted average of
-those neighbors' trained graph embeddings.
+- **Cold-start plans:** a plan with zero interactions never becomes a node
+  in the trained graph, so it has no learned embedding of its own. The
+  training notebook's export step proxies one in two stages: first a
+  similarity floor — its nearest neighbors in semantic space, among plans
+  that *were* trained — then, within that shortlist, a preference for the
+  more confidently-trained ones (weighted by how many real interactions
+  each neighbor has, not just how similar it looks, since a neighbor
+  trained on only 2-3 interactions can look close by pure coincidence). The
+  proxy is the confidence-weighted average of those neighbors' trained
+  graph embeddings.
+- **New users get tuned live, no retraining required:** a user with no row
+  yet in `user_embeddings` gets one folded in on the spot — a weighted
+  average of the *trained* graph embeddings of whatever they've already
+  interacted with (`ranking.py`'s `fold_in_user_embedding`), recomputed
+  fresh each request and sharpening with every new interaction. It's a
+  shallower proxy than a properly trained embedding until the next full run
+  of `notebooks/train_lightgcn.ipynb`.
 
-**Synthetic training data:** real interaction volume is still low, so the
-graph is currently bootstrapped with synthetic users
-(`scripts/generate_synthetic_interactions.py`) — hand-picked archetypes with
-weighted category preferences, three of which (`workshop_learner`,
-`trip_lover`, `afterwork_guru`) draw from curated keyword-matched pools
-instead, so several users deliberately overlap on a sub-theme rather than
-scattering at random. Within a category, each user's picks lean toward their
-own earlier picks there by semantic similarity, keeping one user's taste
-internally coherent. Useful for exercising the pipeline end to end — not yet
-evidence the graph model beats Tier 1 on real taste.
+## Synthetic training data
 
-**New users get tuned live, no retraining required:** a user with no row yet
-in `user_embeddings` gets one folded in on the spot — a weighted average of
-the *trained* graph embeddings of whatever they've already interacted with
-(`ranking.py`'s `fold_in_user_embedding`), recomputed fresh each request and
-sharpening with every new interaction. It's a shallower proxy than a
-properly trained embedding until the next full run of
-`notebooks/train_lightgcn.ipynb`.
+Real interaction volume is still low, so the graph is currently bootstrapped
+with synthetic users (`scripts/generate_synthetic_interactions.py`) —
+hand-picked archetypes with weighted category preferences, three of which
+(`workshop_learner`, `trip_lover`, `afterwork_guru`) draw from curated
+keyword-matched pools instead, so several users deliberately overlap on a
+sub-theme rather than scattering at random. Within a category, each user's
+picks lean toward their own earlier picks there by semantic similarity,
+keeping one user's taste internally coherent. Useful for exercising the
+pipeline end to end — not yet evidence the graph model beats Tier 1 on real
+taste.
 
 ## Setup
 
