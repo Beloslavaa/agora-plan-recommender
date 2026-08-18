@@ -588,15 +588,20 @@
   function remember(plan) {
     state.cache[plan.id] = plan;
   }
-  function addPlans(plans) {
+  function addPlans(plans, atFront) {
     let added = 0;
+    const fresh = [];
     plans.forEach(function (p) {
       if (!p || p.id == null || state.ids.has(p.id)) return;
       state.ids.add(p.id);
-      state.feed.push(p);
       remember(p);
       added++;
+      if (atFront) fresh.push(p); else state.feed.push(p);
     });
+    // atFront: recommendations resolve after the (faster) /plans page has
+    // already painted — splice them into their intended leading position
+    // instead of tacking them onto the end where nobody scrolls past first.
+    if (atFront && fresh.length) state.feed = fresh.concat(state.feed);
     return added;
   }
 
@@ -615,14 +620,22 @@
     // best-matching movie and merged in wherever that ranks (see
     // agora/backend/recommender/semantic.py) — they no longer automatically
     // lead the feed regardless of relevance.
-    try {
-      const recs = await getJSON("/recommendations/" + encodeURIComponent(UID) + "?city=" + encodeURIComponent(CITY) + "&limit=50");
-      if (gen !== loadGeneration) return;
-      addPlans(recs.map((r) => r.plan).filter(Boolean));
-    } catch (e) { /* fall through to /plans */ }
-    if (gen !== loadGeneration) return;
+    //
+    // /recommendations is consistently the slower of the two calls (several
+    // seconds vs. /plans' ~1s) — race them instead of awaiting recs first,
+    // so the feed paints as soon as the fast catalogue page lands. Recs get
+    // spliced into their leading position (see addPlans' atFront) whenever
+    // they resolve, rather than blocking the very first paint on them.
     state.reloading = false;
-    await loadMore(gen);             // top up with the general catalogue
+    const recsPromise = getJSON("/recommendations/" + encodeURIComponent(UID) + "?city=" + encodeURIComponent(CITY) + "&limit=50")
+      .then(function (recs) {
+        if (gen !== loadGeneration) return;
+        addPlans(recs.map((r) => r.plan).filter(Boolean), /* atFront */ true);
+        render();
+      })
+      .catch(function () { /* fall through to a /plans-only feed */ });
+    await loadMore(gen);             // paints as soon as the fast catalogue page lands
+    await recsPromise;
   }
   async function loadMore(gen, attempt) {
     attempt = attempt || 0;
