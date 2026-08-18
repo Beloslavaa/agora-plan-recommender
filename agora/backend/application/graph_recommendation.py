@@ -3,7 +3,8 @@ offline — see notebooks/train_lightgcn.ipynb) with Tier 1's semantic score.
 
 The backend never runs the model here. Every embedding is read straight
 from Postgres; the only computation on this request path is cosine
-similarity and a weighted sum — training is always offline, per AGENTS.md.
+similarity, a percentile-rank normalization (see _percentile_rank), and a
+weighted sum — training is always offline, per AGENTS.md.
 
 Falls through to pure Tier 1 (recommendation.rank_for_user) when there's no
 graph signal to work with at all: a user with neither a trained embedding
@@ -63,11 +64,41 @@ def _field_scores(
     return out
 
 
+def _percentile_rank(scores: np.ndarray) -> np.ndarray:
+    """Replace each non-NaN value with its percentile rank (0=lowest,
+    1=highest) among the other non-NaN values in *scores*; NaN stays NaN.
+
+    Why: graph and semantic cosine scores have different absolute scales
+    that don't reflect relevance. E.g. `cultural` is ~44% of the catalog and
+    densely connected in the (still mostly-synthetic) interaction graph, so
+    ITS graph scores run structurally higher (~0.85-0.92) than a niche
+    category like `photography` (~0.65-0.88) regardless of which one
+    actually matches this user — measured directly: a real user's best
+    photography match (g=0.822, s=0.859) lost to a generic cultural item
+    (g=0.912, s=0.786) under a raw 50/50 blend, purely because cultural's
+    graph-score edge (+0.09) outweighed photography's semantic-score edge
+    (+0.073) in absolute terms. Percentile rank replaces each raw score with
+    "how good is this relative to everything else scored this request" on
+    both axes, so blending is decided by relative standing, not by which
+    axis happens to have a bigger raw number for structural reasons."""
+    out = np.full_like(scores, np.nan, dtype=np.float64)
+    valid = np.where(~np.isnan(scores))[0]
+    if valid.size == 0:
+        return out
+    order = np.argsort(scores[valid])
+    ranks = np.empty(valid.size)
+    ranks[order] = np.arange(valid.size)
+    out[valid] = ranks / max(1, valid.size - 1)
+    return out
+
+
 def _blend_scores(graph_scores: np.ndarray, semantic_scores: np.ndarray) -> np.ndarray:
     """Vectorized equivalent of the old scalar _blend's None-handling:
     ALPHA*graph + (1-ALPHA)*semantic where a plan has both, whichever one
     it has where it only has one, NaN (excluded downstream) where it has
-    neither."""
+    neither. Callers pass percentile ranks (see _percentile_rank), not raw
+    cosine values, so the 0.0 fill for a missing side sits at the bottom of
+    the SAME 0-1 scale as real values rather than a different one."""
     g_nan = np.isnan(graph_scores)
     s_nan = np.isnan(semantic_scores)
     blended = ALPHA * np.where(g_nan, 0.0, graph_scores) + (1 - ALPHA) * np.where(s_nan, 0.0, semantic_scores)
@@ -103,27 +134,39 @@ def rank_for_user(
     candidates, cinemas = cached_city_plans(city, repository)
 
     scoreable = [p for p in candidates if p["id"] not in interacted_ids]
-    graph_scores = _field_scores(user_graph, graph_items, scoreable, "graph_embedding")
-    semantic_scores = _field_scores(semantic_profile, semantic_items, scoreable, "embedding")
-    final_scores = _blend_scores(graph_scores, semantic_scores)
+    cinema_embedded = {
+        domain: [m for m in movies if m["id"] not in interacted_ids]
+        for domain, (info, movies) in cinemas.items()
+    }
+
+    # Main plans and cinema movies are rank-normalized TOGETHER (one pooled
+    # call) rather than each cinema getting its own _percentile_rank call —
+    # otherwise every cinema's single best movie would land near rank 1.0
+    # just for being the top of its own small catalogue, regardless of how
+    # it actually compares to the rest of the city.
+    pooled = scoreable + [m for movies in cinema_embedded.values() for m in movies]
+    graph_scores = _field_scores(user_graph, graph_items, pooled, "graph_embedding")
+    semantic_scores = _field_scores(semantic_profile, semantic_items, pooled, "embedding")
+    final_scores = _blend_scores(_percentile_rank(graph_scores), _percentile_rank(semantic_scores))
+
+    n_main = len(scoreable)
     scored: list[tuple[float, dict]] = [
         (float(final_scores[i]), scoreable[i])
-        for i in range(len(scoreable))
+        for i in range(n_main)
         if not np.isnan(final_scores[i])
     ]
 
     # Same "score a cinema by its single best-matching movie" trick Tier 1
     # uses — see recommendation.py's _rank_with_semantic for the rationale.
-    for domain, (info, movies) in cinemas.items():
-        embedded = [m for m in movies if m["id"] not in interacted_ids]
-        if not embedded:
-            continue
-        g_scores = _field_scores(user_graph, graph_items, embedded, "graph_embedding")
-        s_scores = _field_scores(semantic_profile, semantic_items, embedded, "embedding")
-        movie_scores = _blend_scores(g_scores, s_scores)
+    offset = n_main
+    for domain, embedded in cinema_embedded.items():
+        n = len(embedded)
+        movie_scores = final_scores[offset:offset + n]
+        offset += n
         movie_scores = movie_scores[~np.isnan(movie_scores)]
         if movie_scores.size == 0:
             continue
+        info, movies = cinemas[domain]
         scored.append((float(movie_scores.max()), cinema_pseudo_plan(domain, info, movies)))
 
     if not scored:
