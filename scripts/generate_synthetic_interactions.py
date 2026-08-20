@@ -39,6 +39,12 @@ logger = logging.getLogger(__name__)
 
 USER_PREFIX = "synthetic_"
 
+ALL_CATEGORIES = [
+    "art_exhibitions", "photography", "cinema", "music_concerts", "fashion",
+    "workshops", "comedy_theatre", "food_drink", "sports_wellness", "day_trips",
+    "festivals_markets", "cultural",
+]
+
 # Category-preference vectors. Unlisted categories still get NOISE_FLOOR below,
 # so no archetype is hard-locked to its categories — real people aren't either,
 # and a few weak cross-cluster ties are what keeps the graph from splitting
@@ -48,28 +54,25 @@ USER_PREFIX = "synthetic_"
 ARCHETYPES: dict[str, dict] = {
     "culture_vulture": {
         "share": 3,
-        "weights": {"art_exhibitions": 5, "photography": 4, "cultural": 4},
+        "weights": {"art_exhibitions": 5, "photography": 4, "festivals_markets": 2},
     },
     "cinephile": {
         "share": 3,
-        "weights": {"cinema": 6, "cultural": 2},
+        "weights": {"cinema": 6, "comedy_theatre": 3},
     },
     "music_head": {
         "share": 3,
-        "weights": {"music_concerts": 6, "cultural": 2},
+        "weights": {"music_concerts": 6, "festivals_markets": 3},
     },
     "fashion_forward": {
         "share": 2,
-        "weights": {"fashion": 6, "art_exhibitions": 2, "photography": 2},
+        "weights": {"fashion": 6, "art_exhibitions": 2, "photography": 2, "festivals_markets": 1},
     },
     "eclectic_browser": {
         "share": 2,
         # Deliberately near-flat: a control group of users who don't cluster
         # cleanly into any one archetype, same as a real population would have.
-        "weights": {
-            "art_exhibitions": 1, "photography": 1, "cinema": 1,
-            "music_concerts": 1, "fashion": 1, "cultural": 1,
-        },
+        "weights": {cat: 1 for cat in ALL_CATEGORIES},
     },
     # culture_vulture/cinephile/music_head above are each real, but
     # deliberately kept SEPARATE from each other (see the module docstring's
@@ -79,87 +82,87 @@ ARCHETYPES: dict[str, dict] = {
     # repeated pattern LightGCN can learn from (verified: it doesn't create
     # a real photography+cinema+music cluster — cross-category co-attendance
     # among eclectic_browser users looks the same whether you check
-    # photography+cinema+music or photography+fashion+cultural or any other
-    # combination). This archetype is the deliberate difference: same
-    # mechanism as culture_vulture etc. (plain category weights, no pool),
-    # but weighted to co-attend across all four SPECIFICALLY and repeatedly,
-    # so the graph gets one real learnable cluster for it.
+    # photography+cinema+music or photography+fashion+festivals_markets or
+    # any other combination). This archetype is the deliberate difference:
+    # same mechanism as culture_vulture etc. (plain category weights, no
+    # pool), but weighted to co-attend across all four SPECIFICALLY and
+    # repeatedly, so the graph gets one real learnable cluster for it.
     "culture_omnivore": {
         "share": 3,
         "weights": {"photography": 4, "cinema": 4, "art_exhibitions": 3, "music_concerts": 3},
     },
+    # workshops/day_trips/comedy_theatre/food_drink used to all be lumped
+    # into "cultural" (~44% of the catalog, too broad and heterogeneous —
+    # flamenco shows next to water parks next to escape rooms — for
+    # category-weighted sampling to produce meaningful co-attendance), so
+    # this and the next two archetypes had to fake sub-clusters via a
+    # keyword-matched plan pool instead of a real category weight. Now that
+    # domain/schemas.py's PlanCategory actually splits those out (see the
+    # DB-wide reclassification this followed), plain category weights work
+    # again — no pool, no keyword matching.
     "workshop_learner": {
         "share": 2,
-        # Fallback tilt only — actual picks come from the workshop keyword
-        # pool below whenever it's non-empty; see POOL_BIAS.
-        "weights": {"cultural": 3, "photography": 1},
-        "pool": "workshop",
+        "weights": {"workshops": 6, "food_drink": 2, "sports_wellness": 2},
     },
     "night_owl": {
         "share": 2,
         # No plan carries a time-of-day field (start_date is date-only), so
         # this is a category tilt toward nightlife-associated categories,
         # not a real "only goes out late" filter.
-        "weights": {"music_concerts": 5, "cinema": 3, "cultural": 1},
+        "weights": {"music_concerts": 5, "cinema": 3, "comedy_theatre": 2, "food_drink": 2},
     },
     "trend_chaser": {
         "share": 2,
         # Flat baseline — actual picks are concentrated on the seeded
-        # "popular" pool below whenever it's non-empty; see POOL_BIAS.
-        "weights": {
-            "art_exhibitions": 1, "photography": 1, "cinema": 1,
-            "music_concerts": 1, "fashion": 1, "cultural": 1,
-        },
+        # "popular" pool below whenever it's non-empty; see POOL_BIAS. This
+        # pool is a pseudo-popularity proxy, not a keyword-matched sub-theme
+        # pool like workshop/trip/afterwork used to be, so it stays.
+        "weights": {cat: 1 for cat in ALL_CATEGORIES},
         "pool": "popular",
     },
-    # workshop_learner/trend_chaser above prove the pool mechanism already
-    # solves cross-user clustering for keyword-matched content; these two
-    # apply the same idea to "cultural" specifically — currently ~47% of
-    # Madrid's catalog and, on its own, too broad and heterogeneous
-    # (flamenco shows next to water parks next to escape rooms) for
-    # category-weighted sampling alone to produce meaningful co-attendance.
-    # Splitting it via ARCHETYPE rather than adding real DB categories keeps
-    # this entirely inside the synthetic generator — no reclassification.
     "trip_lover": {
         "share": 2,
-        "weights": {"cultural": 3},
-        "pool": "trip",
+        "weights": {"day_trips": 6, "food_drink": 2, "sports_wellness": 2, "festivals_markets": 1},
     },
     "afterwork_guru": {
         "share": 2,
-        "weights": {"cultural": 3, "music_concerts": 1},
-        "pool": "afterwork",
+        "weights": {"comedy_theatre": 5, "food_drink": 4},
+    },
+    # The three below are new: grounded in co-occurrence patterns visible in
+    # the real catalog post-split (e.g. "Run & Brunch", "Brunch, Spa &
+    # Massage" literally exist as single listings), covering combinations
+    # culture_omnivore doesn't — food/wellness, market/maker, and active
+    # day-tripping — so the smaller new categories (workshops, day_trips,
+    # festivals_markets, food_drink, sports_wellness) get more than one
+    # archetype feeding them and can form real cross-category co-attendance
+    # edges with each other, not just with their one dedicated archetype.
+    "foodie_wellness": {
+        "share": 2,
+        "weights": {"food_drink": 5, "sports_wellness": 4, "day_trips": 1},
+    },
+    "market_maker": {
+        "share": 2,
+        "weights": {"festivals_markets": 5, "workshops": 3, "art_exhibitions": 2},
+    },
+    "weekend_explorer": {
+        "share": 2,
+        "weights": {"day_trips": 5, "sports_wellness": 4, "workshops": 2, "festivals_markets": 2},
     },
 }
-
-ALL_CATEGORIES = ["art_exhibitions", "photography", "cinema", "music_concerts", "fashion", "cultural"]
 
 # Added to every category's weight for every archetype so no plan has zero
 # chance of being picked — see the comment on ARCHETYPES above.
 NOISE_FLOOR = 0.4
 
-# Archetypes with a "pool" key (see ARCHETYPES) draw most of their picks from
-# a curated plan list instead of category weights — the `weights` above are
-# just the fallback used when that pool is empty. POOL_BIAS is the
-# probability of drawing from the pool on any given interaction.
+# trend_chaser is the only archetype left with a "pool" key (see ARCHETYPES)
+# — it draws most of its picks from the seeded "popular" pool below instead
+# of category weights, which are just its fallback when the pool is empty.
+# POOL_BIAS is the probability of drawing from the pool on any given
+# interaction. workshop_learner/trip_lover/afterwork_guru used to have their
+# own keyword-matched pools here too, before their target categories
+# (workshops/day_trips/comedy_theatre+food_drink) existed as real
+# PlanCategory values — see the comment on those archetypes above.
 POOL_BIAS = 0.7
-
-WORKSHOP_KEYWORDS = ("workshop", "taller", "clase", "curso", "class")
-
-# Heuristic, same spirit/limitations as WORKSHOP_KEYWORDS — simple substring
-# matching on title+description, not a real classifier. Both cut across
-# `cultural` (and a bit beyond) to carve out two sub-themes that category
-# alone can't separate.
-TRIP_KEYWORDS = (
-    "toledo", "segovia", "aquopolis", "aquarium", "acuario", "excursion",
-    "excursión", "water park", "zoo", "ávila", "avila", "burgos", "globo",
-    "hiking", "horseback", "a caballo", "en caballo", "barranquismo", "day trip",
-)
-AFTERWORK_KEYWORDS = (
-    "escape room", "flamenco", "candlelight", "murder mystery", "comedy",
-    "monólogo", "monologue", "pub crawl", "cocktail", "karaoke", "cabaret",
-    "tablao", "impro", "stand-up", "quiz room", "trivia",
-)
 
 # No real popularity signal exists right after a fresh regenerate (every
 # plan starts at 0 interactions), so trend_chaser draws from a seeded
@@ -195,11 +198,6 @@ def _pick_archetype(rng: random.Random) -> str:
     names = list(ARCHETYPES)
     shares = [ARCHETYPES[n]["share"] for n in names]
     return rng.choices(names, weights=shares, k=1)[0]
-
-
-def _matches_keywords(plan: dict, keywords: tuple[str, ...]) -> bool:
-    text = f"{plan.get('title', '')} {plan.get('description', '')}".lower()
-    return any(kw in text for kw in keywords)
 
 
 def _plan_vectors(plans: list[dict]) -> dict[int, np.ndarray]:
@@ -264,35 +262,13 @@ def generate(city: str, n_users: int, seed: int | None, dry_run: bool) -> Counte
 
     plan_vec = _plan_vectors(plans)
 
-    workshop_plans = [p for p in plans if _matches_keywords(p, WORKSHOP_KEYWORDS)]
-    if not workshop_plans:
-        logger.warning(
-            "No plans match workshop keywords %s in %s — workshop_learner falls back to category weights.",
-            WORKSHOP_KEYWORDS, city,
-        )
-    trip_plans = [p for p in plans if _matches_keywords(p, TRIP_KEYWORDS)]
-    if not trip_plans:
-        logger.warning(
-            "No plans match trip keywords %s in %s — trip_lover falls back to category weights.",
-            TRIP_KEYWORDS, city,
-        )
-    afterwork_plans = [p for p in plans if _matches_keywords(p, AFTERWORK_KEYWORDS)]
-    if not afterwork_plans:
-        logger.warning(
-            "No plans match afterwork keywords %s in %s — afterwork_guru falls back to category weights.",
-            AFTERWORK_KEYWORDS, city,
-        )
-
     # Seeded pseudo-random "hyped" subset per category — see POPULAR_SHARE.
     popular_plans = [
         p
         for cat, ps in by_category.items() if ps
         for p in rng.sample(ps, max(1, round(len(ps) * POPULAR_SHARE)))
     ]
-    pools = {
-        "workshop": workshop_plans, "popular": popular_plans,
-        "trip": trip_plans, "afterwork": afterwork_plans,
-    }
+    pools = {"popular": popular_plans}
 
     stats = Counter()
     for i in range(n_users):

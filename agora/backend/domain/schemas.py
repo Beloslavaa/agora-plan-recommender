@@ -10,6 +10,20 @@ class PlanCategory(str, Enum):
     cinema = "cinema"
     music_concerts = "music_concerts"
     fashion = "fashion"
+    workshops = "workshops"
+    comedy_theatre = "comedy_theatre"
+    food_drink = "food_drink"
+    sports_wellness = "sports_wellness"
+    day_trips = "day_trips"
+    festivals_markets = "festivals_markets"
+    # Deliberately kept as a genuine residual, not the catch-all it used to
+    # be — everything that fit one of the more specific categories above
+    # (workshops, comedy_theatre, food_drink, sports_wellness, day_trips,
+    # festivals_markets) was split out of what used to all land here, so
+    # this single "cultural" bucket stopped being ~44% of the catalog and,
+    # with it, an artificially dense hub in the trained graph (see
+    # graph_recommendation.py's _percentile_rank docstring for why that
+    # mattered).
     cultural = "cultural"
 
 
@@ -19,7 +33,13 @@ CATEGORY_LABELS: dict[PlanCategory, str] = {
     PlanCategory.cinema: "Cinema and film screenings",
     PlanCategory.music_concerts: "Music concerts and live shows",
     PlanCategory.fashion: "Fashion pop-ups and clothing events",
-    PlanCategory.cultural: "Cultural events and performances",
+    PlanCategory.workshops: "Hands-on classes and workshops (crafts, cooking, fitness, DIY)",
+    PlanCategory.comedy_theatre: "Comedy, theatre, and dance performances",
+    PlanCategory.food_drink: "Food and drink tastings, brunches, rooftop bars",
+    PlanCategory.sports_wellness: "Sports activities and wellness experiences (spa, yoga, active)",
+    PlanCategory.day_trips: "Day trips and guided excursions outside the city",
+    PlanCategory.festivals_markets: "Festivals, fairs, and themed markets",
+    PlanCategory.cultural: "Other cultural events and performances not covered by a more specific category above",
 }
 
 # These are style examples for the LLM (query phrasing), not target content —
@@ -48,9 +68,33 @@ CATEGORY_EXAMPLES: dict[PlanCategory, list[str]] = {
         "clothing pop-up shop this week",
         "fashion market upcoming",
     ],
+    PlanCategory.workshops: [
+        "pottery workshop this weekend",
+        "cooking class upcoming",
+    ],
+    PlanCategory.comedy_theatre: [
+        "stand-up comedy night this week",
+        "theatre play upcoming",
+    ],
+    PlanCategory.food_drink: [
+        "wine tasting event this weekend",
+        "rooftop cocktail bar upcoming",
+    ],
+    PlanCategory.sports_wellness: [
+        "padel tournament this weekend",
+        "spa and massage experience upcoming",
+    ],
+    PlanCategory.day_trips: [
+        "day trip guided excursion this weekend",
+        "outdoor tour near the city upcoming",
+    ],
+    PlanCategory.festivals_markets: [
+        "artisan market this weekend",
+        "cultural festival upcoming",
+    ],
     PlanCategory.cultural: [
-        "cultural event this month",
-        "theatre performance upcoming",
+        "cultural talk or civic event this month",
+        "one-off cultural happening upcoming",
     ],
 }
 
