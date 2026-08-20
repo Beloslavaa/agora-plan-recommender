@@ -69,18 +69,12 @@ def _percentile_rank(scores: np.ndarray) -> np.ndarray:
     1=highest) among the other non-NaN values in *scores*; NaN stays NaN.
 
     Why: graph and semantic cosine scores have different absolute scales
-    that don't reflect relevance. E.g. `cultural` is ~44% of the catalog and
-    densely connected in the (still mostly-synthetic) interaction graph, so
-    ITS graph scores run structurally higher (~0.85-0.92) than a niche
-    category like `photography` (~0.65-0.88) regardless of which one
-    actually matches this user — measured directly: a real user's best
-    photography match (g=0.822, s=0.859) lost to a generic cultural item
-    (g=0.912, s=0.786) under a raw 50/50 blend, purely because cultural's
-    graph-score edge (+0.09) outweighed photography's semantic-score edge
-    (+0.073) in absolute terms. Percentile rank replaces each raw score with
-    "how good is this relative to everything else scored this request" on
-    both axes, so blending is decided by relative standing, not by which
-    axis happens to have a bigger raw number for structural reasons."""
+    that don't reflect relevance — `cultural` (~44% of the catalog, densely
+    connected in the graph) runs structurally higher graph scores than a
+    niche category like `photography`, regardless of which actually matches
+    the user. Percentile rank scores "relative to everything else this
+    request" on both axes, so blending goes by relative standing instead of
+    which axis has the structurally bigger raw number."""
     out = np.full_like(scores, np.nan, dtype=np.float64)
     valid = np.where(~np.isnan(scores))[0]
     if valid.size == 0:

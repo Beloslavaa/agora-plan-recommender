@@ -16,6 +16,48 @@ _BOILERPLATE_TITLES = {
 
 _IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
 
+# Location names a US state — catches name collisions like "Madrid" (Spain)
+# vs "Madrid, NM".
+_US_STATE_NAMES = {
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
+    "maryland", "massachusetts", "michigan", "minnesota", "mississippi",
+    "missouri", "montana", "nebraska", "nevada", "new hampshire",
+    "new jersey", "new mexico", "new york", "north carolina", "north dakota",
+    "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island",
+    "south carolina", "south dakota", "tennessee", "texas", "utah",
+    "vermont", "virginia", "washington", "west virginia", "wisconsin",
+    "wyoming",
+}
+_US_STATE_CODES = {
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "ME", "MD", "MA", "MI", "MN", "MS", "MO",
+    "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR",
+    "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI",
+    "WY",
+}
+
+
+def _looks_like_us_location(location: str | None) -> bool:
+    if not location:
+        return False
+    last_segment = location.rsplit(",", 1)[-1].strip()
+    if last_segment.lower() in _US_STATE_NAMES:
+        return True
+    return len(last_segment) == 2 and last_segment.isupper() and last_segment in _US_STATE_CODES
+
+
+# Country -> "this plan is somewhere else" detectors, keyed by country so a
+# future US city isn't flagged by its own state name. Add new countries here.
+_WRONG_REGION_DETECTORS: dict[str, tuple] = {
+    "Spain": (_looks_like_us_location,),
+}
+
+
+def _location_outside_supported_region(location: str | None, country: str | None) -> bool:
+    return any(detector(location) for detector in _WRONG_REGION_DETECTORS.get(country or "", ()))
+
 
 def _is_valid_url(url: str | None) -> bool:
     if not url:
@@ -48,7 +90,7 @@ def _is_boilerplate(text: str | None) -> bool:
     return text.strip().lower() in _BOILERPLATE_TITLES
 
 
-def validate_plan(plan: PlanData) -> tuple[bool, str | None]:
+def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) -> tuple[bool, str | None]:
     # Computed per call so validation stays correct in a long-running process.
     today = date.today()
     issues: list[str] = []
@@ -72,6 +114,8 @@ def validate_plan(plan: PlanData) -> tuple[bool, str | None]:
     # some call path forgot to stamp it, not a real data-quality issue.
     if not plan.city or not plan.city.strip():
         issues.append("city missing (ingestion pipeline bug, not scraped data)")
+    elif _location_outside_supported_region(plan.location, (city_countries or {}).get(plan.city)):
+        issues.append(f"location outside supported region: '{plan.location}'")
 
     # ── Ticket URL ───────────────────────────────
     if plan.ticket_url and not _is_valid_url(plan.ticket_url):
@@ -108,7 +152,7 @@ def validate_plan(plan: PlanData) -> tuple[bool, str | None]:
     return True, None
 
 
-def validate_and_filter(plans: list[PlanData]) -> list[PlanData]:
+def validate_and_filter(plans: list[PlanData], city_countries: dict[str, str] | None = None) -> list[PlanData]:
     valid: list[PlanData] = []
     seen: set[tuple[str, str, object]] = set()
 
@@ -123,7 +167,7 @@ def validate_and_filter(plans: list[PlanData]) -> list[PlanData]:
             continue
         seen.add(key)
 
-        ok, reason = validate_plan(plan)
+        ok, reason = validate_plan(plan, city_countries)
         if ok:
             valid.append(plan)
         else:

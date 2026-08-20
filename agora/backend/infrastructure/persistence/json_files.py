@@ -27,4 +27,12 @@ def save_fixed_sources(sources: list[FixedSource]) -> None:
 def load_cities() -> list[str]:
     if not CITIES_FILE.exists():
         return []
-    return json.loads(CITIES_FILE.read_text())
+    return [c["name"] for c in json.loads(CITIES_FILE.read_text())]
+
+
+def load_city_countries() -> dict[str, str]:
+    """City name -> country, from data/cities.json. Used by domain/
+    validation.py's wrong-region filter."""
+    if not CITIES_FILE.exists():
+        return {}
+    return {c["name"]: c["country"] for c in json.loads(CITIES_FILE.read_text())}

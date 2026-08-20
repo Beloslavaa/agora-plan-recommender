@@ -15,7 +15,7 @@ from agora.backend.domain.validation import validate_and_filter
 from agora.backend.infrastructure.config import settings
 from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details
 from agora.backend.infrastructure.llm.providers import get_llm_provider
-from agora.backend.infrastructure.persistence.json_files import load_fixed_sources
+from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
 from agora.backend.infrastructure.search.providers import get_search_provider
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
     # city) span cities under one URL scraped for only one of them — correct
     # the ones whose actual location says otherwise before validating.
     correct_city_from_location(plans, city)
-    return validate_and_filter(plans)
+    return validate_and_filter(plans, load_city_countries())
 
 
 async def run_exploratory_pipeline(llm, city: str, only_categories: set[str] | None = None) -> list[PlanData]:
@@ -118,7 +118,7 @@ async def run_exploratory_pipeline(llm, city: str, only_categories: set[str] | N
         max_per_category=10,
         only_categories=cats,
     )
-    return validate_and_filter(plans)
+    return validate_and_filter(plans, load_city_countries())
 
 
 async def run_full_pipeline(city: str) -> list[PlanData]:
@@ -129,7 +129,7 @@ async def run_full_pipeline(city: str) -> list[PlanData]:
     exploratory = await run_exploratory_pipeline(llm, city)
     logger.info("[%s] Exploratory pipeline: %d plans", city, len(exploratory))
 
-    return validate_and_filter(fixed + exploratory)
+    return validate_and_filter(fixed + exploratory, load_city_countries())
 
 
 async def run_one_city(

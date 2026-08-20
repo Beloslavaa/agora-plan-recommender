@@ -6,7 +6,12 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from agora.backend.domain.cinemas import CINEMA_SOURCES
-from agora.backend.domain.plan_matching import compute_url_merge_updates, same_event_by_title
+from agora.backend.domain.plan_matching import (
+    compute_dedup_merge_updates,
+    compute_merge_updates,
+    fuzzy_same_event_by_title,
+    same_event_by_title,
+)
 from agora.backend.domain.schemas import PlanData
 from agora.backend.infrastructure.config import settings
 
@@ -221,10 +226,16 @@ ON CONFLICT (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01')) DO U
 """
 
 
-def _merge_by_url(conn: psycopg.connection.Connection, existing: dict, p: PlanData) -> None:
-    """Persist the domain merge decision (see plan_matching.compute_url_merge_updates)
-    for two plans sharing a url + city."""
-    updates = compute_url_merge_updates(existing, p)
+_CANDIDATE_MATCH_COLUMNS = (
+    "id, title, short_title, description, ticket_url, "
+    "location, image_url, price, category, start_date, end_date, is_stale"
+)
+
+
+def _merge_into_existing(conn: psycopg.connection.Connection, existing: dict, p: PlanData) -> None:
+    """Persist the merge decision (see plan_matching.compute_merge_updates)
+    for two plans matched as the same event."""
+    updates = compute_merge_updates(existing, p)
     if updates:
         set_clause = ", ".join(f"{k} = %s" for k in updates)
         conn.execute(f"UPDATE plans SET {set_clause} WHERE id = %s", (*updates.values(), existing["id"]))
@@ -247,24 +258,40 @@ def upsert_plans(plans: list[PlanData]) -> int:
                 # row would silently kill every row after it in the batch.
                 with conn.transaction():
                     # A url match catches same-event-different-title-text
-                    # duplicates (see plan_matching.same_event_by_title) that
-                    # the title/city/date key below can't. Gated on word
-                    # overlap so a generic listing page shared by genuinely
-                    # different events (a cinema branch's whole showtimes
-                    # page, say) never gets treated as one plan.
-                    existing_by_url = None
+                    # duplicates the title/city/date key below can't.
+                    # Scheme/www-insensitive; gated on word overlap (see
+                    # same_event_by_title) so a shared listing page doesn't
+                    # get treated as one event.
+                    existing_match = None
                     if p.url:
-                        existing_by_url = conn.execute(
-                            "SELECT id, title, short_title, description, ticket_url, "
-                            "location, image_url, price, category, start_date, end_date, is_stale "
-                            "FROM plans WHERE url = %s AND city = %s",
+                        existing_match = conn.execute(
+                            f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans "
+                            r"WHERE lower(regexp_replace(url, '^https?://(www\.)?', '')) "
+                            r"= lower(regexp_replace(%s, '^https?://(www\.)?', '')) AND city = %s",
                             (p.url, p.city),
                         ).fetchone()
-                        if existing_by_url and not same_event_by_title(existing_by_url["title"], p.title):
-                            existing_by_url = None
+                        if existing_match and not same_event_by_title(existing_match["title"], p.title):
+                            existing_match = None
 
-                    if existing_by_url:
-                        _merge_by_url(conn, existing_by_url, p)
+                    if not existing_match:
+                        # Fuzzy/exact title match with a compatible date
+                        # (equal, or one side TBA — see dates_compatible)
+                        # catches "scraped once before the date was known,
+                        # again after" — a NULL start_date never matches a
+                        # real one via the (title, city, date) key alone.
+                        p_date = p.start_date.isoformat() if p.start_date else None
+                        candidates = conn.execute(
+                            f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans "
+                            "WHERE city = %s AND (start_date IS NULL OR %s IS NULL OR start_date = %s)",
+                            (p.city, p_date, p_date),
+                        ).fetchall()
+                        for cand in candidates:
+                            if fuzzy_same_event_by_title(cand["title"], p.title):
+                                existing_match = cand
+                                break
+
+                    if existing_match:
+                        _merge_into_existing(conn, existing_match, p)
                         existed = True
                     else:
                         existed = conn.execute(
@@ -660,13 +687,9 @@ def list_cinema_plans(key: str) -> list[dict]:
     soonest showing first.
 
     Scoped to the hub's own city — some chains (Cines Renoir) have branches
-    in more than one city under the same domain, and correct_city_from_
-    location() now tags those branches with their real city. Without this
-    filter, a hub only ever reachable from one city's view (list_cinemas
-    filters CINEMA_SOURCES by city) still pulled in every OTHER city's
-    showings sharing that domain, since this query never checked city at
-    all — invisible before that fix existed, since every plan from a chain
-    was blanket-tagged the hub's one city anyway.
+    in more than one city under the same domain, tagged by their real city
+    via correct_city_from_location(), so a hub reachable from one city's
+    view must not also pull in another city's showings on that domain.
     """
     if key not in CINEMA_SOURCES:
         return []
@@ -744,3 +767,63 @@ def update_plan_fields(plan_id: int, updates: dict) -> None:
             f"UPDATE plans SET {set_clause} WHERE id = %s",
             (*updates.values(), plan_id),
         )
+
+
+# ── Dedup (used by scripts/dedupe_plans.py) ──────────────
+
+def get_plans_for_dedup(city: str) -> list[dict]:
+    """Every plan row for a city (stale included), with just the columns a
+    fuzzy-title dedup pass needs — no embedding columns."""
+    with _conn() as conn:
+        rows = conn.execute(
+            f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans WHERE city = %s", (city,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def merge_duplicate_plan(keep_id: int, drop_id: int) -> None:
+    """Collapse `drop_id` into `keep_id`: backfill missing fields onto
+    `keep_id`, re-point `drop_id`'s interactions (skipping any that'd
+    collide with the UNIQUE(user_id, plan_id, interaction_type) constraint),
+    then delete `drop_id`."""
+    with _conn() as conn:
+        with conn.transaction():
+            keep = conn.execute(
+                f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans WHERE id = %s", (keep_id,)
+            ).fetchone()
+            drop = conn.execute(
+                f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans WHERE id = %s", (drop_id,)
+            ).fetchone()
+            if keep is None or drop is None:
+                raise ValueError(f"merge_duplicate_plan: missing row(s) {keep_id}/{drop_id}")
+
+            updates = compute_dedup_merge_updates(dict(keep), dict(drop))
+
+            # drop_id must be gone before the keep_id update runs — it can
+            # prefer drop's title, which would collide with drop's own
+            # still-existing row on the unique index.
+            conn.execute(
+                "UPDATE interactions SET plan_id = %s "
+                "WHERE plan_id = %s AND NOT EXISTS ("
+                "  SELECT 1 FROM interactions i2 WHERE i2.plan_id = %s "
+                "  AND i2.user_id = interactions.user_id AND i2.interaction_type = interactions.interaction_type"
+                ")",
+                (keep_id, drop_id, keep_id),
+            )
+            # Any left on drop_id now collide with one already on keep_id — drop those.
+            conn.execute("DELETE FROM interactions WHERE plan_id = %s", (drop_id,))
+            conn.execute("DELETE FROM plans WHERE id = %s", (drop_id,))
+
+            if updates:
+                set_clause = ", ".join(f"{k} = %s" for k in updates)
+                conn.execute(f"UPDATE plans SET {set_clause} WHERE id = %s", (*updates.values(), keep_id))
+
+
+def delete_plan(plan_id: int) -> None:
+    """Hard-delete one plan and its interactions — for content that doesn't
+    belong at all (wrong city/region), unlike mark_stale_plans()'s soft
+    delete for events whose run is just over."""
+    with _conn() as conn:
+        with conn.transaction():
+            conn.execute("DELETE FROM interactions WHERE plan_id = %s", (plan_id,))
+            conn.execute("DELETE FROM plans WHERE id = %s", (plan_id,))

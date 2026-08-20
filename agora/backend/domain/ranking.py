@@ -91,28 +91,16 @@ def score_candidates(
 ) -> np.ndarray:
     """max(cosine-to-averaged-profile, cosine-to-single-closest-past-pick)
     for EVERY candidate at once — matrix ops instead of a per-candidate
-    Python loop. NaN for every candidate if neither *profile* nor *items*
-    has anything to compare against (the vectorized stand-in for the old
-    scalar functions returning None); otherwise a real score per candidate.
+    Python loop (the scalar version measured 15s of CPU per request at real
+    data sizes). NaN for a candidate if neither *profile* nor *items* has
+    anything to compare against.
 
-    Why "best single match" at all, not just cosine-to-profile: a user with
-    several genuinely distinct interests (photography AND arthouse cinema
-    AND indie gigs, say) has embeddings that sit far apart from each other —
-    their weighted AVERAGE (*profile*) lands in the empty space between
-    those clusters, resembling none of them, and systematically loses to
-    generically-worded content that (for the opposite reason) also sits in
-    that same unspecific middle ground. Scoring by the single best match
-    instead credits a candidate for resembling ANY one real past pick — the
-    same trick cinema_pseudo_plan's caller already uses to score a cinema by
-    its single best-matching movie rather than the catalogue average.
-    *items* are weighted the same way user_profile is (saved > view_link >
-    click), normalised against the top weight so both scores stay on the
-    same ~cosine scale and can be safely combined with max().
-
-    Why vectorized: the equivalent scalar per-candidate loop, at real data
-    sizes (3072-dim embeddings, ~800 candidates, a dozen-ish saved items),
-    measured at 15s of CPU PER REQUEST — this does the identical math as a
-    couple of matrix multiplications, in milliseconds."""
+    Why best-single-match, not just cosine-to-profile: a user with several
+    distinct interests has a weighted-average *profile* that lands in the
+    empty space between those clusters, resembling none of them — the same
+    fix cinema_pseudo_plan's caller uses for scoring a cinema by its single
+    best-matching movie. *items* are weighted like user_profile (saved >
+    view_link > click), normalised so both scores stay comparable for max()."""
     n = len(candidate_embeddings)
     if n == 0:
         return np.zeros(0)

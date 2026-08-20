@@ -7,26 +7,17 @@ from agora.backend.infrastructure.persistence.json_files import load_cities, loa
 
 
 def correct_city_from_location(plans: list, assumed_city: str) -> None:
-    """Override plan.city in place when the LLM-extracted location text
-    clearly names a DIFFERENT known city than the one this pipeline run
-    assumed.
-
-    A single source URL is sometimes a multi-city chain (e.g. a cinema chain
-    with branches in more than one city) scraped under only one city's fixed-
-    source/search run — every plan from it would otherwise get blanket-
-    stamped with that one assumed city regardless of which branch it's
-    actually at, even though location almost always names the real city.
+    """Override plan.city in place when the scraped location text clearly
+    names a DIFFERENT known city than the one this pipeline run assumed —
+    e.g. a cinema chain with branches in more than one city, scraped under
+    only one city's run, would otherwise blanket-stamp every branch with it.
 
     Also matches a bare 3-letter city code as the location's trailing
     comma-segment (e.g. "..., BAR", "..., MAD") — cinesrenoir.com's own
-    JSON-LD address data uses these instead of full city names for some
-    branches, confirmed by fetching its pages directly (addressLocality:
-    "BAR" / "MAD", never the full name). Deliberately checked only as the
-    LAST comma-separated segment, not a bare substring/word search anywhere
-    in the text — "BAR" is also just the English word for a pub, and shows
-    up in plenty of real Madrid venue names ("Ella Sky Bar", "Hartem Bar"),
-    which don't have it isolated as its own address segment the way a
-    genuine city-code abbreviation does.
+    JSON-LD address data uses these for some branches instead of full city
+    names. Checked only as the LAST comma segment, not a substring search —
+    "BAR" is also just the English word for a pub, and shows up in real
+    Madrid venue names ("Ella Sky Bar") that aren't a city-code match.
     """
     others = [c for c in load_cities() if c.lower() != assumed_city.lower()]
     for p in plans:

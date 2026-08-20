@@ -1,4 +1,4 @@
 [
-  "Madrid",
-  "Barcelona"
+  {"name": "Madrid", "country": "Spain"},
+  {"name": "Barcelona", "country": "Spain"}
 ]

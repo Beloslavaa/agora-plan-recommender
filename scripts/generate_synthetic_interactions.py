@@ -175,28 +175,18 @@ INTERACTION_WEIGHTS = [0.55, 0.25, 0.20]
 MIN_INTERACTIONS_PER_USER = 5
 MAX_INTERACTIONS_PER_USER = 40
 
-# A user's first pick in a category is unconstrained (nothing established
-# yet to compare against), but subsequent same-category picks are drawn
-# from that user's own top-SAME_CATEGORY_TOP_K_FRAC most semantically
-# similar remaining candidates in it, instead of uniform-random across the
-# whole category. Without this, one synthetic user's "cultural" interactions
-# (currently ~47% of Madrid's catalog, everything from flamenco shows to
-# escape rooms to spa treatments) end up scattered across totally unrelated
-# plans purely by chance. LightGCN then learns that random scatter as if it
-# were real co-attendance, pulling unrelated plans' embeddings together on
-# nothing but sampling noise.
+# A user's first pick in a category is unconstrained, but later same-
+# category picks are drawn from their own top-SAME_CATEGORY_TOP_K_FRAC most
+# semantically similar remaining candidates, not uniform-random — otherwise
+# LightGCN learns random scatter within a broad category (e.g. "cultural")
+# as if it were real co-attendance.
 #
-# Rank-based, not raw-cosine-weighted: measured directly against this
-# project's actual Gemini embeddings, within-category similarity is
-# compressed into a narrow band (e.g. "cultural" plans: median pairwise
-# cosine 0.65, barely above the CROSS-category cultural-vs-fashion mean of
-# 0.61) — probably because `category` itself is one of the embedded text
-# fields (gemini_embeddings.plan_text), which dominates over the more
-# fine-grained title/description content. Weighting by raw cosine value
-# barely moved anything (measured: 0.647 -> 0.652 mean intra-user
-# coherence); picking from the top-K% by RANK instead exploits whatever
-# fine-grained ordering survives that compression even when the absolute
-# differences are tiny (measured: 0.647 -> 0.792).
+# Rank-based, not raw-cosine-weighted: within-category cosine similarity is
+# compressed into a narrow band in this project's actual embeddings (likely
+# because `category` itself is an embedded text field, dominating over
+# finer-grained content), so weighting by raw cosine barely moves anything —
+# picking from the top-K% by RANK exploits the fine-grained ordering that
+# survives the compression even when absolute differences are tiny.
 SAME_CATEGORY_TOP_K_FRAC = 0.1
 SAME_CATEGORY_TOP_K_MIN = 3  # floor for small categories (e.g. photography, ~20 plans)
 
