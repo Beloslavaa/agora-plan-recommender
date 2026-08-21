@@ -34,15 +34,12 @@ from agora.backend.infrastructure.persistence import postgres_repository as _def
 
 logger = logging.getLogger(__name__)
 
-# The training notebook's own held-out evaluation (notebooks/train_lightgcn.ipynb)
-# found a flat 50/50 blend UNDERPERFORMING pure graph on the current
-# (synthetic-archetype-heavy) data — plausibly because graph embeddings
-# already carry semantic information via their init + regularization, so
-# blending raw semantic back in a second time dilutes signal rather than
-# adding new information. Kept at 0.5 to match AGENTS.md's documented
-# design until there's enough real interaction volume to retune it
-# properly; not a settled number.
-ALPHA = 0.5
+# A 5-fold cross-validated sweep found ALPHA=0.3-0.9 all sit in a flat
+# recall@10 plateau (within ~1 std of each other) on current synthetic
+# data — pure semantic and pure graph both lose clearly, but the exact
+# weight between them doesn't. 0.7 is a deliberate lean toward graph
+# within that plateau.
+ALPHA = 0.7
 
 
 def _field_scores(
