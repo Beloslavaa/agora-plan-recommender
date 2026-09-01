@@ -243,5 +243,152 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false
+  },
+  {
+    "name": "Exhibitions in Madrid in Fundaci\u00f3n Mapfre's Sala Recoletos",
+    "url": "https://www.fundacionmapfre.org/en/art-and-culture/exhibitions/recoletos-hall/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false
+  },
+  {
+    "name": "IBERIFF",
+    "url": "https://iberiff.org/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false
+  },
+  {
+    "name": "Top 10 Flea Markets in Madrid: Ten Trails Worth Following",
+    "url": "https://www.leonardohotels.co.uk/blog/top-10-flea-markets-in-madrid-ten-trails-worth-following",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false
+  },
+  {
+    "name": "Pottery studio in Madrid",
+    "url": "https://martaceramica.com/en/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false
+  },
+  {
+    "name": "Hands-on Gastronomic Experiences in Madrid",
+    "url": "https://thecookingclubhouse.es/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false
+  },
+  {
+    "name": "Theatre and dance in Madrid",
+    "url": "https://www.esmadrid.com/en/whats-on-theatre-and-dance-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false
+  },
+  {
+    "name": "Tickets for Cata para emprendedoras",
+    "url": "https://feverup.com/m/325423/en?srsltid\\u003dAfmBOop_gn5_RN0AQKtM4vTs_skrbGzautypklqZArfEa0jUSgezSJtO",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.food_drink",
+    "is_general_listing": false
+  },
+  {
+    "name": "Wellness events in Madrid",
+    "url": "https://ma.to/events/madrid/anytime/wellness",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.sports_wellness",
+    "is_general_listing": false
+  },
+  {
+    "name": "Day trips, guided visits and tours in Madrid",
+    "url": "https://juliatravel.com/en/destinations/madrid/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.day_trips",
+    "is_general_listing": false
+  },
+  {
+    "name": "Some (craft) markets in Spain",
+    "url": "https://www.spain.info/en/top/some-markets-fairs-crafts-spain/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false
+  },
+  {
+    "name": "Autumn Craft Fair 2025",
+    "url": "https://www.madineurope.eu/en/events/autumn-craft-fair-2025-made-for-you-made-in-madrid/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false
+  },
+  {
+    "name": "Gastronomy, food and tapas fairs",
+    "url": "https://www.ifema.es/en/calendar/gastronomy",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false
+  },
+  {
+    "name": "What's On in Madrid",
+    "url": "https://www.esmadrid.com/en/whats-on-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false
+  },
+  {
+    "name": "Corrie Bain International Ceramics School in Barcelona",
+    "url": "https://corriebain.com/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false
+  },
+  {
+    "name": "Paella Cooking Class Barcelona",
+    "url": "https://www.gastronomicartsbarcelona.com/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false
+  },
+  {
+    "name": "Cook&Taste",
+    "url": "https://cookandtaste.net/en/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false
+  },
+  {
+    "name": "The Comedy Clubhouse: Home",
+    "url": "https://thecomedyclubhouse.es/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false
+  },
+  {
+    "name": "Tasting Experiences in Barcelona - Food & Drink",
+    "url": "https://feverup.com/en/barcelona/tasting?srsltid\\u003dAfmBOoqdb3kV1NmljgL6FI4TLe5VvsSRcgICxRFAR8ByXs7y5bC4IkCY",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.food_drink",
+    "is_general_listing": false
+  },
+  {
+    "name": "Explore Catalunya: Small Group Day Trips from Barcelona",
+    "url": "https://explorecatalunya.com/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.day_trips",
+    "is_general_listing": false
+  },
+  {
+    "name": "Barcelona Food Festivals, Markets & Events Calendar 2026",
+    "url": "https://guidavera.com/spain/barcelona/food-events",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false
+  },
+  {
+    "name": "WHAT'S ON",
+    "url": "https://www.barcelona-metropolitan.com/whats-on",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false
   }
 ]
