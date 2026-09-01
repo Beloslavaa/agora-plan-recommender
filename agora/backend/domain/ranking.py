@@ -124,6 +124,53 @@ def score_candidates(
     return np.maximum.reduce(parts)
 
 
+MMR_LAMBDA = 0.7   # relevance vs. diversity trade-off; 1.0 = pure relevance, no diversity
+MMR_POOL_MULT = 3  # only rerank within the top (limit * this) already-relevant candidates
+
+
+def mmr_rerank(scored: list[tuple[float, dict]], limit: int) -> list[tuple[float, dict]]:
+    """Greedy Maximal Marginal Relevance over an already relevance-sorted
+    (score, plan) list. At each step picks whichever unpicked candidate
+    maximises MMR_LAMBDA * relevance - (1 - MMR_LAMBDA) * similarity to the
+    closest already-picked item (cosine in semantic embedding space), instead
+    of always taking the next-highest-relevance one.
+
+    Stops a cluster of near-identical plans — dozens of variously-dated
+    "Candlelight" concerts, or two scrapes of the same exhibition that
+    fuzzy-title dedup (scripts/dedupe_plans.py) didn't catch because the
+    wording differed across sources — from filling the whole top-N just
+    because each one individually scores well.
+
+    Only reranks within the top `limit * MMR_POOL_MULT` candidates by raw
+    relevance — diversity is a tie-breaker among already-good matches, not a
+    reason to promote something irrelevant. A plan with no `embedding` (e.g.
+    a cinema pseudo-plan) is treated as similar to nothing, so it's never
+    penalised or favoured by the diversity term."""
+    pool = scored[: min(len(scored), limit * MMR_POOL_MULT)]
+
+    vectors: list[np.ndarray | None] = []
+    for _, plan in pool:
+        emb = plan.get("embedding")
+        vectors.append(_row_normalise(np.asarray(json.loads(emb), dtype=np.float64)[None, :])[0] if emb else None)
+
+    selected: list[int] = []
+    remaining = set(range(len(pool)))
+    while remaining and len(selected) < limit:
+        best_i, best_mmr = -1, -np.inf
+        for i in remaining:
+            sim = 0.0
+            if vectors[i] is not None and selected:
+                sims = [float(vectors[i] @ vectors[j]) for j in selected if vectors[j] is not None]
+                sim = max(sims) if sims else 0.0
+            mmr = MMR_LAMBDA * pool[i][0] - (1 - MMR_LAMBDA) * sim
+            if mmr > best_mmr:
+                best_i, best_mmr = i, mmr
+        selected.append(best_i)
+        remaining.discard(best_i)
+
+    return [pool[i] for i in selected]
+
+
 def cinema_pseudo_plan(domain: str, info: dict, movies: list[dict]) -> dict:
     """One card standing in for a whole cinema's catalogue (movies from a
     single source get grouped rather than shown individually — see

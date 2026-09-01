@@ -23,6 +23,7 @@ from agora.backend.domain.cinemas import CINEMA_SOURCES
 from agora.backend.domain.ranking import (
     cinema_domain,
     cinema_pseudo_plan,
+    mmr_rerank,
     prepare_scoring_items,
     score_candidates,
     user_profile,
@@ -110,7 +111,7 @@ def _rank_with_semantic(
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     out = []
-    for score, plan in scored[:limit]:
+    for score, plan in mmr_rerank(scored, limit):
         d = dict(plan)
         d["score"] = score
         out.append(d)
@@ -135,7 +136,7 @@ def _rank_with_popularity(
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     out = []
-    for score, plan in scored[:limit]:
+    for score, plan in mmr_rerank(scored, limit):
         d = dict(plan)
         d["score"] = score
         out.append(d)

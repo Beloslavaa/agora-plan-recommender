@@ -26,6 +26,7 @@ from agora.backend.application.recommendation import cached_city_plans
 from agora.backend.domain.ranking import (
     cinema_pseudo_plan,
     fold_in_user_embedding,
+    mmr_rerank,
     prepare_scoring_items,
     score_candidates,
     user_profile,
@@ -165,7 +166,7 @@ def rank_for_user(
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     out = []
-    for score, plan in scored[:limit]:
+    for score, plan in mmr_rerank(scored, limit):
         d = dict(plan)
         d["score"] = score
         out.append(d)
