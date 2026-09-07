@@ -45,6 +45,10 @@ COPY --chown=app:app agora ./agora
 COPY --chown=app:app data ./data
 COPY --chown=app:app index.html ./index.html
 COPY --chown=app:app main.py ./main.py
+# Operational one-offs run through the Dokploy dashboard's container terminal
+# (migrations, backfills) — the only route into the database when it has no
+# published port and the host has no SSH. Run them with PYTHONPATH=. from /app.
+COPY --chown=app:app scripts ./scripts
 
 USER app
 

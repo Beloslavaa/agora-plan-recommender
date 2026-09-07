@@ -2,14 +2,13 @@
 .github
 .idea
 .venv
-__pycache__
-*.pyc
+**/__pycache__
+**/*.pyc
 agora.db
 .env
 .env.example
 .DS_Store
 notebooks
-scripts
 README.md
 AGENTS.md
 render.yaml
