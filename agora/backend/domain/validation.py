@@ -118,15 +118,23 @@ def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) 
         issues.append(f"location outside supported region: '{plan.location}'")
 
     # ── Ticket URL ───────────────────────────────
+    # Both fields are optional everywhere else (nullable on PlanData, and
+    # enrichment backfills a missing one later) — a malformed value just
+    # means the extractor pointed at the wrong thing, not that the rest of
+    # the plan is untrustworthy. Clear the field instead of rejecting the
+    # whole plan over it.
     if plan.ticket_url and not _is_valid_url(plan.ticket_url):
-        issues.append("ticket_url invalid")
+        logger.debug("  ~ dropping invalid ticket_url: %s", plan.ticket_url)
+        plan.ticket_url = None
 
     # ── Image URL ────────────────────────────────
     if plan.image_url:
         if not _is_valid_url(plan.image_url):
-            issues.append("image_url invalid")
+            logger.debug("  ~ dropping invalid image_url: %s", plan.image_url)
+            plan.image_url = None
         elif not _looks_like_image_url(plan.image_url):
-            issues.append("image_url doesn't look like an image")
+            logger.debug("  ~ dropping non-image image_url: %s", plan.image_url)
+            plan.image_url = None
 
     # ── Price ────────────────────────────────────
     if plan.price is not None and (plan.price < 0 or plan.price > 100_000):

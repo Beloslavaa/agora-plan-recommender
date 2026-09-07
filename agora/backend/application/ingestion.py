@@ -148,7 +148,12 @@ async def run_one_city(
     if mode == "fixed":
         plans = await run_fixed_pipeline(llm, city, only_names=only_names)
     elif mode == "explorer":
-        plans = await run_exploratory_pipeline(llm, city, only_categories=only_categories)
+        # Explorer only promotes sources to fixed_sources.json (see
+        # explorer.py) — the plans it happens to extract along the way are
+        # never persisted (ingest_cli.py discards them for this mode), so
+        # classifying/enriching them below would just spend LLM and search
+        # calls on data nobody keeps.
+        return await run_exploratory_pipeline(llm, city, only_categories=only_categories)
     else:
         plans = await run_full_pipeline(city)
 

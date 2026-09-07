@@ -106,6 +106,12 @@ async def _try_promote_base_domain(
         logger.debug("  Base-domain check failed for %s: %s", base_url, e)
         return []
 
+    # PlanData.city defaults to "" and validate_plan rejects any plan with an
+    # empty one — stamp it before validating, or every plan here fails that
+    # check and this never promotes anything (city is otherwise only stamped
+    # in bulk at the end of explore_for_plans, too late for this gate).
+    for p in extracted:
+        p.city = city
     valid = validate_and_filter(extracted)
     if len(valid) < PROMOTION_THRESHOLD:
         return []
@@ -184,8 +190,15 @@ async def explore_for_plans(
                             html, page_url, "exploratory", llm,
                             category=None,
                         ))
+                    # Stamp city before validating — see the same fix in
+                    # _try_promote_base_domain; validate_plan rejects any
+                    # plan with an empty city, and it isn't stamped in bulk
+                    # until the end of explore_for_plans.
+                    for p in extracted:
+                        p.city = city
+                    valid = validate_and_filter(extracted)
                     if cat_count < max_per_category and extracted:
-                        if len(extracted) >= PROMOTION_THRESHOLD:
+                        if len(valid) >= PROMOTION_THRESHOLD:
                             name = result.title.split("—")[0].split("|")[0].strip()[:80]
                             if promote_source(
                                 name=name,
