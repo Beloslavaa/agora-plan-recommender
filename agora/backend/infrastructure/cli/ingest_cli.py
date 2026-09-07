@@ -3,15 +3,14 @@ import asyncio
 import logging
 
 from agora.backend.application.ingestion import run_one_city
-from agora.backend.application.recommendation import backfill_embeddings
 from agora.backend.domain.schemas import PlanCategory
 from agora.backend.infrastructure.persistence.json_files import load_cities, load_fixed_sources
-from agora.backend.infrastructure.persistence.postgres_repository import (
-    get_plan_count,
-    mark_stale_plans,
-    pool,
-    upsert_plans,
-)
+
+# Imported lazily inside main() rather than at module level: --mode explorer
+# (run in GitHub Actions, which has no route to a Dokploy-internal, non-public
+# Postgres) never touches the DB, and importing postgres_repository
+# unconditionally would require psycopg to be installed and DATABASE_URL to
+# be at least parseable even in that mode.
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +79,7 @@ def main() -> None:
         return
 
     only_names = set(args.source) if args.source else None
+    all_plans = []
     for city in cities:
         try:
             plans = asyncio.run(run_one_city(args.mode, city, args.only, only_names))
@@ -88,13 +88,30 @@ def main() -> None:
             # of an unattended multi-city run.
             logger.error("[%s] pipeline failed: %s", city, e)
             continue
-        inserted = upsert_plans(plans)
-        print(f"\n[{city}] New: {inserted}  Scraped this run: {len(plans)}")
+        all_plans.extend(plans)
+        print(f"\n[{city}] Scraped this run: {len(plans)}")
         for p in plans:
             print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
 
+    if args.mode == "explorer":
+        # Discovery only. Promotion of newly-found sources (see
+        # sources_admin.promote_source) already happened as a side effect of
+        # run_one_city above, writing straight to data/fixed_sources.json —
+        # this command is meant to run in GitHub Actions, which commits that
+        # file but has no route to DATABASE_URL. Any plans incidentally
+        # extracted along the way are NOT persisted here: ingestion (scrape
+        # the now-known sources, embed, store) is a separate concern, run as
+        # a Dokploy Schedule Job with --mode fixed against the deployed
+        # container, which does have DB access.
+        print(f"\nDiscovery only — {len(all_plans)} plan(s) found this run were not persisted (see --mode fixed).")
+        return
+
+    from agora.backend.application.recommendation import backfill_embeddings
+    from agora.backend.infrastructure.persistence.postgres_repository import get_plan_count, mark_stale_plans, pool, upsert_plans
+
+    inserted = upsert_plans(all_plans)
     total = get_plan_count()
-    print(f"\nTotal in DB (all cities): {total}")
+    print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
 
     embedded = backfill_embeddings()
     print(f"Embedded {embedded} plan(s) for the semantic recommender")

@@ -1,4 +1,10 @@
-name: Ingestion
+name: Source discovery
+
+# Discovers new sources (search + promote), completely separate from
+# ingestion (scrape known sources, embed, store) — which runs as a Dokploy
+# Schedule Job against the deployed container instead, since Postgres is
+# only reachable on Dokploy's internal network and this GitHub-hosted
+# runner has no route to it. This job never touches the DB.
 
 on:
   schedule:
@@ -8,44 +14,53 @@ on:
   workflow_dispatch: {}   # lets you trigger a run manually from the Actions tab
 
 permissions:
-  contents: write   # needed to push data/fixed_sources.json back at the end
+  contents: write        # push the branch holding the promoted-sources change
+  pull-requests: write   # open/update the PR that proposes it
 
 jobs:
-  ingest:
+  discover:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      # uv provisions Python itself (per .python-version), so no setup-python.
+      - uses: astral-sh/setup-uv@v10
         with:
-          python-version: "3.13"
+          enable-cache: true
 
-      - run: pip install -r requirements.txt
-
-      - name: Run full ingestion pipeline (scrape + embed + soft-delete stale plans)
+      # --no-dev: discovery needs the LLM/search deps, never the offline
+      # training group. --frozen: use uv.lock as pinned, don't re-resolve.
+      - name: Discover & promote new fixed sources
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SEARCH_PROVIDER: ${{ secrets.SEARCH_PROVIDER }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
-        run: python main.py --mode full
+        run: uv run --frozen --no-dev python main.py --mode explorer
 
-      # The exploratory pipeline can promote newly-discovered sources into
-      # data/fixed_sources.json (see sources.py's promote_source), but that's
-      # just a local file write — without this step the update lives only on
-      # this ephemeral runner and is lost the moment the job ends, so every
-      # future run re-discovers from the same stale list. Guarded on an
-      # actual diff so a no-op run doesn't create an empty commit.
-      - name: Commit newly promoted fixed sources
-        run: |
-          if ! git diff --quiet -- data/fixed_sources.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/fixed_sources.json
-            git commit -m "Auto-promote newly discovered fixed sources"
-            git push
-          else
-            echo "No new fixed sources promoted this run."
-          fi
+      # A PR rather than a direct push to master: newly-promoted sources are
+      # LLM/search suggestions and get a human read before they start being
+      # scraped. Merging is also what deploys them — the worker only sees a
+      # source once data/fixed_sources.json is baked into a new image.
+      #
+      # No-ops on its own when the run promoted nothing (no diff → no PR).
+      # The fixed branch name means a run while a PR is still open updates
+      # that PR instead of opening a second one.
+      - name: Open PR for newly promoted fixed sources
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: auto/source-discovery
+          add-paths: data/fixed_sources.json
+          commit-message: "Auto-promote newly discovered fixed sources"
+          title: "Newly discovered fixed sources"
+          body: |
+            Proposed by the monthly source-discovery run
+            (`.github/workflows/ingestion.yml`, `--mode explorer`).
+
+            Each entry was found by search and passed the explorer's checks,
+            but nothing here has been scraped for plans yet — ingestion only
+            picks a source up after this merges and Dokploy redeploys.
+
+            Worth a look before merging: does each URL actually list events
+            for the city it's filed under, and is it a real listing page
+            rather than a search-results or aggregator dead end?

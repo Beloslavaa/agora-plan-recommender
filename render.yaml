@@ -11,7 +11,9 @@ services:
       - key: DATABASE_URL
         sync: false
 
-# The ingestion schedule (scrape + embed + soft-delete stale plans, monthly)
-# runs via GitHub Actions instead of a Render Cron Job — Render has no
-# free tier for cron (billed per run), while GitHub Actions' scheduled
-# workflows are free. See .github/workflows/ingestion.yml.
+# Fallback target only — the real deploy is Dokploy (see README). Note that
+# neither scheduled job comes with this file: ingestion runs as a Dokploy
+# Schedule Job exec'd into the deployed container, and source discovery runs
+# in GitHub Actions (.github/workflows/ingestion.yml). If this Render deploy
+# ever becomes the one serving traffic, ingestion needs re-homing — Render
+# has no free cron tier.

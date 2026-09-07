@@ -1,22 +1,26 @@
 # syntax=docker/dockerfile:1
 
 # ── Stage 1: builder ──────────────────────────────────────────────
-# Installs dependencies into a venv, isolated from the runtime image so
-# pip/setuptools and any transient build artifacts never ship to production.
+# Installs dependencies into a venv, isolated from the runtime image so uv
+# itself and any transient build artifacts never ship to production.
 FROM python:3.13-slim AS builder
 
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+COPY --from=ghcr.io/astral-sh/uv:0.11.4 /uv /usr/local/bin/uv
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
 
 WORKDIR /app
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy only the dependency manifest first so this layer is cached across
-# code changes and only rebuilds when requirements-web.txt changes.
-COPY requirements-web.txt .
-RUN pip install -r requirements-web.txt
+# Only the manifest + lockfile, so this layer is cached across code changes
+# and rebuilds only when dependencies actually change.
+# --frozen: install exactly what uv.lock pins, and fail rather than silently
+# re-resolving if it's out of date with pyproject.toml.
+# --no-dev: skip the offline-training group (torch/jupyter) — see pyproject.toml.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
 
 # ── Stage 2: runtime ──────────────────────────────────────────────
 FROM python:3.13-slim AS runtime
@@ -33,11 +37,14 @@ COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
 
-# Only what agora.backend.infrastructure.web.api needs at request time:
-# index.html (served at "/"), data/ (cities + fixed sources), agora/ (app code).
+# This image serves both roles (see README's Deployment section): the web
+# process below, and the ingestion worker — `python main.py --mode fixed`,
+# run by a Dokploy Schedule Job that execs into this same container, hence
+# main.py being here and not just the API's own files.
 COPY --chown=app:app agora ./agora
 COPY --chown=app:app data ./data
 COPY --chown=app:app index.html ./index.html
+COPY --chown=app:app main.py ./main.py
 
 USER app
 
