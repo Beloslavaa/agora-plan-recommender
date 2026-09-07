@@ -1,0 +1,51 @@
+name: Release
+
+# Builds the Dockerfile and pushes a new image to GHCR on every merge to
+# master, then tells Render to redeploy that exact image. See render.yaml
+# (runtime: image) for the deploy side of this.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # GHCR image refs must be lowercase; github.repository preserves case.
+      - name: Compute lowercase image repo
+        run: echo "IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ env.IMAGE_REPO }}:latest
+            ghcr.io/${{ env.IMAGE_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Render doesn't auto-deploy image-backed services on a new push (the
+      # image tag "latest" alone gives it nothing to react to), so nudge its
+      # deploy hook and tell it to pull the exact sha-tagged image we just
+      # built rather than whatever "latest" happens to resolve to.
+      # - name: Trigger Render deploy
+      #   run: |
+      #     curl -fsS -X POST \
+      #       "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/${{ env.IMAGE_REPO }}:${{ github.sha }}"
