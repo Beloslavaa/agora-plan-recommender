@@ -82,14 +82,18 @@ taste.
 
 ## Setup
 
-Requires Python 3.13 (pinned in `.python-version`).
+Dependencies are managed with [uv](https://docs.astral.sh/uv/) — see
+`pyproject.toml` (`uv.lock` is committed, so installs are reproducible).
+uv provisions Python 3.13 itself, per `.python-version`.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv sync              # runtime deps + the dev group (torch/jupyter, for notebooks/)
+uv sync --no-dev     # runtime only — what the deployed image installs
 cp .env.example .env
 ```
+
+Prefix commands with `uv run` (e.g. `uv run python main.py ...`) to use that
+environment without activating it, or `source .venv/bin/activate` as usual.
 
 Fill in `.env`:
 
@@ -119,10 +123,37 @@ Newly-scraped plans are embedded automatically at the end of the run.
 
 ## Deployment
 
-`render.yaml` deploys this as a single Render web service. Ingestion runs
-separately on a schedule via GitHub Actions
-(`.github/workflows/ingestion.yml`), twice a month, and can also be
-triggered manually from the repo's Actions tab.
+Deployed on Dokploy, which builds the `Dockerfile` directly from this repo
+(`render.yaml` is kept only as a manual fallback deploy target). Postgres is
+a self-hosted Dokploy service, reachable only on Dokploy's internal network
+— no public hostname/port.
+
+One image, two roles — both run from the same container, off the same
+`uv sync --no-dev` environment:
+
+- **web** — `uvicorn ...web.api:app`, the image's `CMD`, serving the API + UI.
+- **worker** — `python main.py --mode fixed`, run by a Dokploy Schedule Job
+  (Application type) that `docker exec`s into that same running container on
+  a cron. This is the ingestion half: scrape the known sources, extract
+  plans, upsert them, backfill embeddings, mark stale plans. It reaches
+  Postgres directly over Dokploy's internal network.
+
+**Source discovery is a completely separate concern** and runs monthly on
+GitHub Actions (`.github/workflows/ingestion.yml`, `--mode explorer`, also
+triggerable from the Actions tab). It searches for new sources, compares
+them against the existing list, and opens a PR proposing additions to
+`data/fixed_sources.json` — a git operation a GitHub-hosted runner can do
+and a Dokploy container can't. It never touches the DB; plans it happens to
+extract while exploring are discarded, since ingestion is the worker's job.
+
+Discoveries land as a PR rather than a direct push so suggested sources get
+reviewed before anything scrapes them. The PR uses a fixed branch
+(`auto/source-discovery`), so a run while one is still open updates it
+instead of stacking up new ones.
+
+Note the handoff between the two: a source only reaches the worker once the
+PR merges and Dokploy rebuilds, because `data/fixed_sources.json` is baked
+into the image at build time. Merging is effectively what deploys a source.
 
 ## Project state
 

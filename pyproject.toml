@@ -1,0 +1,51 @@
+[project]
+name = "agora-plan-recommender"
+version = "0.1.0"
+description = "Cultural-plan recommender: LightGCN over a user–plan graph, blended with semantic embeddings."
+requires-python = ">=3.13"
+
+# Runtime dependencies — everything the deployed image needs, for both roles
+# it serves (the uvicorn web process and the ingestion worker; see README's
+# Deployment section). `uv sync --no-dev` installs exactly this set.
+dependencies = [
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "openai>=1.55.0",
+    "httpx>=0.28.0",
+    "duckduckgo_search>=6.2.0",
+    # vectorized recommender scoring (domain/ranking.py) — was previously only
+    # a transitive dep via torch, made explicit since the live API imports it
+    # directly, not just the offline training notebooks.
+    "numpy>=2.0",
+    # web server (needed to run the API / serve the UI)
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    # database (Supabase/self-hosted Postgres). >=3.2 needed for lazy pool
+    # construction (open=False).
+    "psycopg[binary]>=3.2",
+    "psycopg-pool>=3.2",
+    # password hashing for login
+    "bcrypt>=4.0",
+]
+
+[project.optional-dependencies]
+# Only if you set llm_provider=anthropic: `uv sync --extra anthropic`.
+anthropic = ["anthropic>=0.40.0"]
+
+[dependency-groups]
+# Offline LightGCN training (notebooks/ — see AGENTS.md). Never imported at
+# request time or by the ingestion worker, and deliberately kept out of the
+# deployed image: torch alone is a ~1GB+ install that nothing in production
+# would ever load. Installed by a bare `uv sync`, excluded by `--no-dev`.
+dev = [
+    "torch>=2.6.0",
+    "jupyter>=1.1.0",
+    "ipykernel>=6.29.0",
+]
+
+[tool.uv]
+# Virtual project: uv manages the environment but doesn't build/install this
+# repo as a package. The app runs from the working directory (`python main.py`,
+# `uvicorn agora.backend...`) exactly as it always has, with no build backend
+# or packaging step to keep in sync.
+package = false

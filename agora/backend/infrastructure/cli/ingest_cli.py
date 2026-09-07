@@ -3,15 +3,8 @@ import asyncio
 import logging
 
 from agora.backend.application.ingestion import run_one_city
-from agora.backend.application.recommendation import backfill_embeddings
 from agora.backend.domain.schemas import PlanCategory
 from agora.backend.infrastructure.persistence.json_files import load_cities, load_fixed_sources
-from agora.backend.infrastructure.persistence.postgres_repository import (
-    get_plan_count,
-    mark_stale_plans,
-    pool,
-    upsert_plans,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +16,15 @@ def main() -> None:
         choices=["explorer", "fixed", "full"],
         default="explorer",
         help="explorer (default): search categories & promote good sources | "
-             "fixed: scrape promoted sources | "
-             "full: both",
+        "fixed: scrape promoted sources | "
+        "full: both",
     )
     parser.add_argument(
         "--city",
         nargs="*",
         help="Only run for these cities (e.g. --city Madrid Barcelona). Omit "
-             "to run every city listed in data/cities.json — that's what an "
-             "unattended/cron run should use.",
+        "to run every city listed in data/cities.json — that's what an "
+        "unattended/cron run should use.",
     )
     parser.add_argument(
         "--only",
@@ -80,6 +73,7 @@ def main() -> None:
         return
 
     only_names = set(args.source) if args.source else None
+    all_plans = []
     for city in cities:
         try:
             plans = asyncio.run(run_one_city(args.mode, city, args.only, only_names))
@@ -88,19 +82,34 @@ def main() -> None:
             # of an unattended multi-city run.
             logger.error("[%s] pipeline failed: %s", city, e)
             continue
-        inserted = upsert_plans(plans)
-        print(f"\n[{city}] New: {inserted}  Scraped this run: {len(plans)}")
+        all_plans.extend(plans)
+        print(f"\n[{city}] Scraped this run: {len(plans)}")
         for p in plans:
             print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
 
+    if args.mode == "explorer":
+        print(f"\nDiscovery only — {len(all_plans)} plan(s) found this run were not persisted (see --mode fixed).")
+        return
+
+    from agora.backend.application.recommendation import backfill_embeddings
+    from agora.backend.infrastructure.persistence.postgres_repository import (
+        get_plan_count,
+        mark_stale_plans,
+        pool,
+        upsert_plans,
+    )
+
+    inserted = upsert_plans(all_plans)
     total = get_plan_count()
-    print(f"\nTotal in DB (all cities): {total}")
+    print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
 
     embedded = backfill_embeddings()
     print(f"Embedded {embedded} plan(s) for the semantic recommender")
 
     staled = mark_stale_plans()
-    print(f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted")
+    print(
+        f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted"
+    )
 
     pool.close()
 
