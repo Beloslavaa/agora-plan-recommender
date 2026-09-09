@@ -119,6 +119,13 @@
     "is_general_listing": false
   },
   {
+    "name": "Dice Barcelona",
+    "url": "https://dice.fm/browse/barcelona-5d8cefe1e3e6e374e99e8cbe",
+    "city": "Barcelona",
+    "promoted_by": "manual/music_concerts",
+    "is_general_listing": false
+  },
+  {
     "name": "Condeduquemadrid",
     "url": "https://www.condeduquemadrid.es/",
     "city": "Madrid",
