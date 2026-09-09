@@ -282,7 +282,7 @@ def upsert_plans(plans: list[PlanData]) -> int:
                         p_date = p.start_date.isoformat() if p.start_date else None
                         candidates = conn.execute(
                             f"SELECT {_CANDIDATE_MATCH_COLUMNS} FROM plans "
-                            "WHERE city = %s AND (start_date IS NULL OR %s IS NULL OR start_date = %s)",
+                            "WHERE city = %s AND (start_date IS NULL OR %s::text IS NULL OR start_date = %s)",
                             (p.city, p_date, p_date),
                         ).fetchall()
                         for cand in candidates:
