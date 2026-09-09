@@ -224,18 +224,21 @@ async def extract_plans_from_html(
     safe = trimmed.replace(_FENCE_OPEN, "").replace(_FENCE_CLOSE, "")
     prompt = f"{_FENCE_OPEN}\n{safe}\n{_FENCE_CLOSE}"
     # A dense listing page (a full events calendar, say) can have enough events
-    # that their JSON output alone exceeds a smaller budget and gets cut off
+    # that their JSON output alone exceeds the default budget and gets cut off
     # mid-array — seen in practice on esmadrid.com's events-calendar page,
     # which has no JSON-LD and packs dozens of events into flattened text.
+    # Only pages with enough input text to plausibly hit that get the bigger
+    # (costlier) budget — most sources stay at the original default.
+    extraction_max_tokens = 32768 if len(safe) > 30_000 else 16384
     try:
-        data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=32768)
+        data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=extraction_max_tokens)
     except Exception:
         logger.warning("  First extraction attempt failed, retrying with stronger prompt")
         system += (
             "\n\nIMPORTANT: Return ONLY a valid JSON array. "
             "Do NOT include any explanation, markdown, or text outside the JSON."
         )
-        data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=32768)
+        data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=extraction_max_tokens)
     if not isinstance(data, list):
         logger.warning("  LLM returned %s instead of list, wrapping", type(data).__name__)
         data = [data]
