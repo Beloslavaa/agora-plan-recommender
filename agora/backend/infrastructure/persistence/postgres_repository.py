@@ -227,7 +227,7 @@ ON CONFLICT (lower(btrim(title)), city, COALESCE(start_date, '0001-01-01')) DO U
 
 
 _CANDIDATE_MATCH_COLUMNS = (
-    "id, title, short_title, description, ticket_url, "
+    "id, title, short_title, description, url, ticket_url, "
     "location, image_url, price, category, start_date, end_date, is_stale"
 )
 

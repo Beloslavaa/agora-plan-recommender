@@ -108,6 +108,14 @@ def compute_merge_updates(existing: dict, p: PlanData) -> dict:
     for field in URL_MERGE_FIELDS:
         if not existing.get(field) and getattr(p, field, None):
             updates[field] = getattr(p, field)
+    # url is REFRESHED here, not just backfilled-if-empty — some sources
+    # (dice.fm confirmed) hand back a different URL for the same event on
+    # every scrape, and the previously-captured one can silently go dead
+    # (404) while a fresh, currently-valid one is sitting right here.
+    # Backfill-only froze the very first URL ever seen forever, including
+    # after it stopped working.
+    if p.url and p.url != existing.get("url"):
+        updates["url"] = p.url
     # start_date/end_date are REFRESHED here, not just backfilled-if-empty —
     # unlike the title/city/date match path (where a match means the date is
     # already identical by definition), a url match can be an evergreen
