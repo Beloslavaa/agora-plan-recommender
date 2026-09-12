@@ -136,7 +136,7 @@
         <!-- position+z-index: the 92px Anton wordmark above hit-tests by its
              glyph box (~1.5x the font size, far taller than its 0.78 line box),
              which otherwise sits over these buttons and swallows their clicks -->
-        <div id="dsk-cities" style="position:relative;z-index:1;display:flex;gap:18px;padding:4px 0;margin-top:8px;"></div>
+        <div id="dsk-cities" style="position:relative;z-index:1;display:flex;gap:25px;padding:4px 0;margin-top:8px;"></div>
       </div>
       <svg viewBox="0 0 300 180" style="position:relative;z-index:0;margin-left:-40px;width:224px;height:136px;flex:none;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-12deg);" aria-hidden="true"><path d="M8 90 Q150 -34 292 90 Q150 214 8 90 Z" fill="none" stroke="#121212" stroke-width="9"></path><circle cx="150" cy="90" r="58" fill="#EA4632" stroke="#121212" stroke-width="9"></circle><circle cx="150" cy="90" r="22" fill="#121212"></circle><circle cx="167" cy="74" r="7" fill="#EFEBDE"></circle></svg>
       <!-- doubled star: blue shade offset down-left behind the yellow one,
@@ -165,18 +165,18 @@
     </div>
 
     <div style="position:relative;margin-left:auto;display:flex;align-items:center;gap:34px;">
-      <button id="dsk-nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;">
-        <span style="font-size:30px;line-height:1;color:#121212;">☺</span>
-        <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
+      <button id="dsk-nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;">
+        <span style="font-size:42px;line-height:1;color:#121212;">☺</span>
+        <span style="font-weight:700;font-size:11px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
       </button>
       <!-- primary circle, hanging below the bar's baseline -->
       <button id="dsk-nav-home" style="position:relative;z-index:7;flex:none;width:112px;height:112px;margin:0 8px;transform:translateY(24px);border-radius:50%;background:#EA4632;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;">
         <div id="dsk-ring" style="position:absolute;inset:-8px;border:3px dashed #121212;border-radius:50%;animation:spinRing 9s linear infinite;pointer-events:none;"></div>
         <span class="anton" style="font-size:29px;line-height:0.82;color:#121212;transform:scaleX(0.84);text-align:center;">FOR<br>YOU</span>
       </button>
-      <button id="dsk-nav-saved" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;">
-        <span id="dsk-nav-saved-heart" style="font-size:26px;line-height:1;color:#121212;">♥</span>
-        <span id="dsk-nav-saved-label" style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">SAVED</span>
+      <button id="dsk-nav-saved" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;">
+        <span id="dsk-nav-saved-heart" style="font-size:36px;line-height:1;color:#121212;">♥</span>
+        <span id="dsk-nav-saved-label" style="font-weight:700;font-size:11px;letter-spacing:0.12em;color:#121212;">SAVED</span>
       </button>
     </div>
   </header>
@@ -1375,7 +1375,7 @@
     CITIES_LIST.forEach(function (c) {
       const active = c === CITY;
       host.appendChild(el("button",
-        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;" +
+        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:21px;letter-spacing:0.04em;text-transform:uppercase;" +
         "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? CYAN : "#121212") +
         (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
@@ -1451,47 +1451,52 @@
     left.appendChild(el("div", "flex:none;min-width:0;",
       { text: cleanTitle(p.title) || "UNTITLED", attrs: { class: "dsk-detail-title" } }));
     left.appendChild(el("div",
-      "flex:none;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";white-space:nowrap;margin-top:10px;margin-bottom:40px;",
+      "flex:none;font-weight:700;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";white-space:nowrap;margin-top:12px;margin-bottom:40px;",
       { text: "[ plan " + pad2(n + 1) + " ]" }));
 
-    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;flex:none;");
+    // Tags → description are the canvas's sizes scaled 1.4x, matching the
+    // scaled-up photo column on the right.
+    const tags = el("div", "display:flex;flex-wrap:wrap;gap:7px;flex:none;");
     keywords(p).forEach(function (k) {
       tags.appendChild(el("span",
-        "font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
-        accent + ";padding:3px 8px;", { text: k }));
+        "font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
+        accent + ";padding:4px 11px;", { text: k }));
     });
     left.appendChild(tags);
     left.appendChild(el("div",
-      "font-weight:700;font-size:14px;letter-spacing:0.03em;color:" + accent + ";margin-top:14px;flex:none;",
+      "font-weight:700;font-size:20px;letter-spacing:0.03em;color:" + accent + ";margin-top:20px;flex:none;",
       { text: formatDates(p.start_date, p.end_date) }));
     if (p.location) {
       left.appendChild(el("div",
-        "font-weight:700;font-size:11px;letter-spacing:0.04em;color:#121212;margin-top:10px;flex:none;",
+        "font-weight:700;font-size:15px;letter-spacing:0.04em;color:#121212;margin-top:14px;flex:none;",
         { text: "◎ " + p.location }));
     }
     left.appendChild(el("div",
-      "font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-top:20px;margin-bottom:9px;flex:none;",
+      "font-weight:700;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-top:28px;margin-bottom:13px;flex:none;",
       { text: "// the plan" }));
-    left.appendChild(el("div", "font-size:12.5px;line-height:1.75;color:#121212;",
+    left.appendChild(el("div", "font-size:17px;line-height:1.75;color:#121212;",
       { text: p.description || "No description available for this plan yet." }));
     page.appendChild(leftOuter);
 
     // Fixed 4:3 photo, column hugs the top rather than stretching to the page.
-    const right = el("div", "flex:none;width:330px;display:flex;flex-direction:column;gap:12px;align-self:flex-start;");
+    // The whole column is the canvas's 330px one scaled up 1.4x — width,
+    // borders, shadows, type and spacing all together, as if the corner
+    // were pulled — so it reads at the same weight as the 92px title.
+    const right = el("div", "flex:none;width:462px;display:flex;flex-direction:column;gap:17px;align-self:flex-start;");
     right.appendChild(dskPhotoSlot(p, n, accent,
-      "position:relative;flex:none;aspect-ratio:4 / 3;border:4px solid #121212;background:#FFFFFF;"));
+      "position:relative;flex:none;aspect-ratio:4 / 3;border:6px solid #121212;background:#FFFFFF;"));
 
     const btn = el("button",
-      "flex:none;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:13px;border:4px solid #121212;cursor:pointer;background:" +
-      (saved ? RED : WHITE) + ";color:#121212;box-shadow:5px 5px 0 0 #121212;",
+      "flex:none;width:100%;display:flex;align-items:center;justify-content:center;gap:14px;font-weight:700;font-size:17px;letter-spacing:0.08em;text-transform:uppercase;padding:18px;border:6px solid #121212;cursor:pointer;background:" +
+      (saved ? RED : WHITE) + ";color:#121212;box-shadow:7px 7px 0 0 #121212;",
       { on: { click: toggleSave } });
-    btn.appendChild(el("span", "font-size:17px;line-height:1;", { text: saved ? "♥" : "♡" }));
+    btn.appendChild(el("span", "font-size:24px;line-height:1;", { text: saved ? "♥" : "♡" }));
     btn.appendChild(document.createTextNode(saved ? "SAVED" : "SAVE THIS PLAN"));
     right.appendChild(btn);
 
     const link = isHttp(p.url) ? p.url : (isHttp(p.ticket_url) ? p.ticket_url : (isHttp(p.source_url) ? p.source_url : null));
     const a = el("a",
-      "flex:none;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:11px;letter-spacing:0.07em;text-transform:uppercase;padding:12px;border:4px solid #121212;cursor:pointer;background:#E4BE55;color:#121212;text-decoration:none;box-shadow:4px 4px 0 0 #121212;" +
+      "flex:none;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:11px;font-weight:700;font-size:15px;letter-spacing:0.07em;text-transform:uppercase;padding:17px;border:6px solid #121212;cursor:pointer;background:#E4BE55;color:#121212;text-decoration:none;box-shadow:6px 6px 0 0 #121212;" +
       (link ? "" : "opacity:0.5;pointer-events:none;"),
       { text: "↗ view event",
         attrs: link ? { href: link, target: "_blank", rel: "noopener noreferrer" } : { href: "#" },
