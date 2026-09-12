@@ -71,7 +71,7 @@
   .tile-title       { font-family:'Anton',sans-serif; font-size:38px; line-height:0.8; text-transform:uppercase;
                       letter-spacing:-0.01em; color:#121212; overflow-wrap:break-word;
                       transform:scaleX(0.85); transform-origin:left; }
-  .dsk-detail-title { font-family:'Anton',sans-serif; font-size:62px; line-height:0.78; text-transform:uppercase;
+  .dsk-detail-title { font-family:'Anton',sans-serif; font-size:92px; line-height:0.78; text-transform:uppercase;
                       letter-spacing:-0.02em; color:#121212; word-break:break-word;
                       transform:scaleX(0.84); transform-origin:left; }
   .dsk-saved-title  { font-family:'Anton',sans-serif; font-size:31px; line-height:0.82; text-transform:uppercase;
@@ -79,9 +79,16 @@
                       transform:scaleX(0.85); transform-origin:left; }
   #dsk-header { display:none; }
   @media (min-width: 1024px) and (pointer: fine) and (hover: hover) {
-    #app { max-width: none; box-shadow: none; }
+    /* Side gutters that grow with the window past 1400px (16px → 150px each
+       side by ~1670px), so a very wide monitor doesn't stretch the 2-up grid
+       edge to edge. */
+    #app { max-width: none; box-shadow: none; padding-inline: clamp(16px, calc(16px + (100vw - 1400px) / 2), 150px); }
     #app > nav { display: none !important; }   /* the phone's bottom nav (inline display:flex) — the top bar carries it on desktop */
     #dsk-header { display: flex; }
+    /* The bar's left slot is per-view (see updateDesktopBar): wordmark +
+       city switcher on home, the BACK button on detail/cinema, the SAVED
+       masthead on saved. Everything not for the current view is [hidden]. */
+    #dsk-header [hidden] { display: none !important; }
   }
 </style>
 </head>
@@ -121,22 +128,43 @@
        this replaces the phone's bottom nav entirely. min-height rather than a
        fixed height so the city switcher under the wordmark never clips. -->
   <header id="dsk-header" style="position:relative;z-index:6;flex:none;min-height:132px;background:#FFFFFF;align-items:center;justify-content:space-between;padding:8px 30px;overflow:visible;">
-    <div style="position:relative;display:flex;align-items:center;gap:4px;">
+    <!-- home: wordmark + city switcher + motif -->
+    <div id="dsk-bar-home" style="position:relative;display:flex;align-items:center;gap:4px;">
       <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;">
         <div style="font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:10px;">[ recommended for you ]</div>
         <div class="anton" style="font-size:92px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;">Agora</div>
-        <div id="dsk-cities" style="display:flex;gap:18px;padding:4px 0;margin-top:8px;"></div>
+        <!-- position+z-index: the 92px Anton wordmark above hit-tests by its
+             glyph box (~1.5x the font size, far taller than its 0.78 line box),
+             which otherwise sits over these buttons and swallows their clicks -->
+        <div id="dsk-cities" style="position:relative;z-index:1;display:flex;gap:18px;padding:4px 0;margin-top:8px;"></div>
       </div>
-      <svg viewBox="0 0 300 180" style="position:relative;z-index:1;margin-left:-40px;width:224px;height:136px;flex:none;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-12deg);" aria-hidden="true"><path d="M8 90 Q150 -34 292 90 Q150 214 8 90 Z" fill="none" stroke="#121212" stroke-width="9"></path><circle cx="150" cy="90" r="58" fill="#EA4632" stroke="#121212" stroke-width="9"></circle><circle cx="150" cy="90" r="22" fill="#121212"></circle><circle cx="167" cy="74" r="7" fill="#EFEBDE"></circle></svg>
+      <svg viewBox="0 0 300 180" style="position:relative;z-index:0;margin-left:-40px;width:224px;height:136px;flex:none;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-12deg);" aria-hidden="true"><path d="M8 90 Q150 -34 292 90 Q150 214 8 90 Z" fill="none" stroke="#121212" stroke-width="9"></path><circle cx="150" cy="90" r="58" fill="#EA4632" stroke="#121212" stroke-width="9"></circle><circle cx="150" cy="90" r="22" fill="#121212"></circle><circle cx="167" cy="74" r="7" fill="#EFEBDE"></circle></svg>
       <!-- doubled star: blue shade offset down-left behind the yellow one,
-           same registration as the phone header -->
-      <div style="position:relative;z-index:0;margin-left:-54px;width:124px;height:124px;flex:none;">
+           same registration as the phone header. Stacked ABOVE the eye (as
+           on the phone, where DOM order does it) so the eye's outline
+           doesn't cover the blue shade's left half. -->
+      <div style="position:relative;z-index:1;margin-left:-54px;width:124px;height:124px;flex:none;pointer-events:none;">
         <div style="position:absolute;inset:0;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:translate(-8px,8px) rotate(12deg);opacity:0.85;"></div>
         <div style="position:absolute;inset:0;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(6deg);opacity:0.95;"></div>
       </div>
     </div>
 
-    <div style="position:relative;display:flex;align-items:center;gap:34px;">
+    <!-- detail / cinema: the BACK button lives in the bar -->
+    <div id="dsk-bar-back" hidden style="position:relative;display:flex;align-items:center;min-width:0;">
+      <button id="dsk-back" style="flex:none;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:7px 13px;cursor:pointer;">◂ BACK</button>
+    </div>
+
+    <!-- saved: the masthead lives in the bar -->
+    <div id="dsk-bar-saved" hidden style="position:relative;display:flex;align-items:flex-end;gap:18px;">
+      <div>
+        <div style="font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:5px;">[ your list ]</div>
+        <div class="anton" style="font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;">Saved</div>
+      </div>
+      <div id="dsk-saved-count" style="font-size:10.5px;letter-spacing:0.04em;color:#121212;padding-bottom:10px;"></div>
+      <div class="anton" style="font-size:96px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);margin-left:-6px;padding-bottom:2px;pointer-events:none;">♥</div>
+    </div>
+
+    <div style="position:relative;margin-left:auto;display:flex;align-items:center;gap:34px;">
       <button id="dsk-nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;">
         <span style="font-size:30px;line-height:1;color:#121212;">☺</span>
         <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
@@ -401,7 +429,7 @@
       // 352px height leaves ~2 title lines of room, and the saved row is
       // a fixed 150px — so unlike the phone card, these DO shrink to fit.
       root.querySelectorAll(".tile-title").forEach((n) => fitTitle(n, 38, 24, 2));
-      root.querySelectorAll(".dsk-detail-title").forEach((n) => fitTitle(n, 62, 36, 3));
+      root.querySelectorAll(".dsk-detail-title").forEach((n) => fitTitle(n, 92, 48, 3));
       root.querySelectorAll(".dsk-saved-title").forEach((n) => fitTitle(n, 31, 18, 2));
     });
   }
@@ -1403,27 +1431,30 @@
     const saved = !!state.saved[p.id];
 
     // Pinned to main's box (inset:0) so the page never scrolls as a whole —
-    // only the left column does, exactly like the canvas.
+    // only the text column does. The BACK button is in the top bar (see
+    // updateDesktopBar), not here.
     const page = el("div", "position:absolute;inset:0;display:flex;gap:30px;padding:26px 34px;background:#FFFFFF;overflow:hidden;");
 
-    const left = el("div", "flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;");
-    left.appendChild(el("button",
-      "align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;flex:none;",
-      { text: "◂ BACK", on: { click: goBackFromDetail } }));
-
-    const titleWrap = el("div", "position:relative;margin-top:14px;flex:none;");
-    titleWrap.appendChild(el("div",
-      "position:absolute;bottom:-44px;right:-6px;font-family:'Anton',sans-serif;font-size:176px;line-height:0.66;color:" +
-      faintOf(r.dcol || accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;",
+    // The faint numeral is pinned to the column's bottom-right corner (the
+    // canvas has it behind the whole column, not just the title), so it
+    // sits on the outer clipped box while the text scrolls in its own
+    // inner box above it — an absolute child of the scroller itself would
+    // just scroll away with the text.
+    const leftOuter = el("div", "position:relative;flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;");
+    leftOuter.appendChild(el("div",
+      "position:absolute;bottom:-30px;right:-10px;font-family:'Anton',sans-serif;font-size:210px;line-height:0.66;color:" +
+      faintOf(r.dcol || accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;z-index:0;",
       { text: pad2(n + 1) }));
-    titleWrap.appendChild(el("div",
-      "font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";margin-bottom:6px;",
-      { text: "[ plan " + pad2(n + 1) + " ]" }));
-    titleWrap.appendChild(el("div", "position:relative;z-index:2;",
-      { text: cleanTitle(p.title) || "UNTITLED", attrs: { class: "dsk-detail-title" } }));
-    left.appendChild(titleWrap);
+    const left = el("div", "position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;");
+    leftOuter.appendChild(left);
 
-    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;margin-top:16px;flex:none;");
+    left.appendChild(el("div", "flex:none;min-width:0;",
+      { text: cleanTitle(p.title) || "UNTITLED", attrs: { class: "dsk-detail-title" } }));
+    left.appendChild(el("div",
+      "flex:none;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";white-space:nowrap;margin-top:10px;margin-bottom:40px;",
+      { text: "[ plan " + pad2(n + 1) + " ]" }));
+
+    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;flex:none;");
     keywords(p).forEach(function (k) {
       tags.appendChild(el("span",
         "font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
@@ -1431,7 +1462,7 @@
     });
     left.appendChild(tags);
     left.appendChild(el("div",
-      "font-weight:700;font-size:13px;letter-spacing:0.03em;color:" + accent + ";margin-top:12px;flex:none;",
+      "font-weight:700;font-size:14px;letter-spacing:0.03em;color:" + accent + ";margin-top:14px;flex:none;",
       { text: formatDates(p.start_date, p.end_date) }));
     if (p.location) {
       left.appendChild(el("div",
@@ -1439,15 +1470,16 @@
         { text: "◎ " + p.location }));
     }
     left.appendChild(el("div",
-      "font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-top:16px;margin-bottom:8px;flex:none;",
+      "font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-top:20px;margin-bottom:9px;flex:none;",
       { text: "// the plan" }));
-    left.appendChild(el("div", "font-size:11.5px;line-height:1.7;color:#121212;",
+    left.appendChild(el("div", "font-size:12.5px;line-height:1.75;color:#121212;",
       { text: p.description || "No description available for this plan yet." }));
-    page.appendChild(left);
+    page.appendChild(leftOuter);
 
-    const right = el("div", "flex:none;width:330px;display:flex;flex-direction:column;gap:12px;");
+    // Fixed 4:3 photo, column hugs the top rather than stretching to the page.
+    const right = el("div", "flex:none;width:330px;display:flex;flex-direction:column;gap:12px;align-self:flex-start;");
     right.appendChild(dskPhotoSlot(p, n, accent,
-      "position:relative;flex:1;min-height:0;border:4px solid #121212;background:#FFFFFF;"));
+      "position:relative;flex:none;aspect-ratio:4 / 3;border:4px solid #121212;background:#FFFFFF;"));
 
     const btn = el("button",
       "flex:none;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:13px;border:4px solid #121212;cursor:pointer;background:" +
@@ -1474,23 +1506,10 @@
 
   function renderSavedDesktop() {
     main.innerHTML = "";
+    // The "[ your list ] / SAVED / count" masthead is in the top bar (see
+    // updateDesktopBar) — the page itself is just the grid.
     const box = el("div", "min-height:100%;background:#FFFFFF;padding:30px;");
-
-    const head = el("div", "position:relative;margin-bottom:26px;overflow:hidden;");
-    head.appendChild(el("div",
-      "position:absolute;bottom:-24px;right:8px;font-family:'Anton',sans-serif;font-size:124px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);transform-origin:right bottom;pointer-events:none;",
-      { text: "♥" }));
-    head.appendChild(el("div",
-      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:6px;",
-      { text: "[ your list ]" }));
-    head.appendChild(el("div",
-      "position:relative;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
-      { text: "Saved" }));
     const ids = Object.keys(state.saved).filter((k) => state.saved[k]);
-    head.appendChild(el("div",
-      "position:relative;margin-top:8px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
-      { text: ids.length ? ("// " + ids.length + (ids.length === 1 ? " plan kept" : " plans kept")) : "// no plans kept" }));
-    box.appendChild(head);
 
     if (!ids.length) {
       box.appendChild(dskEmptyBox("Nothing\nSaved Yet", "Open a plan and tap the heart to keep it here.", "max-width:420px;"));
@@ -1558,10 +1577,7 @@
     main.innerHTML = "";
     const c = state.cinema || { name: "", plans: [], loading: true };
     const wrap = el("div", "padding:28px 30px 0;");
-    const head = el("div", "position:relative;margin-bottom:6px;overflow:visible;");
-    head.appendChild(el("button",
-      "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;margin-bottom:18px;",
-      { text: "◂ BACK", on: { click: goHome } }));
+    const head = el("div", "position:relative;margin-bottom:6px;overflow:visible;");   // BACK is in the top bar
     head.appendChild(el("div",
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ cinema ]" }));
@@ -1587,6 +1603,21 @@
     fitTileWaves();
   }
 
+  // The top bar's left slot follows the view (canvas: wordmark on home, BACK
+  // on detail, the SAVED masthead on saved). Cinema has no artboard — it
+  // gets the BACK button like detail.
+  function updateDesktopBar() {
+    const v = state.view;
+    document.getElementById("dsk-bar-home").hidden = v !== "home";
+    document.getElementById("dsk-bar-back").hidden = !(v === "detail" || v === "cinema");
+    document.getElementById("dsk-bar-saved").hidden = v !== "saved";
+    if (v === "saved") {
+      const n = Object.keys(state.saved).filter((k) => state.saved[k]).length;
+      document.getElementById("dsk-saved-count").textContent =
+        n ? ("// " + n + (n === 1 ? " plan kept" : " plans kept")) : "// no plans kept";
+    }
+  }
+
   function updateNav() {
     const on = state.view === "saved";
     document.getElementById("nav-saved-heart").style.color = on ? RED : INK;
@@ -1597,7 +1628,7 @@
 
   function render() {
     const dsk = isDesktop();
-    if (dsk) renderDesktopCities();   // the switcher lives in the top bar on every desktop view
+    if (dsk) { renderDesktopCities(); updateDesktopBar(); }   // the top bar is per-view on desktop
     if (state.view === "home") renderHome();
     else if (state.view === "detail") (dsk ? renderDetailDesktop : renderDetail)();
     else if (state.view === "saved") (dsk ? renderSavedDesktop : renderSaved)();
@@ -1618,6 +1649,9 @@
   document.getElementById("dsk-nav-explore").addEventListener("click", shuffle);
   document.getElementById("dsk-nav-home").addEventListener("click", goHome);
   document.getElementById("dsk-nav-saved").addEventListener("click", goSaved);
+  document.getElementById("dsk-back").addEventListener("click", function () {
+    if (state.view === "cinema") goHome(); else goBackFromDetail();
+  });
   // Crossing the breakpoint (window resize, monitor change) swaps the whole
   // layout — rebuild the current view with whichever path now applies.
   DESKTOP_MQ.addEventListener("change", function () { render(); });
