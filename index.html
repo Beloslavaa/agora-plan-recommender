@@ -105,7 +105,7 @@
     .fh-title { flex: none; }
     .fh-text { flex: 1 1 360px; }
     .fh-desc { max-width: 360px !important; }
-    .fh-decor { position: relative !important; left: auto !important; top: auto !important; flex: none; }
+    .fh-decor { position: relative !important; left: auto !important; right: auto !important; top: auto !important; width: 320px; flex: none; }
   }
 </style>
 </head>
@@ -884,19 +884,28 @@
 
     // Eye + doubled star doodle — grouped under one positioned box so its
     // three shapes (originally positioned relative to the whole header) can
-    // be repositioned relative to just this box instead, while keeping the
-    // exact same mobile look (see the coordinate math in the class comment
-    // near the desktop media query above).
+    // be repositioned relative to just this box instead. Sized with
+    // left+right (not left+width) so its width stays FLUID on mobile,
+    // matching the original: the eye anchors off the left (it sits right
+    // where the fixed-width "AGORA" text ends, so a fixed left offset is
+    // correct), but the stars anchor off the right edge via negative
+    // `right` values — exactly like the original un-grouped markup — so
+    // they stay pinned a few px past the header's own right edge no matter
+    // how narrow the phone is, instead of the fixed left+width box this
+    // used to be, which overflowed off-screen on any phone narrower than
+    // the ~424px baseline it was sized for. The desktop media query gives
+    // this an explicit width, since a flex item with only absolutely
+    // positioned (i.e. non-flow) children has no intrinsic size otherwise.
     const decorWrap = el("div",
-      "position:absolute;left:120px;top:0;width:320px;height:150px;pointer-events:none;overflow:visible;",
+      "position:absolute;left:120px;right:0;top:0;height:150px;pointer-events:none;overflow:visible;",
       { attrs: { class: "fh-decor" } });
     decorWrap.appendChild(el("div",
       "position:absolute;left:0;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
       { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
     decorWrap.appendChild(el("div",
-      "position:absolute;left:182px;top:12px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
+      "position:absolute;right:-4px;top:12px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
     decorWrap.appendChild(el("div",
-      "position:absolute;left:190px;top:4px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
+      "position:absolute;right:-12px;top:4px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
     head.appendChild(decorWrap);
 
     return head;
