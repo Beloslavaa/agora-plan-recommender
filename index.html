@@ -57,6 +57,53 @@
     #ring { animation: none !important; }
     #grain { animation: none !important; }
   }
+  /* Desktop/landscape: the phone-frame illusion (max-width + border/shadow)
+     goes away entirely — the page fills the real browser window edge to
+     edge — but the actual content is centered with EQUAL gutters on both
+     sides (margin:auto), not flush to one edge. `.view-wide` centers the
+     feed header and nav row at a width that matches the 2-column card
+     grid; `.view-narrow` centers the single-column detail/saved/cinema
+     pages at a narrower reading width (wide buttons there would look
+     absurd). `.feed-grid` is capped to the same 1180px and centered the
+     same way; its two columns are `1fr` (not a fixed px width) so they
+     share whatever space is actually available instead of overflowing
+     and getting clipped on narrower desktop widths — they just happen to
+     land noticeably wider than the phone card once there's 1180px to
+     split, which was the point of the extra desktop space. Their
+     wave-border SVGs are rebuilt to each card's real measured size (see
+     fitAllWaveBorders/buildWavePath) so the scallop amplitude stays
+     true-scale at whatever width the column resolves to, instead of
+     stretching into an oversized zigzag the way a fixed viewBox would.
+     The feed header itself reflows from the mobile
+     stacked order into a single row — title, then blurb, then the eye/
+     star doodle — via `.feed-header`'s flex layout; `.fh-decor` drops the
+     mobile version's absolute overlap positioning (`!important` beats the
+     inline styles that position it that way on mobile) to take its place
+     as a normal flex item instead. `pointer:fine` keeps all of this from
+     firing on large phones held sideways — it's meant for mouse-driven
+     desktop browsers. */
+  @media (min-width: 900px) and (pointer: fine) {
+    #app { max-width: none; box-shadow: none; }
+    .view-narrow { max-width: 720px; margin: 0 auto; }
+    .view-wide { max-width: 1180px; margin: 0 auto; }
+    /* align-items:start overrides grid's default "stretch" — without it, a
+       shorter card next to a taller row-mate got force-stretched to match,
+       and since the wave-border SVG fills 100% of that stretched box, the
+       scallop + accent-color fill rendered across space the visible white
+       card content never actually reached: a big oversized wavy colored
+       slab hanging off the bottom of the real (shorter) card. */
+    .feed-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; column-gap: 40px; row-gap: 20px; max-width: 1180px; margin: 0 auto; }
+    /* Cards keep their own margin-bottom for mobile's plain stacked column
+       (where it's the only thing spacing them apart) — inside the grid,
+       row-gap does that job instead, so the card's own margin here would
+       just stack on top of it and double the gap between rows. */
+    .feed-grid .plan-card { margin-bottom: 0; }
+    .feed-header { display: flex; align-items: center; gap: 32px; margin-bottom: 24px !important; }
+    .fh-title { flex: none; }
+    .fh-text { flex: 1 1 360px; }
+    .fh-desc { max-width: 360px !important; }
+    .fh-decor { position: relative !important; left: auto !important; top: auto !important; flex: none; }
+  }
 </style>
 </head>
 <body>
@@ -92,7 +139,8 @@
   <main id="main"></main>
 
   <!-- BOTTOM NAV -->
-  <nav style="position:relative;z-index:5;flex:none;height:82px;background:#FFFFFF;border-top:5px solid #121212;display:flex;align-items:center;justify-content:space-between;padding:0 32px;">
+  <nav style="position:relative;z-index:5;flex:none;height:82px;background:#FFFFFF;border-top:5px solid #121212;display:flex;align-items:center;padding:0 32px;">
+   <div class="view-wide" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
     <button id="nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;">
       <span style="font-size:28px;line-height:1;color:#121212;">☺</span>
       <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
@@ -105,6 +153,7 @@
       <span id="nav-saved-heart" style="font-size:24px;line-height:1;color:#121212;">♥</span>
       <span id="nav-saved-label" style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">SAVED</span>
     </button>
+   </div>
   </nav>
 
   <!-- grain overlay -->
@@ -337,8 +386,15 @@
   }
 
   // ── signature: outward-only sine-wave rounded-rect border ─
-  const WAVE_PATH = (function () {
-    const W=400,H=210,a=9,wT=10,wS=5,NT=170,NS=95,p=[];
+  // Built from the card's ACTUAL rendered pixel size (via fitAllWaveBorders,
+  // measured post-layout), not a fixed abstract viewBox — a fixed viewBox
+  // stretched anisotropically by preserveAspectRatio='none' whenever a
+  // card's real aspect ratio drifted from it (e.g. wider desktop cards),
+  // which blew the amplitude/offset up on the left/right edges into a
+  // "bugged"-looking oversized zigzag. Amplitude `a` is always real pixels
+  // now, so the scallop stays the same subtle size at any card width.
+  function buildWavePath(W, H) {
+    const a=9,wT=10,wS=5,NT=170,NS=95,p=[];
     const outT=(t)=>-a*(1+Math.sin(2*Math.PI*wT*t));
     const outB=(t)=> a*(1+Math.sin(2*Math.PI*wT*t));
     const outR=(u)=> a*(1+Math.sin(2*Math.PI*wS*u));
@@ -348,7 +404,52 @@
     for (let i=1;i<=NT;i++){const t=i/NT;p.push([W-t*W,H+outB(t)]);}
     for (let i=1;i<NS;i++){const u=i/NS;p.push([outL(u),H-u*H]);}
     return "M " + p.map((q)=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L ") + " Z";
-  })();
+  }
+  function waveSvgMarkup(accent, W, H) {
+    const d = buildWavePath(W, H);
+    return "<svg viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
+      "<path d='"+d+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
+      "<path d='"+d+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>";
+  }
+  // Re-measures every card's actual rendered box (post-layout) and rebuilds
+  // its wave border to match exactly — see buildWavePath's comment above.
+  function fitAllWaveBorders() {
+    const root = document.getElementById("main");
+    if (!root || !root.querySelectorAll) return;
+    requestAnimationFrame(function () {
+      root.querySelectorAll(".wave-wrap").forEach(function (n) {
+        // Measure the CARD sibling, not this wrap — inside a grid, the grid
+        // item (wrap) is an independent formatting context, so the card's
+        // own margin-bottom (spacing to the next card) can't collapse
+        // through it the way it does in mobile's plain block stacking; it
+        // gets trapped inside wrap instead, inflating it taller than the
+        // card actually is. Sizing the wave border off wrap's inflated box
+        // stretched the accent-color fill 46px past the real card, showing
+        // as a thick colored band under the visible white/colored card.
+        const card = n.nextElementSibling;
+        const w = card ? card.clientWidth : n.clientWidth;
+        const h = card ? card.clientHeight : n.clientHeight;
+        if (!w || !h) return;
+        // This div itself is still sized by its OWN `inset:0`, i.e. still
+        // stretched to match the inflated wrap (see comment above) — fixing
+        // only the SVG's viewBox left the <svg> (width/height:100% of ITS
+        // parent, this div) rendering into that taller box regardless,
+        // restretching the "correctly sized" path right back out. Pin an
+        // explicit height/width here so the div — and the svg inside it —
+        // actually shrink to the card's real box instead of just changing
+        // what the path math claims that box is.
+        n.style.height = h + "px";
+        n.style.width = w + "px";
+        const svg = n.querySelector("svg");
+        if (!svg) return;
+        const d = buildWavePath(w, h);
+        svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+        const paths = svg.querySelectorAll("path");
+        if (paths[0]) paths[0].setAttribute("d", d);
+        if (paths[1]) paths[1].setAttribute("d", d);
+      });
+    });
+  }
 
   // ── sunburst: alternating outer/inner spikes — a bold graphic shape
   // instead of a plain oversized circle (which just read as "circle cropped
@@ -497,18 +598,17 @@
 
     const wrap = el("div", "position:relative;");
 
-    // wave border (author-controlled colors → safe inline svg)
+    // wave border (author-controlled colors → safe inline svg). Placeholder
+    // sized to the mobile card box; fitAllWaveBorders() rebuilds it to the
+    // card's real measured size right after layout (see its comment).
     wrap.appendChild(el("div",
       "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0;",
-      { svg:
-        "<svg viewBox='0 0 400 210' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
-        "<path d='"+WAVE_PATH+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
-        "<path d='"+WAVE_PATH+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>" }));
+      { attrs: { class: "wave-wrap" }, svg: waveSvgMarkup(accent, 424, 214) }));
 
     const card = el("div",
       "position:relative;display:flex;align-items:stretch;min-height:214px;background:" + bg +
       ";margin-bottom:46px;cursor:pointer;overflow:hidden;",
-      { on: { click: function () { openPlan(plan); } } });
+      { attrs: { class: "plan-card" }, on: { click: function () { openPlan(plan); } } });
 
     // Blue stripes stay UNDER the photo panel (z-index:3) — unlike the accent
     // shapes below, this one is a full-bleed background pattern, not a small
@@ -739,23 +839,28 @@
 
   // ── renderers ────────────────────────────────────────────
   function feedHeader() {
-    const head = el("div", "position:relative;margin-bottom:36px;overflow:visible;");
-    head.appendChild(el("div",
-      "position:absolute;left:120px;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
-      { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
-    head.appendChild(el("div",
-      "position:absolute;top:12px;right:-4px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
-    head.appendChild(el("div",
-      "position:absolute;top:4px;right:-12px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
-    head.appendChild(el("div",
+    // Grouped into three blocks — title, blurb+switcher, eye/star doodle —
+    // in that DOM order so the desktop breakpoint can lay them out as a
+    // single row (title, then text, then the decoration) via .feed-header's
+    // flex rule. On mobile none of that fires: .fh-decor keeps the same
+    // inline absolute-overlap position it always had, and title/text just
+    // stack as plain blocks — pixel-identical to the original layout.
+    const head = el("div", "position:relative;margin-bottom:36px;overflow:visible;", { attrs: { class: "feed-header" } });
+
+    const titleWrap = el("div", "position:relative;", { attrs: { class: "fh-title" } });
+    titleWrap.appendChild(el("div",
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ recommended for you ]" }));
-    head.appendChild(el("div",
+    titleWrap.appendChild(el("div",
       "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: "Agora" }));
-    head.appendChild(el("div",
+    head.appendChild(titleWrap);
+
+    const textWrap = el("div", "position:relative;", { attrs: { class: "fh-text" } });
+    textWrap.appendChild(el("div",
       "position:relative;margin-top:14px;max-width:230px;font-size:10.5px;line-height:1.55;color:#121212;",
-      { text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
+      { attrs: { class: "fh-desc" },
+        text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
 
     // City switcher: persistent, always editable here — NOT tied to login.
     // Plain text, no boxes; the active city reads in red.
@@ -771,7 +876,25 @@
         (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
     });
-    head.appendChild(switcher);
+    textWrap.appendChild(switcher);
+    head.appendChild(textWrap);
+
+    // Eye + doubled star doodle — grouped under one positioned box so its
+    // three shapes (originally positioned relative to the whole header) can
+    // be repositioned relative to just this box instead, while keeping the
+    // exact same mobile look (see the coordinate math in the class comment
+    // near the desktop media query above).
+    const decorWrap = el("div",
+      "position:absolute;left:120px;top:0;width:320px;height:150px;pointer-events:none;overflow:visible;",
+      { attrs: { class: "fh-decor" } });
+    decorWrap.appendChild(el("div",
+      "position:absolute;left:0;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
+      { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
+    decorWrap.appendChild(el("div",
+      "position:absolute;left:182px;top:12px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
+    decorWrap.appendChild(el("div",
+      "position:absolute;left:190px;top:4px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
+    head.appendChild(decorWrap);
 
     return head;
   }
@@ -782,10 +905,13 @@
     // browser, but we refuse the click at the source (openPlan) and grey/
     // pointer-lock it here too so it visibly reads as inert.
     const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""));
-    pad.appendChild(feedHeader());
+    const headerWrap = el("div", "", { attrs: { class: "view-wide" } });
+    headerWrap.appendChild(feedHeader());
+    pad.appendChild(headerWrap);
 
     if (!state.feed.length) {
-      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
+      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;",
+        { attrs: { class: "view-wide" } });
       box.appendChild(el("div",
         "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
         { text: state.reloading ? "Your feed\nis reloading" : (state.loading || state.booting) ? "Loading\nplans" : "No plans\nyet" }));
@@ -794,13 +920,19 @@
         { text: state.reloading ? "Refreshing your recommendations." : (state.loading || state.booting) ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
       pad.appendChild(box);
     } else {
-      state.feed.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
+      // .feed-grid is a plain block on mobile (single stacked column, same
+      // as before) and becomes a 2-column grid at the desktop breakpoint —
+      // see the media query up top.
+      const grid = el("div", "", { attrs: { class: "feed-grid" } });
+      state.feed.forEach(function (plan, i) { grid.appendChild(buildCard(plan, i)); });
+      pad.appendChild(grid);
       pad.appendChild(el("div",
         "text-align:center;font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#121212;opacity:0.5;padding:4px 0 10px;",
         { text: state.done ? "· that's the whole stack — back to top ·" : "· loading more plans ·" }));
     }
     main.appendChild(pad);
     fitAllTitles();
+    fitAllWaveBorders();
   }
 
   function renderDetail() {
@@ -815,13 +947,21 @@
     const accent = r.ac;
     const saved = !!state.saved[p.id];
 
-    const box = el("div", "min-height:100%;background:#FFFFFF;padding:16px 18px 20px;");
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:16px 18px 20px;",
+      { attrs: { class: "view-narrow" } });
 
     box.appendChild(el("button",
       "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;",
       { text: "◂ BACK", on: { click: goBackFromDetail } }));
 
-    const titleWrap = el("div", "position:relative;margin-top:18px;overflow:hidden;");
+    // overflow was previously `hidden` here, which clipped this decorative
+    // number down to unrecognizable slivers whenever the title was short
+    // enough to fit on one line (titleWrap's own height, driven purely by
+    // the in-flow title text, was far shorter than the absolutely
+    // positioned number's ~120px box) — left `visible` since the box below
+    // (the photo banner, or the description) is opaque and DOM-later, so it
+    // paints over any part of the number that bleeds past titleWrap anyway.
+    const titleWrap = el("div", "position:relative;margin-top:18px;");
     titleWrap.appendChild(el("div",
       "position:absolute;bottom:-40px;right:-6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.66;color:" +
       faintOf(accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;",
@@ -936,7 +1076,8 @@
 
   function renderSaved() {
     main.innerHTML = "";
-    const box = el("div", "min-height:100%;background:#FFFFFF;padding:22px 18px 20px;");
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:22px 18px 20px;",
+      { attrs: { class: "view-narrow" } });
 
     const head = el("div", "position:relative;margin-bottom:18px;overflow:hidden;");
     head.appendChild(el("div",
@@ -1059,7 +1200,7 @@
   function renderCinema() {
     main.innerHTML = "";
     const c = state.cinema || { name: "", plans: [], loading: true };
-    const pad = el("div", "padding:22px 18px 26px;");
+    const pad = el("div", "padding:22px 18px 26px;", { attrs: { class: "view-narrow" } });
 
     const head = el("div", "position:relative;margin-bottom:24px;overflow:visible;");
     head.appendChild(el("button",
@@ -1089,6 +1230,7 @@
     }
     main.appendChild(pad);
     fitAllTitles();
+    fitAllWaveBorders();
   }
 
   function updateNav() {
