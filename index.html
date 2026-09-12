@@ -55,61 +55,33 @@
   button { font-family:'Space Mono', monospace; }
   @media (prefers-reduced-motion: reduce) {
     #ring { animation: none !important; }
+    #dsk-ring { animation: none !important; }
     #grain { animation: none !important; }
   }
-  /* Desktop/landscape: the phone-frame illusion (max-width + border/shadow)
-     goes away entirely — the page fills the real browser window edge to
-     edge — but the actual content is centered with EQUAL gutters on both
-     sides (margin:auto), not flush to one edge. `.view-wide` centers the
-     feed header and nav row at a width that matches the 2-column card
-     grid; `.view-narrow` centers the single-column detail/saved/cinema
-     pages at a narrower reading width (wide buttons there would look
-     absurd). `.feed-grid` is capped to the same 1180px and centered the
-     same way; its two columns are `1fr` (not a fixed px width) so they
-     share whatever space is actually available instead of overflowing
-     and getting clipped on narrower desktop widths — they just happen to
-     land noticeably wider than the phone card once there's 1180px to
-     split, which was the point of the extra desktop space. Their
-     wave-border SVGs are rebuilt to each card's real measured size (see
-     fitAllWaveBorders/buildWavePath) so the scallop amplitude stays
-     true-scale at whatever width the column resolves to, instead of
-     stretching into an oversized zigzag the way a fixed viewBox would.
-     The feed header itself reflows from the mobile
-     stacked order into a single row — title, then blurb, then the eye/
-     star doodle — via `.feed-header`'s flex layout; `.fh-decor` drops the
-     mobile version's absolute overlap positioning (`!important` beats the
-     inline styles that position it that way on mobile) to take its place
-     as a normal flex item instead. Gated behind min-width:1024px (comfortably
-     past even a large phone's landscape width — an iPhone Pro Max is
-     ~930px) plus BOTH pointer:fine and hover:hover, so a touchscreen that
-     happens to misreport one of those (some do) still can't satisfy both —
-     this is meant for mouse-driven desktop browsers only, never a phone in
-     any orientation. */
+
+  /* ── DESKTOP / LANDSCAPE ─────────────────────────────────────────────
+     A separate layout (top bar with the nav cluster, 2-up tile grid,
+     two-column detail page) rendered by its own JS path — see the
+     "desktop / landscape" section in the script, chosen via a matchMedia
+     of this SAME query. Nothing below applies to the phone layout, and
+     the phone render path never touches any of these class names. The
+     query is gated on min-width past any phone's landscape width plus
+     BOTH pointer:fine and hover:hover, so a touchscreen that misreports
+     one of them still can't match — mouse-driven desktop browsers only. */
+  .tile-title       { font-family:'Anton',sans-serif; font-size:38px; line-height:0.8; text-transform:uppercase;
+                      letter-spacing:-0.01em; color:#121212; overflow-wrap:break-word;
+                      transform:scaleX(0.85); transform-origin:left; }
+  .dsk-detail-title { font-family:'Anton',sans-serif; font-size:62px; line-height:0.78; text-transform:uppercase;
+                      letter-spacing:-0.02em; color:#121212; word-break:break-word;
+                      transform:scaleX(0.84); transform-origin:left; }
+  .dsk-saved-title  { font-family:'Anton',sans-serif; font-size:31px; line-height:0.82; text-transform:uppercase;
+                      color:#121212; word-break:break-word; overflow:hidden; max-height:52px;
+                      transform:scaleX(0.85); transform-origin:left; }
+  #dsk-header { display:none; }
   @media (min-width: 1024px) and (pointer: fine) and (hover: hover) {
     #app { max-width: none; box-shadow: none; }
-    /* No max-width/margin here anymore — a fixed cap always leaves a dead
-       gutter on anything wider than it, no matter how big the cap. These
-       now fill whatever width the page actually has; the small side
-       padding below (see .feed-pad) is the only edge margin left. */
-    .view-narrow, .view-wide { max-width: none; margin: 0; }
-    .feed-pad { padding-left: 10px !important; padding-right: 10px !important; }
-    /* align-items:start overrides grid's default "stretch" — without it, a
-       shorter card next to a taller row-mate got force-stretched to match,
-       and since the wave-border SVG fills 100% of that stretched box, the
-       scallop + accent-color fill rendered across space the visible white
-       card content never actually reached: a big oversized wavy colored
-       slab hanging off the bottom of the real (shorter) card. */
-    .feed-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; column-gap: 40px; row-gap: 20px; }
-    /* Cards keep their own margin-bottom for mobile's plain stacked column
-       (where it's the only thing spacing them apart) — inside the grid,
-       row-gap does that job instead, so the card's own margin here would
-       just stack on top of it and double the gap between rows. */
-    .feed-grid .plan-card { margin-bottom: 0; }
-    .feed-header { display: flex; align-items: center; gap: 32px; margin-bottom: 24px !important; }
-    .fh-title { flex: none; }
-    .fh-text { flex: 1 1 360px; }
-    .fh-desc { max-width: 360px !important; }
-    .fh-decor { position: relative !important; left: auto !important; right: auto !important; top: auto !important; width: 320px; flex: none; }
+    #app > nav { display: none !important; }   /* the phone's bottom nav (inline display:flex) — the top bar carries it on desktop */
+    #dsk-header { display: flex; }
   }
 </style>
 </head>
@@ -143,11 +115,48 @@
     </div>
   </div>
 
+  <!-- DESKTOP TOP BAR (display:none on the phone; shown by the desktop media
+       query, see the CSS). Wordmark + city switcher + eye/star motif on the
+       left, the EXPLORE / FOR YOU / SAVED cluster on the right — on desktop
+       this replaces the phone's bottom nav entirely. min-height rather than a
+       fixed height so the city switcher under the wordmark never clips. -->
+  <header id="dsk-header" style="position:relative;z-index:6;flex:none;min-height:132px;background:#FFFFFF;align-items:center;justify-content:space-between;padding:8px 30px;overflow:visible;">
+    <div style="position:relative;display:flex;align-items:center;gap:4px;">
+      <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;">
+        <div style="font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:10px;">[ recommended for you ]</div>
+        <div class="anton" style="font-size:92px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;">Agora</div>
+        <div id="dsk-cities" style="display:flex;gap:18px;padding:4px 0;margin-top:8px;"></div>
+      </div>
+      <svg viewBox="0 0 300 180" style="position:relative;z-index:1;margin-left:-40px;width:224px;height:136px;flex:none;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-12deg);" aria-hidden="true"><path d="M8 90 Q150 -34 292 90 Q150 214 8 90 Z" fill="none" stroke="#121212" stroke-width="9"></path><circle cx="150" cy="90" r="58" fill="#EA4632" stroke="#121212" stroke-width="9"></circle><circle cx="150" cy="90" r="22" fill="#121212"></circle><circle cx="167" cy="74" r="7" fill="#EFEBDE"></circle></svg>
+      <!-- doubled star: blue shade offset down-left behind the yellow one,
+           same registration as the phone header -->
+      <div style="position:relative;z-index:0;margin-left:-54px;width:124px;height:124px;flex:none;">
+        <div style="position:absolute;inset:0;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:translate(-8px,8px) rotate(12deg);opacity:0.85;"></div>
+        <div style="position:absolute;inset:0;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(6deg);opacity:0.95;"></div>
+      </div>
+    </div>
+
+    <div style="position:relative;display:flex;align-items:center;gap:34px;">
+      <button id="dsk-nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;">
+        <span style="font-size:30px;line-height:1;color:#121212;">☺</span>
+        <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
+      </button>
+      <!-- primary circle, hanging below the bar's baseline -->
+      <button id="dsk-nav-home" style="position:relative;z-index:7;flex:none;width:112px;height:112px;margin:0 8px;transform:translateY(24px);border-radius:50%;background:#EA4632;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div id="dsk-ring" style="position:absolute;inset:-8px;border:3px dashed #121212;border-radius:50%;animation:spinRing 9s linear infinite;pointer-events:none;"></div>
+        <span class="anton" style="font-size:29px;line-height:0.82;color:#121212;transform:scaleX(0.84);text-align:center;">FOR<br>YOU</span>
+      </button>
+      <button id="dsk-nav-saved" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;">
+        <span id="dsk-nav-saved-heart" style="font-size:26px;line-height:1;color:#121212;">♥</span>
+        <span id="dsk-nav-saved-label" style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">SAVED</span>
+      </button>
+    </div>
+  </header>
+
   <main id="main"></main>
 
   <!-- BOTTOM NAV -->
-  <nav style="position:relative;z-index:5;flex:none;height:82px;background:#FFFFFF;border-top:5px solid #121212;display:flex;align-items:center;padding:0 32px;">
-   <div class="view-wide" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+  <nav style="position:relative;z-index:5;flex:none;height:82px;background:#FFFFFF;border-top:5px solid #121212;display:flex;align-items:center;justify-content:space-between;padding:0 32px;">
     <button id="nav-explore" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:0;">
       <span style="font-size:28px;line-height:1;color:#121212;">☺</span>
       <span style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">EXPLORE</span>
@@ -160,7 +169,6 @@
       <span id="nav-saved-heart" style="font-size:24px;line-height:1;color:#121212;">♥</span>
       <span id="nav-saved-label" style="font-weight:700;font-size:8px;letter-spacing:0.12em;color:#121212;">SAVED</span>
     </button>
-   </div>
   </nav>
 
   <!-- grain overlay -->
@@ -389,19 +397,18 @@
     // onto more lines and the box grows to hold them.
     requestAnimationFrame(function () {
       root.querySelectorAll(".saved-title").forEach((n) => fitTitle(n, 26, 15, 2));
+      // Desktop-only classes (see the desktop section). The tile's fixed
+      // 352px height leaves ~2 title lines of room, and the saved row is
+      // a fixed 150px — so unlike the phone card, these DO shrink to fit.
+      root.querySelectorAll(".tile-title").forEach((n) => fitTitle(n, 38, 24, 2));
+      root.querySelectorAll(".dsk-detail-title").forEach((n) => fitTitle(n, 62, 36, 3));
+      root.querySelectorAll(".dsk-saved-title").forEach((n) => fitTitle(n, 31, 18, 2));
     });
   }
 
   // ── signature: outward-only sine-wave rounded-rect border ─
-  // Built from the card's ACTUAL rendered pixel size (via fitAllWaveBorders,
-  // measured post-layout), not a fixed abstract viewBox — a fixed viewBox
-  // stretched anisotropically by preserveAspectRatio='none' whenever a
-  // card's real aspect ratio drifted from it (e.g. wider desktop cards),
-  // which blew the amplitude/offset up on the left/right edges into a
-  // "bugged"-looking oversized zigzag. Amplitude `a` is always real pixels
-  // now, so the scallop stays the same subtle size at any card width.
-  function buildWavePath(W, H) {
-    const a=9,wT=10,wS=5,NT=170,NS=95,p=[];
+  const WAVE_PATH = (function () {
+    const W=400,H=210,a=9,wT=10,wS=5,NT=170,NS=95,p=[];
     const outT=(t)=>-a*(1+Math.sin(2*Math.PI*wT*t));
     const outB=(t)=> a*(1+Math.sin(2*Math.PI*wT*t));
     const outR=(u)=> a*(1+Math.sin(2*Math.PI*wS*u));
@@ -411,52 +418,7 @@
     for (let i=1;i<=NT;i++){const t=i/NT;p.push([W-t*W,H+outB(t)]);}
     for (let i=1;i<NS;i++){const u=i/NS;p.push([outL(u),H-u*H]);}
     return "M " + p.map((q)=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L ") + " Z";
-  }
-  function waveSvgMarkup(accent, W, H) {
-    const d = buildWavePath(W, H);
-    return "<svg viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
-      "<path d='"+d+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
-      "<path d='"+d+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>";
-  }
-  // Re-measures every card's actual rendered box (post-layout) and rebuilds
-  // its wave border to match exactly — see buildWavePath's comment above.
-  function fitAllWaveBorders() {
-    const root = document.getElementById("main");
-    if (!root || !root.querySelectorAll) return;
-    requestAnimationFrame(function () {
-      root.querySelectorAll(".wave-wrap").forEach(function (n) {
-        // Measure the CARD sibling, not this wrap — inside a grid, the grid
-        // item (wrap) is an independent formatting context, so the card's
-        // own margin-bottom (spacing to the next card) can't collapse
-        // through it the way it does in mobile's plain block stacking; it
-        // gets trapped inside wrap instead, inflating it taller than the
-        // card actually is. Sizing the wave border off wrap's inflated box
-        // stretched the accent-color fill 46px past the real card, showing
-        // as a thick colored band under the visible white/colored card.
-        const card = n.nextElementSibling;
-        const w = card ? card.clientWidth : n.clientWidth;
-        const h = card ? card.clientHeight : n.clientHeight;
-        if (!w || !h) return;
-        // This div itself is still sized by its OWN `inset:0`, i.e. still
-        // stretched to match the inflated wrap (see comment above) — fixing
-        // only the SVG's viewBox left the <svg> (width/height:100% of ITS
-        // parent, this div) rendering into that taller box regardless,
-        // restretching the "correctly sized" path right back out. Pin an
-        // explicit height/width here so the div — and the svg inside it —
-        // actually shrink to the card's real box instead of just changing
-        // what the path math claims that box is.
-        n.style.height = h + "px";
-        n.style.width = w + "px";
-        const svg = n.querySelector("svg");
-        if (!svg) return;
-        const d = buildWavePath(w, h);
-        svg.setAttribute("viewBox", "0 0 " + w + " " + h);
-        const paths = svg.querySelectorAll("path");
-        if (paths[0]) paths[0].setAttribute("d", d);
-        if (paths[1]) paths[1].setAttribute("d", d);
-      });
-    });
-  }
+  })();
 
   // ── sunburst: alternating outer/inner spikes — a bold graphic shape
   // instead of a plain oversized circle (which just read as "circle cropped
@@ -605,17 +567,18 @@
 
     const wrap = el("div", "position:relative;");
 
-    // wave border (author-controlled colors → safe inline svg). Placeholder
-    // sized to the mobile card box; fitAllWaveBorders() rebuilds it to the
-    // card's real measured size right after layout (see its comment).
+    // wave border (author-controlled colors → safe inline svg)
     wrap.appendChild(el("div",
       "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0;",
-      { attrs: { class: "wave-wrap" }, svg: waveSvgMarkup(accent, 424, 214) }));
+      { svg:
+        "<svg viewBox='0 0 400 210' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
+        "<path d='"+WAVE_PATH+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
+        "<path d='"+WAVE_PATH+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>" }));
 
     const card = el("div",
       "position:relative;display:flex;align-items:stretch;min-height:214px;background:" + bg +
       ";margin-bottom:46px;cursor:pointer;overflow:hidden;",
-      { attrs: { class: "plan-card" }, on: { click: function () { openPlan(plan); } } });
+      { on: { click: function () { openPlan(plan); } } });
 
     // Blue stripes stay UNDER the photo panel (z-index:3) — unlike the accent
     // shapes below, this one is a full-bleed background pattern, not a small
@@ -696,6 +659,12 @@
   };
 
   const main = document.getElementById("main");
+
+  // ── desktop / landscape switch ────────────────────────────
+  // Same query as the desktop CSS block up top — the CSS shows/hides the
+  // top bar and bottom nav, this picks which render path builds #main.
+  const DESKTOP_MQ = window.matchMedia("(min-width: 1024px) and (pointer: fine) and (hover: hover)");
+  function isDesktop() { return DESKTOP_MQ.matches; }
 
   function remember(plan) {
     state.cache[plan.id] = plan;
@@ -846,28 +815,23 @@
 
   // ── renderers ────────────────────────────────────────────
   function feedHeader() {
-    // Grouped into three blocks — title, blurb+switcher, eye/star doodle —
-    // in that DOM order so the desktop breakpoint can lay them out as a
-    // single row (title, then text, then the decoration) via .feed-header's
-    // flex rule. On mobile none of that fires: .fh-decor keeps the same
-    // inline absolute-overlap position it always had, and title/text just
-    // stack as plain blocks — pixel-identical to the original layout.
-    const head = el("div", "position:relative;margin-bottom:36px;overflow:visible;", { attrs: { class: "feed-header" } });
-
-    const titleWrap = el("div", "position:relative;", { attrs: { class: "fh-title" } });
-    titleWrap.appendChild(el("div",
+    const head = el("div", "position:relative;margin-bottom:36px;overflow:visible;");
+    head.appendChild(el("div",
+      "position:absolute;left:120px;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
+      { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
+    head.appendChild(el("div",
+      "position:absolute;top:12px;right:-4px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
+    head.appendChild(el("div",
+      "position:absolute;top:4px;right:-12px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
+    head.appendChild(el("div",
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ recommended for you ]" }));
-    titleWrap.appendChild(el("div",
+    head.appendChild(el("div",
       "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: "Agora" }));
-    head.appendChild(titleWrap);
-
-    const textWrap = el("div", "position:relative;", { attrs: { class: "fh-text" } });
-    textWrap.appendChild(el("div",
+    head.appendChild(el("div",
       "position:relative;margin-top:14px;max-width:230px;font-size:10.5px;line-height:1.55;color:#121212;",
-      { attrs: { class: "fh-desc" },
-        text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
+      { text: "A never-ending stack of plans for your city. Keep scrolling — it just keeps coming. Hit the circle to jump back to the top." }));
 
     // City switcher: persistent, always editable here — NOT tied to login.
     // Plain text, no boxes; the active city reads in red.
@@ -883,52 +847,29 @@
         (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
     });
-    textWrap.appendChild(switcher);
-    head.appendChild(textWrap);
-
-    // Eye + doubled star doodle — grouped under one positioned box so its
-    // three shapes (originally positioned relative to the whole header) can
-    // be repositioned relative to just this box instead. Sized with
-    // left+right (not left+width) so its width stays FLUID on mobile,
-    // matching the original: the eye anchors off the left (it sits right
-    // where the fixed-width "AGORA" text ends, so a fixed left offset is
-    // correct), but the stars anchor off the right edge via negative
-    // `right` values — exactly like the original un-grouped markup — so
-    // they stay pinned a few px past the header's own right edge no matter
-    // how narrow the phone is, instead of the fixed left+width box this
-    // used to be, which overflowed off-screen on any phone narrower than
-    // the ~424px baseline it was sized for. The desktop media query gives
-    // this an explicit width, since a flex item with only absolutely
-    // positioned (i.e. non-flow) children has no intrinsic size otherwise.
-    const decorWrap = el("div",
-      "position:absolute;left:120px;right:0;top:0;height:150px;pointer-events:none;overflow:visible;",
-      { attrs: { class: "fh-decor" } });
-    decorWrap.appendChild(el("div",
-      "position:absolute;left:0;top:6px;width:230px;height:138px;z-index:0;pointer-events:none;overflow:visible;opacity:0.85;transform:rotate(-24deg);transform-origin:50% 50%;",
-      { svg: "<svg viewBox='0 0 300 180' width='230' height='138' style='overflow:visible'><path d='M8 90 Q150 -34 292 90 Q150 214 8 90 Z' fill='none' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='58' fill='#EA4632' stroke='#121212' stroke-width='7'/><circle cx='150' cy='90' r='22' fill='#121212'/><circle cx='167' cy='74' r='7' fill='#EFEBDE'/></svg>" }));
-    decorWrap.appendChild(el("div",
-      "position:absolute;right:-4px;top:12px;width:126px;height:126px;background:#7FA9BD;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(9deg);opacity:0.85;"));
-    decorWrap.appendChild(el("div",
-      "position:absolute;right:-12px;top:4px;width:126px;height:126px;background:#E4BE55;clip-path:polygon(50% 0,63% 30%,97% 30%,69% 52%,80% 90%,50% 66%,20% 90%,31% 52%,3% 30%,37% 30%);transform:rotate(3deg);opacity:0.95;"));
-    head.appendChild(decorWrap);
+    head.appendChild(switcher);
 
     return head;
   }
 
+  // renderHome() is called directly from a few places (city switch, cities
+  // list refresh, login unlock) besides render() — dispatch here so those
+  // call sites don't each need to know about the desktop path.
   function renderHome() {
+    if (isDesktop()) { renderDesktopCities(); renderHomeDesktop(); }
+    else renderHomeMobile();
+  }
+
+  function renderHomeMobile() {
     main.innerHTML = "";
     // Scroll-only until login/skip: the feed itself stays clickable to the
     // browser, but we refuse the click at the source (openPlan) and grey/
     // pointer-lock it here too so it visibly reads as inert.
-    const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""),
-      { attrs: { class: "feed-pad" } });
-    const headerWrap = el("div", "", { attrs: { class: "view-wide" } });
-    headerWrap.appendChild(feedHeader());
-    pad.appendChild(headerWrap);
+    const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""));
+    pad.appendChild(feedHeader());
 
     if (!state.feed.length) {
-      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;",
-        { attrs: { class: "view-wide" } });
+      const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
       box.appendChild(el("div",
         "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
         { text: state.reloading ? "Your feed\nis reloading" : (state.loading || state.booting) ? "Loading\nplans" : "No plans\nyet" }));
@@ -937,19 +878,13 @@
         { text: state.reloading ? "Refreshing your recommendations." : (state.loading || state.booting) ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in." }));
       pad.appendChild(box);
     } else {
-      // .feed-grid is a plain block on mobile (single stacked column, same
-      // as before) and becomes a 2-column grid at the desktop breakpoint —
-      // see the media query up top.
-      const grid = el("div", "", { attrs: { class: "feed-grid" } });
-      state.feed.forEach(function (plan, i) { grid.appendChild(buildCard(plan, i)); });
-      pad.appendChild(grid);
+      state.feed.forEach(function (plan, i) { pad.appendChild(buildCard(plan, i)); });
       pad.appendChild(el("div",
         "text-align:center;font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#121212;opacity:0.5;padding:4px 0 10px;",
         { text: state.done ? "· that's the whole stack — back to top ·" : "· loading more plans ·" }));
     }
     main.appendChild(pad);
     fitAllTitles();
-    fitAllWaveBorders();
   }
 
   function renderDetail() {
@@ -964,20 +899,17 @@
     const accent = r.ac;
     const saved = !!state.saved[p.id];
 
-    const box = el("div", "min-height:100%;background:#FFFFFF;padding:16px 18px 20px;",
-      { attrs: { class: "view-narrow" } });
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:16px 18px 20px;");
 
     box.appendChild(el("button",
       "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;",
       { text: "◂ BACK", on: { click: goBackFromDetail } }));
 
-    // overflow was previously `hidden` here, which clipped this decorative
-    // number down to unrecognizable slivers whenever the title was short
-    // enough to fit on one line (titleWrap's own height, driven purely by
-    // the in-flow title text, was far shorter than the absolutely
-    // positioned number's ~120px box) — left `visible` since the box below
-    // (the photo banner, or the description) is opaque and DOM-later, so it
-    // paints over any part of the number that bleeds past titleWrap anyway.
+    // overflow is deliberately NOT hidden here: it clipped the decorative
+    // number down to unrecognizable slivers whenever the title fit on one
+    // line (titleWrap's height comes only from the in-flow title text, far
+    // shorter than the absolutely positioned number's ~120px box). The
+    // opaque, DOM-later banner/description below paints over any bleed.
     const titleWrap = el("div", "position:relative;margin-top:18px;");
     titleWrap.appendChild(el("div",
       "position:absolute;bottom:-40px;right:-6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.66;color:" +
@@ -1093,8 +1025,7 @@
 
   function renderSaved() {
     main.innerHTML = "";
-    const box = el("div", "min-height:100%;background:#FFFFFF;padding:22px 18px 20px;",
-      { attrs: { class: "view-narrow" } });
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:22px 18px 20px;");
 
     const head = el("div", "position:relative;margin-bottom:18px;overflow:hidden;");
     head.appendChild(el("div",
@@ -1217,7 +1148,7 @@
   function renderCinema() {
     main.innerHTML = "";
     const c = state.cinema || { name: "", plans: [], loading: true };
-    const pad = el("div", "padding:22px 18px 26px;", { attrs: { class: "view-narrow" } });
+    const pad = el("div", "padding:22px 18px 26px;");
 
     const head = el("div", "position:relative;margin-bottom:24px;overflow:visible;");
     head.appendChild(el("button",
@@ -1247,20 +1178,430 @@
     }
     main.appendChild(pad);
     fitAllTitles();
-    fitAllWaveBorders();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ── desktop / landscape ───────────────────────────────────
+  // ══════════════════════════════════════════════════════════
+  // Wired from the "Anti-Design Plan Recommendation" landscape canvas: a
+  // top bar carrying the nav (markup in the HTML, #dsk-header), a 2-up grid
+  // of tall tiles with the photo on TOP and the info block below, a
+  // two-column detail page, and a 2-up saved grid. Chosen by isDesktop()
+  // (see DESKTOP_MQ); the phone renderers above are never involved.
+  const TILE_H = 352, TILE_IMG_H = 218;
+
+  // Same outward-only sine border as the phone card, but generated for the
+  // tile's ACTUAL rendered pixel box (see fitTileWaves) rather than a fixed
+  // viewBox stretched with preserveAspectRatio:none — tiles vary in width
+  // with the window, and stretching a fixed box would scale the left/right
+  // amplitude with it. Wave params are the canvas's (a=10, 8 cycles across,
+  // 7 down).
+  function buildTileWavePath(W, H) {
+    const a=10,wT=8,wS=7,NT=200,NS=180,p=[];
+    const outT=(t)=>-a*(1+Math.sin(2*Math.PI*wT*t));
+    const outB=(t)=> a*(1+Math.sin(2*Math.PI*wT*t));
+    const outR=(u)=> a*(1+Math.sin(2*Math.PI*wS*u));
+    const outL=(u)=>-a*(1+Math.sin(2*Math.PI*wS*u));
+    for (let i=0;i<=NT;i++){const t=i/NT;p.push([t*W,outT(t)]);}
+    for (let i=1;i<=NS;i++){const u=i/NS;p.push([W+outR(u),u*H]);}
+    for (let i=1;i<=NT;i++){const t=i/NT;p.push([W-t*W,H+outB(t)]);}
+    for (let i=1;i<NS;i++){const u=i/NS;p.push([outL(u),H-u*H]);}
+    return "M " + p.map((q)=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L ") + " Z";
+  }
+  function tileWaveSvg(accent, W, H) {
+    const d = buildTileWavePath(W, H);
+    return "<svg viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none' width='100%' height='100%' style='overflow:visible'>" +
+      "<path d='"+d+"' fill='"+accent+"' stroke='"+accent+"' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' transform='translate(6 6)'/>" +
+      "<path d='"+d+"' fill='none' stroke='#121212' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>";
+  }
+  // Post-layout: rebuild each tile's border to its card's real size. The
+  // wave div is sized explicitly too (not left on inset:0) so the <svg>
+  // inside it — width/height:100% of the div — really matches the card.
+  function fitTileWaves() {
+    requestAnimationFrame(function () {
+      main.querySelectorAll(".tile-wave").forEach(function (n) {
+        const card = n.nextElementSibling;
+        const w = card ? card.clientWidth : 0, h = card ? card.clientHeight : 0;
+        if (!w || !h) return;
+        n.style.width = w + "px";
+        n.style.height = h + "px";
+        const svg = n.querySelector("svg");
+        if (!svg) return;
+        const d = buildTileWavePath(w, h);
+        svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+        svg.querySelectorAll("path").forEach((pth) => pth.setAttribute("d", d));
+      });
+    });
+  }
+
+  // Colour-matched shapes pinned to the tile's bottom corners and cut off
+  // by its edge (z-index 3: over the photo panel, under the info text).
+  function tileDecoration(r, i) {
+    const dcol = r.dcol || r.ac, dcol2 = r.dcol2 || r.ac;
+    const TRI = "polygon(100% 0,100% 100%,0 100%)";
+    switch (r.deco) {
+      case "num":
+        return el("div",
+          "position:absolute;bottom:-52px;left:4px;font-family:'Anton',sans-serif;font-size:188px;line-height:0.7;color:" +
+          faintOf(dcol) + ";transform:scaleX(0.68);transform-origin:left bottom;pointer-events:none;z-index:3;",
+          { text: pad2(i + 1) });
+      case "rings":
+        return el("div",
+          "position:absolute;bottom:-52px;right:-50px;width:196px;height:196px;z-index:3;pointer-events:none;opacity:0.5;",
+          { svg: "<svg viewBox='0 0 200 200' width='196' height='196'><circle cx='100' cy='100' r='90' fill='none' stroke='"+dcol+"' stroke-width='9'/><circle cx='100' cy='100' r='62' fill='none' stroke='"+dcol+"' stroke-width='9'/><circle cx='100' cy='100' r='34' fill='none' stroke='"+dcol+"' stroke-width='9'/></svg>" });
+      case "arc":
+        return el("div",
+          "position:absolute;bottom:-78px;left:-58px;width:190px;height:190px;border-radius:50%;background:" +
+          dcol + ";opacity:0.32;z-index:3;pointer-events:none;");
+      case "bars":
+        return el("div",
+          "position:absolute;bottom:-24px;right:-20px;width:190px;height:190px;background:repeating-linear-gradient(48deg," +
+          dcol + " 0 13px, transparent 13px 30px);opacity:0.38;z-index:3;pointer-events:none;transform:rotate(5deg);");
+      case "blob":
+        return el("div",
+          "position:absolute;bottom:-46px;right:-38px;width:182px;height:182px;background:linear-gradient(150deg," +
+          dcol + "," + dcol2 + ");border-radius:47% 53% 60% 40% / 42% 46% 54% 58%;opacity:0.5;z-index:3;pointer-events:none;transform:rotate(-8deg);");
+      case "triangle":
+        return el("div",
+          "position:absolute;bottom:-34px;right:-34px;width:200px;height:200px;background:" +
+          dcol + ";clip-path:" + TRI + ";opacity:0.34;z-index:3;pointer-events:none;");
+      case "cross":
+        return el("div",
+          "position:absolute;bottom:-48px;left:-32px;width:172px;height:172px;z-index:3;pointer-events:none;opacity:0.4;transform:rotate(12deg);",
+          { svg: "<svg viewBox='0 0 120 120' width='172' height='172'><path d='M46 0 h28 v46 h46 v28 h-46 v46 h-28 v-46 h-46 v-28 h46 z' fill='"+dcol+"'/></svg>" });
+      default:
+        return null;
+    }
+  }
+
+  // Photo panel shared by the tile, the detail page and the saved row: the
+  // B&W-paled photo under the halftone dots, or — with no usable photo,
+  // including one that 404s at render time — one of the fill shapes.
+  function dskPhotoSlot(plan, i, accent, css) {
+    const slot = el("div", css + "overflow:hidden;isolation:isolate;");
+    if (isHttp(plan.image_url)) {
+      const img = el("img", "",
+        { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "", loading: "lazy" } });
+      img.addEventListener("error", function () { img.remove(); slot.insertBefore(fillShape(i, accent), slot.firstChild); });
+      slot.appendChild(img);
+    } else {
+      slot.appendChild(fillShape(i, accent));
+    }
+    slot.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));
+    return slot;
+  }
+
+  // One landscape tile: wave border behind, then a fixed-height card with
+  // the big photo panel on top and title / tags / dates below.
+  function buildTile(plan, i) {
+    const r = RECIPES[i % 15];
+    const accent = r.ac, bg = r.bg;
+    const dateColor = bg === WHITE ? accent : INK;
+
+    const wrap = el("div", "position:relative;");
+    wrap.appendChild(el("div",
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0;",
+      { attrs: { class: "tile-wave" }, svg: tileWaveSvg(accent, 418, TILE_H) }));
+
+    const card = el("div",
+      "position:relative;height:" + TILE_H + "px;display:flex;flex-direction:column;background:" + bg +
+      ";cursor:pointer;overflow:hidden;",
+      { on: { click: function () { openPlan(plan); } } });
+
+    if (r.stripes) card.appendChild(el("div",
+      "position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(90deg,#7FA9BD 0 16px, transparent 16px 36px);opacity:0.8;"));
+    const deco = tileDecoration(r, i);
+    if (deco) card.appendChild(deco);
+
+    card.appendChild(dskPhotoSlot(plan, i, accent,
+      "position:relative;flex:none;height:" + TILE_IMG_H + "px;background:#FFFFFF;border-bottom:5px solid #121212;z-index:2;"));
+
+    const info = el("div",
+      "position:relative;flex:1;min-height:0;padding:15px 18px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;z-index:4;");
+    info.appendChild(el("div", "",
+      { text: (plan.short_title || plan.title) || "UNTITLED", attrs: { class: "tile-title" } }));
+    const row = el("div", "display:flex;align-items:flex-end;justify-content:space-between;gap:12px;");
+    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;");
+    keywords(plan).forEach(function (k) {
+      tags.appendChild(el("span",
+        "font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
+        accent + ";padding:2px 7px;", { text: k }));
+    });
+    row.appendChild(tags);
+    row.appendChild(el("div",
+      "font-weight:700;font-size:10.5px;letter-spacing:0.04em;color:" + dateColor + ";white-space:nowrap;",
+      { text: formatDates(plan.start_date, plan.end_date) }));
+    info.appendChild(row);
+    card.appendChild(info);
+
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  // The city switcher under the wordmark in the top bar — same treatment as
+  // the phone's (plain Anton text, active city in cyan with the ink shadow).
+  function renderDesktopCities() {
+    const host = document.getElementById("dsk-cities");
+    if (!host) return;
+    host.innerHTML = "";
+    CITIES_LIST.forEach(function (c) {
+      const active = c === CITY;
+      host.appendChild(el("button",
+        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;" +
+        "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? CYAN : "#121212") +
+        (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
+        { text: c, on: { click: function () { switchCity(c); } } }));
+    });
+  }
+
+  function dskEmptyBox(big, small, extraCss) {
+    const box = el("div", "padding:40px 24px;text-align:center;border:4px dashed #121212;" + (extraCss || ""));
+    box.appendChild(el("div",
+      "font-family:'Anton',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+      { text: big }));
+    if (small) box.appendChild(el("div", "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;", { text: small }));
+    return box;
+  }
+
+  function tileGrid(extraCss) {
+    return el("div",
+      "padding:28px 30px 34px;display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:60px;row-gap:58px;align-content:start;" +
+      (extraCss || ""));
+  }
+
+  function renderHomeDesktop() {
+    main.innerHTML = "";
+    // Scroll-only until login/skip — same greyed, pointer-locked treatment
+    // as the phone feed (openPlan refuses the click at the source too).
+    const grid = tileGrid(awaitingAuth ? "pointer-events:none;opacity:0.6;" : "");
+    if (!state.feed.length) {
+      grid.appendChild(dskEmptyBox(
+        state.reloading ? "Your feed\nis reloading" : (state.loading || state.booting) ? "Loading\nplans" : "No plans\nyet",
+        state.reloading ? "Refreshing your recommendations." : (state.loading || state.booting) ? "Pulling the latest from your city." : "Please wait a few seconds while plans load in.",
+        "grid-column:1 / -1;max-width:520px;"));
+    } else {
+      state.feed.forEach(function (plan, i) { grid.appendChild(buildTile(plan, i)); });
+      grid.appendChild(el("div",
+        "grid-column:1 / -1;text-align:center;font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#121212;opacity:0.5;padding-top:6px;",
+        { text: state.done ? "· that's the whole stack — back to top ·" : "· loading more plans ·" }));
+    }
+    main.appendChild(grid);
+    fitAllTitles();
+    fitTileWaves();
+  }
+
+  // Two-column split: text column (scrolls on its own) on the left, the
+  // photo with the save / view-event buttons stacked under it on the right.
+  function renderDetailDesktop() {
+    main.innerHTML = "";
+    const p = state.selected || {};
+    const sourceList = state.detailFrom === "cinema" && state.cinema ? state.cinema.plans : state.feed;
+    const idx = sourceList.findIndex((x) => x.id === p.id);
+    const n = idx >= 0 ? idx : 0;
+    const r = RECIPES[n % 15];
+    const accent = r.ac;
+    const saved = !!state.saved[p.id];
+
+    // Pinned to main's box (inset:0) so the page never scrolls as a whole —
+    // only the left column does, exactly like the canvas.
+    const page = el("div", "position:absolute;inset:0;display:flex;gap:30px;padding:26px 34px;background:#FFFFFF;overflow:hidden;");
+
+    const left = el("div", "flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;");
+    left.appendChild(el("button",
+      "align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;flex:none;",
+      { text: "◂ BACK", on: { click: goBackFromDetail } }));
+
+    const titleWrap = el("div", "position:relative;margin-top:14px;flex:none;");
+    titleWrap.appendChild(el("div",
+      "position:absolute;bottom:-44px;right:-6px;font-family:'Anton',sans-serif;font-size:176px;line-height:0.66;color:" +
+      faintOf(r.dcol || accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;",
+      { text: pad2(n + 1) }));
+    titleWrap.appendChild(el("div",
+      "font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:" + accent + ";margin-bottom:6px;",
+      { text: "[ plan " + pad2(n + 1) + " ]" }));
+    titleWrap.appendChild(el("div", "position:relative;z-index:2;",
+      { text: cleanTitle(p.title) || "UNTITLED", attrs: { class: "dsk-detail-title" } }));
+    left.appendChild(titleWrap);
+
+    const tags = el("div", "display:flex;flex-wrap:wrap;gap:5px;margin-top:16px;flex:none;");
+    keywords(p).forEach(function (k) {
+      tags.appendChild(el("span",
+        "font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#121212;background:" +
+        accent + ";padding:3px 8px;", { text: k }));
+    });
+    left.appendChild(tags);
+    left.appendChild(el("div",
+      "font-weight:700;font-size:13px;letter-spacing:0.03em;color:" + accent + ";margin-top:12px;flex:none;",
+      { text: formatDates(p.start_date, p.end_date) }));
+    if (p.location) {
+      left.appendChild(el("div",
+        "font-weight:700;font-size:11px;letter-spacing:0.04em;color:#121212;margin-top:10px;flex:none;",
+        { text: "◎ " + p.location }));
+    }
+    left.appendChild(el("div",
+      "font-weight:700;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-top:16px;margin-bottom:8px;flex:none;",
+      { text: "// the plan" }));
+    left.appendChild(el("div", "font-size:11.5px;line-height:1.7;color:#121212;",
+      { text: p.description || "No description available for this plan yet." }));
+    page.appendChild(left);
+
+    const right = el("div", "flex:none;width:330px;display:flex;flex-direction:column;gap:12px;");
+    right.appendChild(dskPhotoSlot(p, n, accent,
+      "position:relative;flex:1;min-height:0;border:4px solid #121212;background:#FFFFFF;"));
+
+    const btn = el("button",
+      "flex:none;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:13px;border:4px solid #121212;cursor:pointer;background:" +
+      (saved ? RED : WHITE) + ";color:#121212;box-shadow:5px 5px 0 0 #121212;",
+      { on: { click: toggleSave } });
+    btn.appendChild(el("span", "font-size:17px;line-height:1;", { text: saved ? "♥" : "♡" }));
+    btn.appendChild(document.createTextNode(saved ? "SAVED" : "SAVE THIS PLAN"));
+    right.appendChild(btn);
+
+    const link = isHttp(p.url) ? p.url : (isHttp(p.ticket_url) ? p.ticket_url : (isHttp(p.source_url) ? p.source_url : null));
+    const a = el("a",
+      "flex:none;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:11px;letter-spacing:0.07em;text-transform:uppercase;padding:12px;border:4px solid #121212;cursor:pointer;background:#E4BE55;color:#121212;text-decoration:none;box-shadow:4px 4px 0 0 #121212;" +
+      (link ? "" : "opacity:0.5;pointer-events:none;"),
+      { text: "↗ view event",
+        attrs: link ? { href: link, target: "_blank", rel: "noopener noreferrer" } : { href: "#" },
+        on: link ? { click: function () { postInteraction(p.id, "view_link"); } } : {} });
+    a.className = "plainlink";
+    right.appendChild(a);
+    page.appendChild(right);
+
+    main.appendChild(page);
+    fitAllTitles();
+  }
+
+  function renderSavedDesktop() {
+    main.innerHTML = "";
+    const box = el("div", "min-height:100%;background:#FFFFFF;padding:30px;");
+
+    const head = el("div", "position:relative;margin-bottom:26px;overflow:hidden;");
+    head.appendChild(el("div",
+      "position:absolute;bottom:-24px;right:8px;font-family:'Anton',sans-serif;font-size:124px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);transform-origin:right bottom;pointer-events:none;",
+      { text: "♥" }));
+    head.appendChild(el("div",
+      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:6px;",
+      { text: "[ your list ]" }));
+    head.appendChild(el("div",
+      "position:relative;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      { text: "Saved" }));
+    const ids = Object.keys(state.saved).filter((k) => state.saved[k]);
+    head.appendChild(el("div",
+      "position:relative;margin-top:8px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
+      { text: ids.length ? ("// " + ids.length + (ids.length === 1 ? " plan kept" : " plans kept")) : "// no plans kept" }));
+    box.appendChild(head);
+
+    if (!ids.length) {
+      box.appendChild(dskEmptyBox("Nothing\nSaved Yet", "Open a plan and tap the heart to keep it here.", "max-width:420px;"));
+      main.appendChild(box);
+      return;
+    }
+
+    // Same resolve-then-sort as the phone list (see renderSaved).
+    let pending = 0;
+    const items = ids.map(function (id) {
+      const p = state.cache[id];
+      if (!p) {
+        pending++;
+        getJSON("/plans/" + encodeURIComponent(id)).then(function (plan) {
+          remember(plan);
+        }).catch(function () {}).finally(function () {
+          pending--;
+          if (pending === 0 && state.view === "saved") render();
+        });
+      }
+      return { id: id, plan: p };
+    });
+    items.sort(function (a, b) { return planSortKey(planTimeInfo(a.plan)) - planSortKey(planTimeInfo(b.plan)); });
+
+    const grid = el("div", "display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:30px;row-gap:26px;align-content:start;");
+    items.forEach(function (item, i) {
+      const id = item.id, p = item.plan;
+      const info = planTimeInfo(p);
+      const bg = info.expired
+        ? "repeating-linear-gradient(-45deg,#E3A5CE 0,#E3A5CE 6px,#FFFFFF 6px,#FFFFFF 12px)"
+        : "#E3A5CE";
+      const row = el("div",
+        "position:relative;display:flex;height:150px;background:" + bg + ";border:4px solid #121212;cursor:pointer;overflow:hidden;box-shadow:6px 6px 0 0 #EA4632;");
+      if (p) {
+        row.appendChild(dskPhotoSlot(p, i, RED,
+          "position:relative;flex:none;width:172px;background:#FFFFFF;border-right:4px solid #121212;"));
+      }
+      const col = el("div", "flex:1;min-width:0;padding:13px 14px 12px;display:flex;flex-direction:column;justify-content:space-between;");
+      col.appendChild(el("div", "",
+        { text: p ? (cleanTitle(p.title) || "UNTITLED") : "PLAN #" + id, attrs: { class: "dsk-saved-title" } }));
+      const bottom = el("div", "display:flex;align-items:flex-end;justify-content:space-between;gap:8px;");
+      const dateRow = el("div", "display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;");
+      dateRow.appendChild(el("div", "font-weight:700;font-size:10px;letter-spacing:0.03em;color:#121212;",
+        { text: p ? formatDates(p.start_date, p.end_date) : "" }));
+      const label = timeLabel(info);
+      if (label) {
+        dateRow.appendChild(el("div",
+          "font-weight:700;font-size:10px;letter-spacing:0.05em;" + (info.expired ? "color:#121212;opacity:0.6;" : "color:#EA4632;"),
+          { text: "· " + label }));
+      }
+      bottom.appendChild(dateRow);
+      bottom.appendChild(el("div", "font-size:18px;line-height:1;color:#EA4632;opacity:0.7;", { text: "♥" }));
+      col.appendChild(bottom);
+      row.appendChild(col);
+      if (p) row.addEventListener("click", function () { openPlan(p); });
+      grid.appendChild(row);
+    });
+    box.appendChild(grid);
+    main.appendChild(box);
+    fitAllTitles();
+  }
+
+  // One cinema's movie list — the same tile grid as the home feed.
+  function renderCinemaDesktop() {
+    main.innerHTML = "";
+    const c = state.cinema || { name: "", plans: [], loading: true };
+    const wrap = el("div", "padding:28px 30px 0;");
+    const head = el("div", "position:relative;margin-bottom:6px;overflow:visible;");
+    head.appendChild(el("button",
+      "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;margin-bottom:18px;",
+      { text: "◂ BACK", on: { click: goHome } }));
+    head.appendChild(el("div",
+      "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
+      { text: "[ cinema ]" }));
+    head.appendChild(el("div",
+      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:62px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      { text: c.name || "" }));
+    head.appendChild(el("div",
+      "position:relative;margin-top:10px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
+      { text: c.loading
+          ? "Loading showtimes…"
+          : "// " + c.plans.length + (c.plans.length === 1 ? " movie showing" : " movies showing") + ", soonest first" }));
+    wrap.appendChild(head);
+    main.appendChild(wrap);
+
+    const grid = tileGrid("padding-top:20px;");
+    if (!c.loading && !c.plans.length) {
+      grid.appendChild(dskEmptyBox("No movies\nlisted", null, "grid-column:1 / -1;max-width:420px;"));
+    } else {
+      c.plans.forEach(function (plan, i) { grid.appendChild(buildTile(plan, i)); });
+    }
+    main.appendChild(grid);
+    fitAllTitles();
+    fitTileWaves();
   }
 
   function updateNav() {
     const on = state.view === "saved";
     document.getElementById("nav-saved-heart").style.color = on ? RED : INK;
     document.getElementById("nav-saved-label").style.color = on ? RED : INK;
+    document.getElementById("dsk-nav-saved-heart").style.color = on ? RED : INK;
+    document.getElementById("dsk-nav-saved-label").style.color = on ? RED : INK;
   }
 
   function render() {
+    const dsk = isDesktop();
+    if (dsk) renderDesktopCities();   // the switcher lives in the top bar on every desktop view
     if (state.view === "home") renderHome();
-    else if (state.view === "detail") renderDetail();
-    else if (state.view === "saved") renderSaved();
-    else if (state.view === "cinema") renderCinema();
+    else if (state.view === "detail") (dsk ? renderDetailDesktop : renderDetail)();
+    else if (state.view === "saved") (dsk ? renderSavedDesktop : renderSaved)();
+    else if (state.view === "cinema") (dsk ? renderCinemaDesktop : renderCinema)();
     updateNav();
   }
 
@@ -1274,6 +1615,12 @@
   document.getElementById("nav-explore").addEventListener("click", shuffle);
   document.getElementById("nav-home").addEventListener("click", goHome);
   document.getElementById("nav-saved").addEventListener("click", goSaved);
+  document.getElementById("dsk-nav-explore").addEventListener("click", shuffle);
+  document.getElementById("dsk-nav-home").addEventListener("click", goHome);
+  document.getElementById("dsk-nav-saved").addEventListener("click", goSaved);
+  // Crossing the breakpoint (window resize, monitor change) swaps the whole
+  // layout — rebuild the current view with whichever path now applies.
+  DESKTOP_MQ.addEventListener("change", function () { render(); });
 
   // ── go ───────────────────────────────────────────────────
   function boot() {
