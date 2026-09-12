@@ -87,15 +87,19 @@
      any orientation. */
   @media (min-width: 1024px) and (pointer: fine) and (hover: hover) {
     #app { max-width: none; box-shadow: none; }
-    .view-narrow { max-width: 960px; margin: 0 auto; }
-    .view-wide { max-width: 1180px; margin: 0 auto; }
+    /* No max-width/margin here anymore — a fixed cap always leaves a dead
+       gutter on anything wider than it, no matter how big the cap. These
+       now fill whatever width the page actually has; the small side
+       padding below (see .feed-pad) is the only edge margin left. */
+    .view-narrow, .view-wide { max-width: none; margin: 0; }
+    .feed-pad { padding-left: 10px !important; padding-right: 10px !important; }
     /* align-items:start overrides grid's default "stretch" — without it, a
        shorter card next to a taller row-mate got force-stretched to match,
        and since the wave-border SVG fills 100% of that stretched box, the
        scallop + accent-color fill rendered across space the visible white
        card content never actually reached: a big oversized wavy colored
        slab hanging off the bottom of the real (shorter) card. */
-    .feed-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; column-gap: 40px; row-gap: 20px; max-width: 1180px; margin: 0 auto; }
+    .feed-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; column-gap: 40px; row-gap: 20px; }
     /* Cards keep their own margin-bottom for mobile's plain stacked column
        (where it's the only thing spacing them apart) — inside the grid,
        row-gap does that job instead, so the card's own margin here would
@@ -916,7 +920,8 @@
     // Scroll-only until login/skip: the feed itself stays clickable to the
     // browser, but we refuse the click at the source (openPlan) and grey/
     // pointer-lock it here too so it visibly reads as inert.
-    const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""));
+    const pad = el("div", "padding:22px 18px 26px;" + (awaitingAuth ? "pointer-events:none;opacity:0.6;" : ""),
+      { attrs: { class: "feed-pad" } });
     const headerWrap = el("div", "", { attrs: { class: "view-wide" } });
     headerWrap.appendChild(feedHeader());
     pad.appendChild(headerWrap);
