@@ -79,10 +79,13 @@
      star doodle — via `.feed-header`'s flex layout; `.fh-decor` drops the
      mobile version's absolute overlap positioning (`!important` beats the
      inline styles that position it that way on mobile) to take its place
-     as a normal flex item instead. `pointer:fine` keeps all of this from
-     firing on large phones held sideways — it's meant for mouse-driven
-     desktop browsers. */
-  @media (min-width: 900px) and (pointer: fine) {
+     as a normal flex item instead. Gated behind min-width:1024px (comfortably
+     past even a large phone's landscape width — an iPhone Pro Max is
+     ~930px) plus BOTH pointer:fine and hover:hover, so a touchscreen that
+     happens to misreport one of those (some do) still can't satisfy both —
+     this is meant for mouse-driven desktop browsers only, never a phone in
+     any orientation. */
+  @media (min-width: 1024px) and (pointer: fine) and (hover: hover) {
     #app { max-width: none; box-shadow: none; }
     .view-narrow { max-width: 720px; margin: 0 auto; }
     .view-wide { max-width: 1180px; margin: 0 auto; }
