@@ -35,7 +35,11 @@ jobs:
       - name: Discover & promote new fixed sources
         env:
           LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          # Both keys: LLM_PROVIDER picks which one is actually read, and
+          # GeminiProvider talks to Gemini through the OpenAI SDK, so a missing
+          # GEMINI_API_KEY surfaces as an OpenAI "set OPENAI_API_KEY" error.
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SEARCH_PROVIDER: ${{ secrets.SEARCH_PROVIDER }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: uv run --frozen --no-dev python main.py --mode explorer

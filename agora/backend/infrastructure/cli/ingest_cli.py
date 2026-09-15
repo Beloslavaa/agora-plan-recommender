@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+import sys
 
 from agora.backend.application.ingestion import run_one_city
 from agora.backend.domain.schemas import PlanCategory
@@ -74,6 +75,7 @@ def main() -> None:
 
     only_names = set(args.source) if args.source else None
     all_plans = []
+    failed = 0
     for city in cities:
         try:
             plans = asyncio.run(run_one_city(args.mode, city, args.only, only_names))
@@ -81,11 +83,19 @@ def main() -> None:
             # One city's bad source / LLM hiccup must not take down the rest
             # of an unattended multi-city run.
             logger.error("[%s] pipeline failed: %s", city, e)
+            failed += 1
             continue
         all_plans.extend(plans)
         print(f"\n[{city}] Scraped this run: {len(plans)}")
         for p in plans:
             print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
+
+    # Partial failure stays tolerated above, but if *every* city blew up the
+    # run accomplished nothing — exit non-zero so CI shows red instead of a
+    # green check on a run that only produced stack traces.
+    if failed == len(cities):
+        logger.error("All %d city pipeline(s) failed — nothing was processed.", failed)
+        sys.exit(1)
 
     if args.mode == "explorer":
         print(f"\nDiscovery only — {len(all_plans)} plan(s) found this run were not persisted (see --mode fixed).")
