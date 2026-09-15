@@ -24,7 +24,9 @@ jobs:
       - uses: actions/checkout@v4
 
       # uv provisions Python itself (per .python-version), so no setup-python.
-      - uses: astral-sh/setup-uv@v10
+      # Pinned to a full version: setup-uv stopped publishing a floating major
+      # tag after v6, so `@v10` doesn't resolve.
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
 
