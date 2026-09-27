@@ -70,6 +70,13 @@ match. See `AGENTS.md` for the fuller design rationale.
   toward a fold-in of everything they've done *since* training, weighted by
   how much that is (`PIN_FADE_WEIGHT` — about five saves to reach 50/50), so
   a new save moves them immediately instead of at the next retrain.
+- **Fresh plans get a nudge, never a penalty:** the blended score is
+  multiplied by up to 1.15 for a plan ingested today, halving every 15 days
+  (one ingestion cycle — runs on the 1st and 15th) and gone after ~2 months
+  (`ranking.py`'s `plan_freshness`). Multiplying means it lifts new plans
+  that already match and leaves poor matches where they are. A new plan
+  that's a near-copy of an older one (same event from another source,
+  recurring event on a new date) gets no nudge — it isn't news.
 
 ## Synthetic training data
 

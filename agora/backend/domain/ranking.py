@@ -206,7 +206,47 @@ def score_candidates(
     return np.maximum.reduce(parts)
 
 
-MMR_LAMBDA = 0.7   # relevance vs. diversity trade-off; 1.0 = pure relevance, no diversity
+FRESHNESS_BOOST = 0.15         # a brand-new plan's score is multiplied by up to 1 + this
+FRESHNESS_HALF_LIFE_DAYS = 15  # ingestion runs on the 1st and 15th — each older batch gets half the boost
+FRESHNESS_MIN = 0.05           # below this (~65 days) a plan counts as not fresh at all
+NEAR_DUPLICATE_SIM = 0.95      # semantic cosine at/above which a new plan is "the same thing again"
+
+
+def plan_freshness(plans: list[dict], now: datetime) -> np.ndarray:
+    """0-1 per plan: how "new" it is, for boosting recently ingested plans
+    that already match the user (the caller MULTIPLIES the relevance score
+    by 1 + FRESHNESS_BOOST * this, so freshness can lift a good match but
+    never rescue an irrelevant one).
+
+    Halves every FRESHNESS_HALF_LIFE_DAYS since the plan was first ingested
+    (plans.created_at — a re-scrape of the same event merges into the
+    existing row and keeps it, see upsert_plans). Fading instead of ever
+    penalising: a plan the user scrolled past just drifts back to its plain
+    relevance score as newer batches arrive.
+
+    Zero for a new plan that's a near-copy (semantic cosine >=
+    NEAR_DUPLICATE_SIM) of an OLDER plan in *plans* — the same event
+    scraped from another source in different wording (which upsert's
+    URL/fuzzy-title dedup can miss), or a recurring event on a new date.
+    Neither is news, so neither should jump the feed."""
+    age_days = np.array([max(0.0, (now - p["created_at"]).total_seconds() / 86400) for p in plans])
+    fresh = 0.5 ** (age_days / FRESHNESS_HALF_LIFE_DAYS)
+    fresh[fresh < FRESHNESS_MIN] = 0.0
+
+    embedded = [i for i, p in enumerate(plans) if p.get("embedding")]
+    recent = [k for k, i in enumerate(embedded) if fresh[i] > 0]
+    if not recent:
+        return fresh
+    vecs = _row_normalise(np.asarray([json.loads(plans[i]["embedding"]) for i in embedded], dtype=np.float64))
+    created = np.array([plans[i]["created_at"].timestamp() for i in embedded])
+    sims = vecs[recent] @ vecs.T                                   # (n_recent, n_embedded)
+    older = created[None, :] < created[recent][:, None]
+    duplicate = ((sims >= NEAR_DUPLICATE_SIM) & older).any(axis=1)
+    fresh[[embedded[recent[k]] for k in np.flatnonzero(duplicate)]] = 0.0
+    return fresh
+
+
+MMR_LAMBDA = 0.7  # relevance vs. diversity trade-off; 1.0 = pure relevance, no diversity
 MMR_POOL_MULT = 3  # only rerank within the top (limit * this) already-relevant candidates
 
 

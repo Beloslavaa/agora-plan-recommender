@@ -19,6 +19,7 @@ plan, rather than dropping the whole request to Tier 1.
 
 import json
 import logging
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -26,10 +27,12 @@ from agora.backend.application import recommendation
 from agora.backend.application.ports import PlanRepository
 from agora.backend.application.recommendation import cached_city_plans
 from agora.backend.domain.ranking import (
+    FRESHNESS_BOOST,
     cinema_pseudo_plan,
     cold_start_graph_embeddings,
     live_user_embedding,
     mmr_rerank,
+    plan_freshness,
     prepare_scoring_items,
     score_candidates,
     user_profile,
@@ -44,6 +47,25 @@ logger = logging.getLogger(__name__)
 # weight between them doesn't. 0.7 is a deliberate lean toward graph
 # within that plateau.
 ALPHA = 0.7
+
+
+_freshness_cache: dict[str, tuple[list[dict], dict[int, float]]] = {}
+
+
+def _city_freshness(city: str, candidates: list[dict], cinemas: dict) -> dict[int, float]:
+    """plan id -> plan_freshness, for every plan in the city (cinema movies
+    included). The same for every user, so it's computed once per
+    cached_city_plans snapshot — that cache hands back the same list object
+    until its TTL expires, which is what the identity check keys on —
+    rather than re-parsing every embedding on every request."""
+    hit = _freshness_cache.get(city)
+    if hit and hit[0] is candidates:
+        return hit[1]
+    everything = candidates + [m for _, movies in cinemas.values() for m in movies]
+    scores = plan_freshness(everything, datetime.now(timezone.utc))
+    result = {p["id"]: float(s) for p, s in zip(everything, scores)}
+    _freshness_cache[city] = (candidates, result)
+    return result
 
 
 def backfill_graph_embeddings(repository: PlanRepository = _default_repository) -> int:
@@ -181,6 +203,13 @@ def rank_for_user(
     graph_scores = _field_scores(user_graph, graph_items, pooled, "graph_embedding")
     semantic_scores = _field_scores(semantic_profile, semantic_items, pooled, "embedding")
     final_scores = _blend_scores(_percentile_rank(graph_scores), _percentile_rank(semantic_scores))
+
+    # Recently ingested plans get a multiplicative nudge (see
+    # domain/ranking.py's plan_freshness) — applied to the blended score,
+    # so it lifts new plans that already match and does nothing for ones
+    # that don't. NaN (unscorable) stays NaN.
+    freshness = _city_freshness(city, candidates, cinemas)
+    final_scores = final_scores * (1 + FRESHNESS_BOOST * np.array([freshness.get(p["id"], 0.0) for p in pooled]))
 
     n_main = len(scoreable)
     scored: list[tuple[float, dict]] = [
