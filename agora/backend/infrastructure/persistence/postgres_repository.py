@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import bcrypt
 import psycopg
@@ -423,10 +424,11 @@ def get_user_interactions_with_embeddings(user_id: str) -> list[dict]:
     separate calls, since Tier 1 needs the former and Tier 2
     (graph_recommendation.py) needs the latter on every single request (not
     cacheable, since it must reflect interactions the instant they're
-    recorded)."""
+    recorded). `city` comes along because graph embeddings only mean
+    something within their own city's graph."""
     with _conn() as conn:
         rows = conn.execute(
-            """SELECT i.plan_id, i.interaction_type, i.created_at, p.embedding, p.graph_embedding
+            """SELECT i.plan_id, i.interaction_type, i.created_at, p.city, p.embedding, p.graph_embedding
                FROM interactions i JOIN plans p ON p.id = i.plan_id
                WHERE i.user_id = %s
                ORDER BY i.created_at DESC""",
@@ -574,24 +576,75 @@ def set_plan_graph_embeddings_bulk(rows: list[tuple[int, list[float]]]) -> None:
         )
 
 
-def upsert_user_embeddings_bulk(city: str, rows: list[tuple[str, list[float]]]) -> None:
-    """Write every trained user embedding for a city in ONE round trip (see
-    set_plan_graph_embeddings_bulk for why bulk matters here)."""
-    if not rows:
-        return
+def replace_city_graph_embeddings(
+    city: str,
+    plan_rows: list[tuple[int, list[float]]],
+    user_rows: list[tuple[str, list[float]]],
+) -> None:
+    """Swap a city's whole graph space for a fresh training run's, in ONE
+    transaction. Every retrain learns a new, unaligned vector space, so any
+    plan or user vector left over from an earlier run (a plan that went
+    stale and dropped out of training, a user with no interactions this
+    time) is meaningless next to the new ones — and a leftover plan vector
+    would even get picked as a cold-start anchor by
+    backfill_graph_embeddings. Clearing first, then writing, guarantees
+    everything in the city comes from the same run; one transaction means
+    the API never sees the half-cleared state in between."""
     with _conn() as conn:
-        conn.execute(
-            """INSERT INTO user_embeddings (user_id, city, embedding, updated_at)
-               SELECT * FROM unnest(%s::text[], %s::text[], %s::text[], array_fill(now(), ARRAY[%s]))
-               ON CONFLICT (user_id, city) DO UPDATE
-               SET embedding = EXCLUDED.embedding, updated_at = EXCLUDED.updated_at""",
-            (
-                [r[0] for r in rows],
-                [city] * len(rows),
-                [json.dumps(r[1]) for r in rows],
-                len(rows),
-            ),
-        )
+        conn.execute("UPDATE plans SET graph_embedding = NULL WHERE city = %s", (city,))
+        conn.execute("DELETE FROM user_embeddings WHERE city = %s", (city,))
+        if plan_rows:
+            conn.execute(
+                """UPDATE plans SET graph_embedding = data.embedding
+                   FROM (SELECT * FROM unnest(%s::int[], %s::text[]) AS t(id, embedding)) AS data
+                   WHERE plans.id = data.id""",
+                ([r[0] for r in plan_rows], [json.dumps(r[1]) for r in plan_rows]),
+            )
+        if user_rows:
+            conn.execute(
+                """INSERT INTO user_embeddings (user_id, city, embedding, updated_at)
+                   SELECT * FROM unnest(%s::text[], %s::text[], %s::text[], array_fill(now(), ARRAY[%s]))""",
+                (
+                    [r[0] for r in user_rows],
+                    [city] * len(user_rows),
+                    [json.dumps(r[1]) for r in user_rows],
+                    len(user_rows),
+                ),
+            )
+
+
+def get_plans_missing_graph_embedding() -> list[dict]:
+    """Live plans with a semantic embedding but no graph embedding — scraped
+    since the last training run, so they need a cold-start proxy (see
+    graph_recommendation.backfill_graph_embeddings). Plans with no semantic
+    embedding yet are skipped: the proxy is built FROM that embedding."""
+    with _conn() as conn:
+        rows = conn.execute(
+            """SELECT id, city, embedding FROM plans
+               WHERE graph_embedding IS NULL AND embedding IS NOT NULL AND NOT is_stale"""
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_graph_anchor_plans(city: str) -> list[dict]:
+    """Plans in *city* that carry both embeddings AND at least one
+    interaction, with that interaction count as `degree` — i.e. the plans
+    that were real nodes in the trained graph, as opposed to earlier
+    cold-start proxies (zero interactions), which must not be averaged
+    from again. Stale plans ARE included: one that went stale after the
+    last training run still carries a vector from that run's space (older
+    runs' leftovers are cleared by replace_city_graph_embeddings), and
+    events are short-lived enough that much of the trained graph is
+    already in the past by the next ingestion."""
+    with _conn() as conn:
+        rows = conn.execute(
+            """SELECT p.id, p.embedding, p.graph_embedding, COUNT(i.id) AS degree
+               FROM plans p JOIN interactions i ON i.plan_id = p.id
+               WHERE p.city = %s AND p.graph_embedding IS NOT NULL AND p.embedding IS NOT NULL
+               GROUP BY p.id""",
+            (city,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_plan_graph_embeddings(plan_ids: list[int]) -> dict[int, list[float]]:
@@ -607,13 +660,16 @@ def get_plan_graph_embeddings(plan_ids: list[int]) -> dict[int, list[float]]:
     return {r["id"]: json.loads(r["graph_embedding"]) for r in rows}
 
 
-def get_user_embedding(user_id: str, city: str) -> list[float] | None:
+def get_user_embedding(user_id: str, city: str) -> tuple[list[float], datetime] | None:
+    """(trained vector, when it was trained) — the timestamp is what lets
+    the recommender tell which of the user's interactions the vector
+    already reflects and which came after (see ranking.live_user_embedding)."""
     with _conn() as conn:
         row = conn.execute(
-            "SELECT embedding FROM user_embeddings WHERE user_id = %s AND city = %s",
+            "SELECT embedding, updated_at FROM user_embeddings WHERE user_id = %s AND city = %s",
             (user_id, city),
         ).fetchone()
-    return json.loads(row["embedding"]) if row else None
+    return (json.loads(row["embedding"]), row["updated_at"]) if row else None
 
 
 def get_interaction_counts(plan_ids: list[int]) -> dict[int, int]:

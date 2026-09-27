@@ -8,8 +8,10 @@ weighted sum — training is always offline, per AGENTS.md.
 
 Falls through to pure Tier 1 (recommendation.rank_for_user) when there's no
 graph signal to work with at all: a user with neither a trained embedding
-(user_embeddings) nor any interacted plan carrying one to fold in from (see
-domain/ranking.py's fold_in_user_embedding). A single candidate plan missing
+(user_embeddings) nor any interacted plan carrying one to fold in from. The
+user's position is recomputed live on every request — trained vector blended
+with whatever they've done since training (see domain/ranking.py's
+live_user_embedding) — so it never waits for a retrain. A single candidate plan missing
 a graph_embedding (never trained, or too new for the last export's
 cold-start pass) just falls back to its semantic score alone for that one
 plan, rather than dropping the whole request to Tier 1.
@@ -25,7 +27,8 @@ from agora.backend.application.ports import PlanRepository
 from agora.backend.application.recommendation import cached_city_plans
 from agora.backend.domain.ranking import (
     cinema_pseudo_plan,
-    fold_in_user_embedding,
+    cold_start_graph_embeddings,
+    live_user_embedding,
     mmr_rerank,
     prepare_scoring_items,
     score_candidates,
@@ -41,6 +44,42 @@ logger = logging.getLogger(__name__)
 # weight between them doesn't. 0.7 is a deliberate lean toward graph
 # within that plateau.
 ALPHA = 0.7
+
+
+def backfill_graph_embeddings(repository: PlanRepository = _default_repository) -> int:
+    """Give every live plan that has a semantic embedding but no graph
+    embedding a cold-start proxy (see domain/ranking.py's
+    cold_start_graph_embeddings), so plans scraped since the last training
+    run get a graph score right away instead of waiting for the next
+    notebook run. Run after backfill_embeddings — the proxy is built from
+    the semantic embedding.
+
+    Per city: each city's graph is trained separately, so anchors from one
+    city's graph space mean nothing in another's. A city with no trained
+    anchors at all is skipped (its plans stay semantic-only, as before).
+    Safe to re-run — only ever touches rows where graph_embedding IS NULL.
+    Returns how many were written."""
+    by_city: dict[str, list[dict]] = {}
+    for plan in repository.get_plans_missing_graph_embedding():
+        by_city.setdefault(plan["city"], []).append(plan)
+
+    written = 0
+    for city, targets in by_city.items():
+        anchors = repository.get_graph_anchor_plans(city)
+        if not anchors:
+            logger.info("[%s] no trained graph yet — %d plan(s) stay semantic-only", city, len(targets))
+            continue
+        proxies = cold_start_graph_embeddings(
+            np.asarray([json.loads(p["embedding"]) for p in targets]),
+            np.asarray([json.loads(a["embedding"]) for a in anchors]),
+            np.asarray([json.loads(a["graph_embedding"]) for a in anchors]),
+            np.asarray([a["degree"] for a in anchors]),
+        )
+        repository.set_plan_graph_embeddings_bulk(
+            [(p["id"], v.tolist()) for p, v in zip(targets, proxies)]
+        )
+        written += len(targets)
+    return written
 
 
 def _field_scores(
@@ -109,9 +148,11 @@ def rank_for_user(
     rows = repository.get_user_interactions_with_embeddings(user_id)
     interacted_ids = {r["plan_id"] for r in rows}
 
-    user_graph = repository.get_user_embedding(user_id, city)
-    if user_graph is None:
-        user_graph = fold_in_user_embedding(rows)
+    # Graph embeddings live in per-city spaces, so only this city's
+    # interactions can place the user in it; the semantic space is shared,
+    # so that side keeps every row.
+    graph_rows = [r for r in rows if r.get("city") == city]
+    user_graph = live_user_embedding(repository.get_user_embedding(user_id, city), graph_rows)
     semantic_profile = user_profile(rows)
 
     if user_graph is None and semantic_profile is None:
@@ -120,7 +161,7 @@ def rank_for_user(
     # Parsed ONCE per request — scoring runs once per candidate plan (hundreds
     # per city), so this must not re-parse the same handful of saved items'
     # embeddings from JSON on every single call (see prepare_scoring_items).
-    graph_items = prepare_scoring_items(rows, "graph_embedding")
+    graph_items = prepare_scoring_items(graph_rows, "graph_embedding")
     semantic_items = prepare_scoring_items(rows, "embedding")
 
     candidates, cinemas = cached_city_plans(city, repository)

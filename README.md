@@ -38,8 +38,9 @@ relevance.
 
 **Tier 2 (live):** a LightGCN graph recommender on the bipartite user-plan
 interaction graph — co-consumption ("the same crowd attends plan A and B")
-rather than text similarity. Trained offline
-(`notebooks/train_lightgcn.ipynb`), initialized from and regularized toward
+rather than text similarity. Trained offline, one graph per city
+(`notebooks/train_lightgcn.ipynb`; `python scripts/train_all_cities.py`
+runs it for every city in `data/cities.json`), initialized from and regularized toward
 Tier 1's semantic embeddings, then exported to `plans.graph_embedding` /
 `user_embeddings`. `/recommendations/{user_id}` blends the graph score with
 Tier 1's semantic score, falling back through Tier 1 then popularity when
@@ -51,7 +52,9 @@ match. See `AGENTS.md` for the fuller design rationale.
 
 - **Cold-start plans:** a plan with zero interactions never becomes a node
   in the trained graph, so it has no learned embedding of its own. The
-  training notebook's export step proxies one in two stages: first a
+  training notebook's export step — and every ingestion run in between, for
+  plans scraped since (`graph_recommendation.backfill_graph_embeddings`) —
+  proxies one in two stages: first a
   similarity floor — its nearest neighbors in semantic space, among plans
   that *were* trained — then, within that shortlist, a preference for the
   more confidently-trained ones (weighted by how many real interactions
@@ -59,13 +62,14 @@ match. See `AGENTS.md` for the fuller design rationale.
   trained on only 2-3 interactions can look close by pure coincidence). The
   proxy is the confidence-weighted average of those neighbors' trained
   graph embeddings.
-- **New users get tuned live, no retraining required:** a user with no row
-  yet in `user_embeddings` gets one folded in on the spot — a weighted
-  average of the *trained* graph embeddings of whatever they've already
-  interacted with (`ranking.py`'s `fold_in_user_embedding`), recomputed
-  fresh each request and sharpening with every new interaction. It's a
-  shallower proxy than a properly trained embedding until the next full run
-  of `notebooks/train_lightgcn.ipynb`.
+- **Every user's position is live, no retraining required:** it's
+  recomputed on each request from the *trained* graph embeddings of what
+  they've interacted with in that city (`ranking.py`'s `live_user_embedding`).
+  A user with no row in `user_embeddings` gets a plain weighted average of
+  those (fold-in). A trained user starts at their trained vector and drifts
+  toward a fold-in of everything they've done *since* training, weighted by
+  how much that is (`PIN_FADE_WEIGHT` — about five saves to reach 50/50), so
+  a new save moves them immediately instead of at the next retrain.
 
 ## Synthetic training data
 

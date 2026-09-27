@@ -4,6 +4,7 @@ application/recommendation.py for the use-case that fetches candidates and
 calls this, and infrastructure/embeddings/ for the embedding provider."""
 
 import json
+from datetime import datetime
 
 import numpy as np
 
@@ -66,6 +67,87 @@ def fold_in_user_embedding(rows: list[dict]) -> list[float] | None:
     graph signal, not just semantic. None if none of those plans have a
     graph embedding either — caller falls back further, to semantic-only."""
     return _weighted_profile(rows, "graph_embedding")
+
+
+# How much post-training activity it takes for the live fold-in to count as
+# much as the trained vector, in INTERACTION_WEIGHT units: 15 = five saves,
+# or fifteen clicks. Lower = the trained vector fades faster.
+PIN_FADE_WEIGHT = 15.0
+
+
+def live_user_embedding(trained: tuple[list[float], datetime] | None, rows: list[dict]) -> list[float] | None:
+    """Where this user sits in graph space RIGHT NOW: their trained vector
+    (if any) blended with a fold-in of everything they've done since it was
+    trained, so a save moves them immediately instead of at the next retrain.
+
+    The trained vector already reflects every interaction up to its
+    timestamp, so only LATER rows are folded in (counting earlier ones again
+    would double-weight them). The mix leans on the fold-in as that later
+    activity piles up — m = w / (w + PIN_FADE_WEIGHT), w = total weight of
+    those later rows — so with nothing new it IS the trained vector, and
+    after lots of new activity it's mostly the fold-in. Both sides are
+    L2-normalised first: only direction matters for cosine scoring, and the
+    trained vector and a plain average of plan vectors don't share a scale.
+
+    No trained vector → plain fold-in over every row (a user who wasn't in
+    the last training run). *rows* must already be limited to the city
+    being ranked — graph spaces are per-city."""
+    if trained is None:
+        return fold_in_user_embedding(rows)
+    vector, trained_at = trained
+    recent = [r for r in rows if r.get("graph_embedding") and r["created_at"] > trained_at]
+    folded = fold_in_user_embedding(recent)
+    if folded is None:
+        return vector
+    w = sum(INTERACTION_WEIGHT.get(r["interaction_type"], 1.0) for r in recent)
+    m = w / (w + PIN_FADE_WEIGHT)
+    pin, live = _row_normalise(np.asarray([vector, folded], dtype=np.float64))
+    return ((1 - m) * pin + m * live).tolist()
+
+
+COLDSTART_K = 5         # trained neighbours averaged into one cold-start proxy
+COLDSTART_PRIOR = 5     # interactions a neighbour needs to reach 50% trust
+COLDSTART_SHORTLIST = 4 # similarity floor: only the top COLDSTART_K * this many are eligible at all
+
+
+def cold_start_graph_embeddings(
+    target_semantic: np.ndarray,
+    anchor_semantic: np.ndarray,
+    anchor_graph: np.ndarray,
+    anchor_degree: np.ndarray,
+) -> np.ndarray:
+    """Graph-space proxy for plans that were never a node in the trained
+    graph: a weighted average of the graph embeddings of their nearest
+    trained neighbours ("anchors") in SEMANTIC space. No training — the
+    anchors' vectors are only read, never changed. Shared by the training
+    notebook's export and ingestion's backfill (graph_recommendation.
+    backfill_graph_embeddings), so both produce the same proxies.
+
+    Similarity FLOOR, then confidence breaks ties within it — a flat
+    similarity*confidence score let confidence override a huge similarity
+    gap: for one plan, a neighbour at only 0.55 similarity but very high
+    confidence (31 interactions) beat one at 0.76 similarity with 3
+    interactions, dragging the proxy toward a generic well-connected hub
+    instead of anything thematically relevant. Two stages instead: (1) take
+    the top COLDSTART_K * COLDSTART_SHORTLIST anchors by RAW similarity
+    only, then (2) within THAT already-similar shortlist, prefer the more
+    confidently-trained ones (degree / (degree + COLDSTART_PRIOR)).
+    Confidence can only choose among options that already look alike.
+
+    Shapes: targets (T, d_sem), anchors (A, d_sem) / (A, d_graph) / (A,).
+    Returns (T, d_graph)."""
+    sims = _row_normalise(np.asarray(target_semantic, dtype=np.float64)) @ \
+        _row_normalise(np.asarray(anchor_semantic, dtype=np.float64)).T  # (T, A)
+    degree = np.asarray(anchor_degree, dtype=np.float64)
+    confidence = degree / (degree + COLDSTART_PRIOR)
+
+    shortlist = np.argsort(-sims, axis=1)[:, :COLDSTART_K * COLDSTART_SHORTLIST]
+    shortlist_score = np.clip(np.take_along_axis(sims, shortlist, axis=1), 1e-6, None) * confidence[shortlist]
+    top_local = np.argsort(-shortlist_score, axis=1)[:, :COLDSTART_K]
+    top = np.take_along_axis(shortlist, top_local, axis=1)                  # (T, k)
+    weights = np.take_along_axis(shortlist_score, top_local, axis=1)
+    weights /= weights.sum(axis=1, keepdims=True)
+    return np.einsum("tk,tkd->td", weights, np.asarray(anchor_graph, dtype=np.float64)[top])
 
 
 def prepare_scoring_items(rows: list[dict], field: str) -> list[tuple[float, list[float]]]:

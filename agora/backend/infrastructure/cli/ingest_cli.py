@@ -101,6 +101,7 @@ def main() -> None:
         print(f"\nDiscovery only — {len(all_plans)} plan(s) found this run were not persisted (see --mode fixed).")
         return
 
+    from agora.backend.application.graph_recommendation import backfill_graph_embeddings
     from agora.backend.application.recommendation import backfill_embeddings
     from agora.backend.infrastructure.persistence.postgres_repository import (
         get_plan_count,
@@ -120,6 +121,11 @@ def main() -> None:
     print(
         f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted"
     )
+
+    # After staling, so no proxy is spent on a plan that just went stale.
+    # Cold-start proxies only, no retraining — see backfill_graph_embeddings.
+    graphed = backfill_graph_embeddings()
+    print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
 
     pool.close()
 
