@@ -785,6 +785,56 @@
     }
   }
 
+  // ── URL routing ──────────────────────────────────────────
+  // Each plan's detail view lives at /plan/{id} (served by the backend's
+  // plan_page route), so it can be shared, bookmarked and refreshed, and the
+  // browser's own back button returns to the feed. Every other view stays
+  // at "/". Entries we push carry { agora: true } so leaving detail can pop
+  // back to the feed entry instead of stacking a new one on top.
+  const BASE_TITLE = document.title;
+  function planIdFromPath() {
+    const m = location.pathname.match(/^\/plan\/(\d+)\/?$/);
+    return m ? Number(m[1]) : null;
+  }
+  function pushPath(path) {
+    if (location.pathname !== path) history.pushState({ agora: true }, "", path);
+  }
+  function showDetail(plan) {
+    state.selected = plan;
+    remember(plan);
+    state.view = "detail";
+    document.title = (cleanTitle(plan.title) || "Plan") + " · AGORA";
+    render();
+    main.scrollTop = 0;
+  }
+  function leaveDetailUrl() {
+    document.title = BASE_TITLE;
+    if (!planIdFromPath()) return;
+    // Landed straight on a shared link: there's no feed entry behind this
+    // one, so rewrite it in place rather than pushing a duplicate.
+    if (history.state && history.state.agora) history.pushState({ agora: true }, "", "/");
+    else history.replaceState(null, "", "/");
+  }
+  // A shared /plan/{id} link — the plan may not be in the feed (or even this
+  // city), so fetch it by id. Unknown/removed ids just fall back to home.
+  async function openPlanById(id) {
+    const plan = state.cache[id] || await getJSON("/plans/" + id).catch(function () { return null; });
+    if (planIdFromPath() !== id) return;   // navigated elsewhere mid-fetch
+    if (!plan) { history.replaceState(null, "", "/"); return; }
+    state.detailFrom = "home";
+    showDetail(plan);
+  }
+  window.addEventListener("popstate", function () {
+    const id = planIdFromPath();
+    if (id != null) {
+      const plan = state.cache[id];
+      if (plan) showDetail(plan); else openPlanById(id);
+    } else if (state.view === "detail") {
+      document.title = BASE_TITLE;
+      goBackFromDetail();
+    }
+  });
+
   // ── navigation ───────────────────────────────────────────
   function openPlan(plan) {
     if (awaitingAuth) return;   // feed is scroll-only until login/skip
@@ -792,19 +842,24 @@
     // Remember whether BACK from the detail page should return here or to
     // the cinema list it was opened from.
     state.detailFrom = state.view === "cinema" ? "cinema" : "home";
-    state.selected = plan;
-    remember(plan);
     postInteraction(plan.id, "click");
-    state.view = "detail";
-    render();
-    main.scrollTop = 0;
+    pushPath("/plan/" + plan.id);
+    showDetail(plan);
   }
-  function goHome()  { state.view = "home";  render(); main.scrollTop = 0; }
-  function goSaved() { state.view = "saved"; render(); main.scrollTop = 0; }
+  function goHome()  { leaveDetailUrl(); state.view = "home";  render(); main.scrollTop = 0; }
+  function goSaved() { leaveDetailUrl(); state.view = "saved"; render(); main.scrollTop = 0; }
   function goBackFromDetail() {
     if (state.detailFrom === "cinema" && state.cinema) { state.view = "cinema"; render(); }
     else { state.view = "home"; render(); }
     main.scrollTop = 0;
+  }
+  // The in-app ◂ BACK button: if we pushed this plan's entry ourselves, step
+  // the browser history back (popstate then restores the previous view), so
+  // in-app BACK and the browser's back button stay in lockstep.
+  function backFromDetail() {
+    if (history.state && history.state.agora && planIdFromPath() != null) { history.back(); return; }
+    leaveDetailUrl();
+    goBackFromDetail();
   }
   async function openCinema(hub) {
     state.cinema = { key: hub.cinema_key, name: hub.short_title || hub.title, plans: [], loading: true };
@@ -931,7 +986,7 @@
 
     box.appendChild(el("button",
       "display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:10px;letter-spacing:0.1em;background:#FFFFFF;color:#121212;border:3px solid #121212;padding:6px 12px;cursor:pointer;",
-      { text: "◂ BACK", on: { click: goBackFromDetail } }));
+      { text: "◂ BACK", on: { click: backFromDetail } }));
 
     // overflow is deliberately NOT hidden here: it clipped the decorative
     // number down to unrecognizable slivers whenever the title fit on one
@@ -1639,6 +1694,10 @@
     else if (state.view === "saved") (dsk ? renderSavedDesktop : renderSaved)();
     else if (state.view === "cinema") (dsk ? renderCinemaDesktop : renderCinema)();
     updateNav();
+    // The login gate floats over the feed, not over a plan — someone landing
+    // on a shared /plan/{id} link reads it first and meets the gate on BACK.
+    document.getElementById("login-gate").style.display =
+      awaitingAuth && state.view !== "detail" ? "flex" : "none";
   }
 
   // ── infinite scroll ──────────────────────────────────────
@@ -1655,7 +1714,7 @@
   document.getElementById("dsk-nav-home").addEventListener("click", goHome);
   document.getElementById("dsk-nav-saved").addEventListener("click", goSaved);
   document.getElementById("dsk-back").addEventListener("click", function () {
-    if (state.view === "cinema") goHome(); else goBackFromDetail();
+    if (state.view === "cinema") goHome(); else backFromDetail();
   });
   // Crossing the breakpoint (window resize, monitor change) swaps the whole
   // layout — rebuild the current view with whichever path now applies.
@@ -1669,6 +1728,8 @@
     loadCitiesList();
     loadSavedFromServer();
     loadInitial(gen);
+    const linkedId = planIdFromPath();
+    if (linkedId != null) openPlanById(linkedId);
     // Anton loads async and changes text metrics — re-fit once it's ready.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
   }
@@ -1698,12 +1759,9 @@
   }
 
   function wireLoginBanner() {
-    const gate = document.getElementById("login-gate");
     const form = document.getElementById("login-form");
     const errorEl = document.getElementById("login-error");
     const skipBtn = document.getElementById("login-skip");
-
-    gate.style.display = "flex";
 
     form.addEventListener("submit", async function (e) {
       e.preventDefault();

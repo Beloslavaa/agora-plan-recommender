@@ -129,6 +129,14 @@ def index():
     )
 
 
+@app.get("/plan/{plan_id}")
+def plan_page(plan_id: int):
+    # Shareable per-plan URL: the same single page, which reads the id off
+    # location.pathname at boot and opens that plan's detail view. Singular
+    # "/plan/" so it never collides with the JSON "/plans/{id}" API route.
+    return index()
+
+
 # ── Routes ───────────────────────────────────────────────
 
 @app.post("/auth")
