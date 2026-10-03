@@ -397,5 +397,75 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false
+  },
+  {
+    "name": "Fundación Juan March Madrid",
+    "url": "https://www.march.es/es/madrid",
+    "city": "Madrid",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true
+  },
+  {
+    "name": "Teatros del Canal",
+    "url": "https://www.teatroscanal.com/cartelera-madrid/",
+    "city": "Madrid",
+    "promoted_by": "manual/comedy_theatre",
+    "is_general_listing": true
+  },
+  {
+    "name": "La Casa Encendida",
+    "url": "https://www.lacasaencendida.es/actividades",
+    "city": "Madrid",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true
+  },
+  {
+    "name": "Espacio Fundación Telefónica",
+    "url": "https://espacio.fundaciontelefonica.com/agenda/exposiciones/",
+    "city": "Madrid",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Fundación Canal",
+    "url": "https://www.fundacioncanal.com/exposiciones/",
+    "city": "Madrid",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Museo Lázaro Galdiano",
+    "url": "https://www.museolazarogaldiano.es/",
+    "city": "Madrid",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true
+  },
+  {
+    "name": "Fundació Joan Miró",
+    "url": "https://www.fmirobcn.org/es/exposiciones/",
+    "city": "Barcelona",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Foto Colectania",
+    "url": "https://fotocolectania.org/",
+    "city": "Barcelona",
+    "promoted_by": "manual/photography",
+    "is_general_listing": false
+  },
+  {
+    "name": "Fundació Vila Casas",
+    "url": "https://www.fundaciovilacasas.com/ca/exposicions/actuals",
+    "city": "Barcelona",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false
+  },
+  {
+    "name": "Fundació Suñol",
+    "url": "https://www.fundaciosunol.org/ca/exposicions/",
+    "city": "Barcelona",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false
   }
 ]
