@@ -13,7 +13,7 @@ from agora.backend.domain.schemas import (
 )
 from agora.backend.domain.validation import validate_and_filter
 from agora.backend.infrastructure.http.fetcher import fetch_page_with_details
-from agora.backend.infrastructure.persistence.json_files import load_fixed_sources
+from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
 from agora.backend.infrastructure.search.providers import get_search_provider
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,9 @@ async def _try_promote_base_domain(
     # in bulk at the end of explore_for_plans, too late for this gate).
     for p in extracted:
         p.city = city
-    valid = validate_and_filter(extracted)
+    # With city_countries, so a page about another country's same-named city
+    # can't pass this gate and become a permanent fixed source.
+    valid = validate_and_filter(extracted, load_city_countries())
     if len(valid) < PROMOTION_THRESHOLD:
         return []
 
@@ -196,7 +198,7 @@ async def explore_for_plans(
                     # until the end of explore_for_plans.
                     for p in extracted:
                         p.city = city
-                    valid = validate_and_filter(extracted)
+                    valid = validate_and_filter(extracted, load_city_countries())
                     if cat_count < max_per_category and extracted:
                         if len(valid) >= PROMOTION_THRESHOLD:
                             name = result.title.split("—")[0].split("|")[0].strip()[:80]

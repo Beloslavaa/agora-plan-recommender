@@ -67,6 +67,16 @@ def _parse_ld_event(obj: dict, base_url: str | None = None) -> dict | None:
         if isinstance(address, dict):
             parts = [address.get("streetAddress"), address.get("addressLocality")]
             addr_str = ", ".join(p for p in parts if p) or None
+            # Not shown in the location string, but they're what tell
+            # "Madrid, ES" from "Madrid, US" (see domain/countries.py).
+            country = address.get("addressCountry")
+            if isinstance(country, dict):
+                country = country.get("name") or country.get("@id")
+            if isinstance(country, str) and country.strip():
+                out["country"] = country.strip()
+            postal = address.get("postalCode")
+            if postal is not None and str(postal).strip():
+                out["postal_code"] = str(postal).strip()
         elif isinstance(address, str):
             addr_str = address
         location_str = ", ".join(p for p in (loc_name, addr_str) if p)

@@ -95,7 +95,8 @@ Compact format — omit any field that has no value:
 [{{"title":"Event 1","start_date":"2026-07-05"}},{{"title":"Event 2","start_date":"2026-07-06"}}]
 
 Available fields: title, short_title, description, start_date (YYYY-MM-DD),
-end_date, url, ticket_url, location, image_url, price (number), tags (string[])
+end_date, url, ticket_url, location, image_url, price (number), tags (string[]),
+country, postal_code
 
 Rules:
 - title is required; all other fields are optional
@@ -109,6 +110,18 @@ Rules:
 - ticket_url: the [link: URL] whose label is about buying tickets (e.g. "tickets",
   "buy", "entradas", "comprar", "reserva"). Skip if none.
 - image_url: the [image: URL] closest to the event (its poster/photo).
+- country: the country where the event takes place, as a 2-letter code
+  (e.g. "ES", "US"). Fill it ONLY when the page text states the country, or
+  names a place that identifies it without doubt (a full postal address, a
+  region or state such as "Comunidad de Madrid" or "New Mexico"). A city
+  name alone is NOT enough — many cities share a name across countries.
+  When unsure, leave it out.
+- postal_code: the event venue's postal/ZIP code, copied exactly as written
+  on the page. Skip if none.
+- Extract the individual events the page mentions. NEVER output the page
+  itself as an event: an article, guide, "top 10" list, weekly agenda or
+  calendar is a container, not an event. A festival, season or fair that has
+  its own name, dates and venue IS an event — keep it.
 - Skip events that ended before {today}
 - ALWAYS return a JSON array — even for one event: [{{"title":"..."}}]
 - If same event has multiple showtimes, include it ONCE
@@ -133,6 +146,8 @@ def _plan_from_ld_event(
         category=category,
         source_url=source_url,
         source_type=source_type,
+        country=ev.get("country"),
+        postal_code=ev.get("postal_code"),
     )
 
 
@@ -260,6 +275,9 @@ async def extract_plans_from_html(
             category=category,
             source_url=source_url,
             source_type=source_type,
+            # str() both: the LLM sometimes returns a postal code as a number.
+            country=str(item["country"]).strip() if item.get("country") else None,
+            postal_code=str(item["postal_code"]).strip() if item.get("postal_code") else None,
         )
         for item in data
         if isinstance(item, dict) and item.get("title")

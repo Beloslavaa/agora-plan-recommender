@@ -135,6 +135,11 @@ class PlanData(BaseModel):
     # validated/stored. Defaults "" only so PlanData stays constructible
     # before that stamping happens.
     city: str = ""
+    # Where the source says the event is — JSON-LD address or the LLM
+    # extractor, raw as found (normalised by domain/countries.py). Only read
+    # by validation's wrong-country check; not persisted.
+    country: str | None = None
+    postal_code: str | None = None
 
 
 class SearchResult(BaseModel):
