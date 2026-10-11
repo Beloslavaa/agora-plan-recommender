@@ -99,6 +99,15 @@ CATEGORY_EXAMPLES: dict[PlanCategory, list[str]] = {
 }
 
 
+class City(BaseModel):
+    """One entry of data/cities.json."""
+    name: str
+    country: str
+    # ISO 639-1 code of the language locals search in — discovery writes one
+    # query in it and one in English (see explorer.QUERY_SYSTEM).
+    language: str = "en"
+
+
 class FixedSource(BaseModel):
     name: str
     url: str

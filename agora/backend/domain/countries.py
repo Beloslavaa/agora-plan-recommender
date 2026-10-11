@@ -1,4 +1,5 @@
-"""Country normalisation for the wrong-country check in domain/validation.py.
+"""Country and language lookups: normalisation for the wrong-country check in
+domain/validation.py, plus per-language words used by discovery and enrichment.
 
 Sources state a plan's country in different forms — JSON-LD uses "ES" on
 Eventbrite/Ticketmaster, "Spain" on Songkick, "España" on smaller Spanish
@@ -51,6 +52,33 @@ def country_code(value) -> str | None:
     if len(v) == 2 and v.isalpha():
         return v.upper()
     return _COUNTRY_NAMES.get(v.lower())
+
+
+_LANGUAGE_NAMES: dict[str, str] = {
+    "en": "English", "es": "Spanish", "ca": "Catalan", "pt": "Portuguese",
+    "fr": "French", "it": "Italian", "de": "German",
+}
+
+# The word people search for alongside an event title to find where to buy —
+# enrichment's URL lookup ("<title>" <venue> entradas).
+_TICKETS_WORD: dict[str, str] = {
+    "en": "tickets", "es": "entradas", "ca": "entrades", "pt": "bilhetes",
+    "fr": "billets", "it": "biglietti", "de": "tickets",
+}
+
+
+def search_country(country: str | None) -> str | None:
+    """The lowercase country code search engines take as `gl` ("es")."""
+    code = country_code(country)
+    return code.lower() if code else None
+
+
+def language_name(code: str) -> str:
+    return _LANGUAGE_NAMES.get(code, code)
+
+
+def tickets_word(language: str | None) -> str:
+    return _TICKETS_WORD.get(language or "en", "tickets")
 
 
 def postal_code_fits(postal_code: str | None, country: str) -> bool | None:

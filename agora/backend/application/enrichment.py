@@ -20,9 +20,11 @@ from html import unescape
 from urllib.parse import urlparse
 
 from agora.backend.application.ports import LLMProvider, SearchProvider
-from agora.backend.domain.schemas import CATEGORY_LABELS, PlanCategory, PlanData
+from agora.backend.domain.countries import search_country, tickets_word
+from agora.backend.domain.schemas import CATEGORY_LABELS, City, PlanCategory, PlanData
 from agora.backend.domain.url_safety import effective_base_url, normalise_url
 from agora.backend.infrastructure.http.fetcher import fetch_page
+from agora.backend.infrastructure.persistence.json_files import load_city_settings
 
 logger = logging.getLogger(__name__)
 
@@ -200,17 +202,22 @@ async def _generate_description(plan: PlanData, llm: LLMProvider) -> str:
     return ""
 
 
-async def _search_url(plan: PlanData, search: SearchProvider) -> str | None:
+async def _search_url(plan: PlanData, search: SearchProvider, city: City | None = None) -> str | None:
     """Search Google for the plan's dedicated event page."""
     title = plan.title.strip()
     location = (plan.location or "").strip() or plan.city
+    # In the city's language ("entradas" in Madrid) — that's how the event's
+    # own Spanish-language page phrases it.
+    language = city.language if city else None
+    tickets = tickets_word(language)
+    gl = search_country(city.country) if city else None
 
-    query = f'"{title}" {location} tickets'
+    query = f'"{title}" {location} {tickets}'
     if len(query) > 200:
-        query = f'"{title[:80]}" {location} tickets'
+        query = f'"{title[:80]}" {location} {tickets}'
 
     try:
-        results = await search.search(query, max_results=5)
+        results = await search.search(query, max_results=5, gl=gl, hl=language)
     except Exception as e:
         logger.debug("  ~ search failed for '%s': %s", query[:40], e)
         return None
@@ -249,6 +256,7 @@ async def enrich_plan(
     plan: PlanData,
     llm: LLMProvider | None = None,
     search: SearchProvider | None = None,
+    city: City | None = None,
 ) -> PlanData:
     """Enrich a single plan with short title, URL search, image, and ticket link.
 
@@ -264,7 +272,7 @@ async def enrich_plan(
 
     # ── 2. URL search fallback ───────────────────────────
     if not plan.url and search:
-        url = await _search_url(plan, search)
+        url = await _search_url(plan, search, city)
         if url:
             plan.url = url
             logger.info("  ✓ URL for %s: %s", plan.title[:40], url)
@@ -326,10 +334,11 @@ async def enrich_plans(
         return plans
 
     sem = asyncio.Semaphore(5)
+    cities = load_city_settings()
 
     async def _enrich(p: PlanData) -> PlanData:
         async with sem:
-            return await enrich_plan(p, llm=llm, search=search)
+            return await enrich_plan(p, llm=llm, search=search, city=cities.get(p.city))
 
     # enrich_plan mutates in place, so `plans` already reflects the changes;
     # we still await so the fetches/LLM calls complete before returning.

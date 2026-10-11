@@ -5,15 +5,21 @@ from urllib.parse import urlparse
 
 from agora.backend.application.ports import LLMProvider, SearchProvider
 from agora.backend.application.sources_admin import correct_city_from_location, promote_source
+from agora.backend.domain.countries import language_name, search_country
 from agora.backend.domain.schemas import (
     CATEGORY_EXAMPLES,
     CATEGORY_LABELS,
+    City,
     PlanCategory,
     PlanData,
 )
 from agora.backend.domain.validation import validate_and_filter
 from agora.backend.infrastructure.http.fetcher import fetch_page_with_details
-from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
+from agora.backend.infrastructure.persistence.json_files import (
+    load_city_countries,
+    load_city_settings,
+    load_fixed_sources,
+)
 from agora.backend.infrastructure.search.providers import get_search_provider
 
 logger = logging.getLogger(__name__)
@@ -22,17 +28,36 @@ QUERY_SYSTEM = """\
 Today's date is {today}.
 
 You are a creative curator. Generate 2 search queries to discover current \
-{category} in {city}.
+{category} in {place}.
+
+{language_instructions}
 
 The queries MUST find events happening ON or AFTER {today}.
-Use only relative time phrases like "this month", "this weekend", "upcoming" — \
-never use a specific year or date in the query.
+Use only relative time phrases, in each query's own language (e.g. "este fin \
+de semana", "this weekend", "próximamente", "upcoming") — never use a \
+specific year or date in the query.
 
-Here are examples of good queries for this category:
+Here are examples of good queries for this category. They show the STYLE of a \
+good query — short, specific, time-relative. They say nothing about language: \
+do not translate them, and write each query in the language requested above.
 {examples}
 
-Return a JSON array of query strings.
+Return a JSON array of exactly 2 objects:
+[{{"lang": "{local_code}", "q": "..."}}, {{"lang": "en", "q": "..."}}]
 """
+
+# One query in the local language reaches venues that only publish in it;
+# the English one keeps expat/visitor listings.
+_BILINGUAL_INSTRUCTIONS = """\
+- Query 1: in {language}, written the way someone who lives in {city} would \
+type it into Google. Use the words locals actually use, not a translation of \
+an English phrase.
+- Query 2: in English, written the way a visitor or an English-speaking \
+resident would type it."""
+
+_ENGLISH_INSTRUCTIONS = """\
+- Write both queries in English, taking two different angles (e.g. one \
+specific, one broader), so they don't return the same results."""
 
 PROMOTION_THRESHOLD = 2
 
@@ -40,21 +65,44 @@ PROMOTION_THRESHOLD = 2
 async def generate_queries(
     llm: LLMProvider,
     category: PlanCategory,
-    city: str,
-) -> list[str]:
+    city: City,
+) -> list[tuple[str | None, str]]:
+    """(language, query) pairs. Language is None when the model didn't tag
+    a query with one of the two languages asked for."""
     examples = "\n".join(f"- {e}" for e in CATEGORY_EXAMPLES[category])
+    local = city.language
+    if local == "en":
+        language_instructions = _ENGLISH_INSTRUCTIONS
+    else:
+        language_instructions = _BILINGUAL_INSTRUCTIONS.format(
+            language=language_name(local), city=city.name,
+        )
     system = QUERY_SYSTEM.format(
         today=date.today().isoformat(),  # per-call, not frozen at import time
         category=CATEGORY_LABELS[category],
-        city=city,
+        # Country alongside the name: one more nudge away from same-named
+        # cities elsewhere (Madrid, NM), on top of the search's gl.
+        place=f"{city.name}, {city.country}" if city.country else city.name,
+        language_instructions=language_instructions,
+        local_code=local,
         examples=examples,
     )
-    return await llm.parse_json(
+    data = await llm.parse_json(
         prompt="Generate the queries now.",
         system=system,
         temperature=0.9,
         max_tokens=1024,
     )
+    queries: list[tuple[str | None, str]] = []
+    for item in data if isinstance(data, list) else []:
+        # Plain strings (the old output shape) are still accepted, just
+        # without a language — a small model slip shouldn't stop discovery.
+        if isinstance(item, str) and item.strip():
+            queries.append((None, item.strip()))
+        elif isinstance(item, dict) and str(item.get("q") or "").strip():
+            lang = item.get("lang")
+            queries.append((lang if lang in (local, "en") else None, str(item["q"]).strip()))
+    return queries
 
 
 async def _try_promote_base_domain(
@@ -142,6 +190,11 @@ async def explore_for_plans(
     checked_domains: set[str] = set()
     existing_domains = {urlparse(s.url).hostname for s in load_fixed_sources()}
 
+    # A city missing from data/cities.json still gets explored, just in
+    # English with no country hint — as before languages were configured.
+    city_settings = load_city_settings().get(city) or City(name=city, country="")
+    gl = search_country(city_settings.country)
+
     categories = only_categories or set(PlanCategory)
     for category in PlanCategory:
         if category not in categories:
@@ -149,18 +202,18 @@ async def explore_for_plans(
         logger.info("Exploring category: %s", CATEGORY_LABELS[category])
         cat_count = 0
         try:
-            queries = await generate_queries(llm, category, city)
+            queries = await generate_queries(llm, category, city_settings)
         except Exception as e:
             logger.warning("  Failed to generate queries for %s: %s", category, e)
             continue
 
-        for query in queries:
+        for lang, query in queries:
             if cat_count >= max_per_category:
                 break
-            logger.info("  Query: %s", query)
+            logger.info("  Query [%s]: %s", lang or "?", query)
             await asyncio.sleep(1)
             try:
-                results = await search_provider.search(query, max_results=5)
+                results = await search_provider.search(query, max_results=5, gl=gl, hl=lang)
             except Exception as e:
                 logger.warning("  Search failed: %s", e or type(e).__name__)
                 if cat_count >= min_per_category:

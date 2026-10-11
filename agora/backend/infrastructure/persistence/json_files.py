@@ -4,7 +4,7 @@ files under data/, no database involved."""
 import json
 from pathlib import Path
 
-from agora.backend.domain.schemas import FixedSource
+from agora.backend.domain.schemas import City, FixedSource
 
 SOURCES_FILE = Path("data/fixed_sources.json")
 CITIES_FILE = Path("data/cities.json")
@@ -28,6 +28,13 @@ def load_cities() -> list[str]:
     if not CITIES_FILE.exists():
         return []
     return [c["name"] for c in json.loads(CITIES_FILE.read_text())]
+
+
+def load_city_settings() -> dict[str, City]:
+    """City name -> its full data/cities.json entry (country, language)."""
+    if not CITIES_FILE.exists():
+        return {}
+    return {c["name"]: City(**c) for c in json.loads(CITIES_FILE.read_text())}
 
 
 def load_city_countries() -> dict[str, str]:

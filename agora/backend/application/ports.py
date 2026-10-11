@@ -81,7 +81,12 @@ class LLMProvider(ABC):
 
 class SearchProvider(ABC):
     @abstractmethod
-    async def search(self, query: str, max_results: int = 10) -> list[SearchResult]:
+    async def search(
+        self, query: str, max_results: int = 10, gl: str | None = None, hl: str | None = None,
+    ) -> list[SearchResult]:
+        """gl: country to rank results for (ISO code, e.g. "es"); hl: the
+        query's language. Both are ranking hints, not filters — providers
+        without an equivalent ignore them."""
         ...
 
 
