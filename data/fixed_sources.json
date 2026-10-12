@@ -365,15 +365,6 @@
     "selectors": null
   },
   {
-    "name": "Pottery studio in Madrid",
-    "url": "https://martaceramica.com/en/",
-    "city": "Madrid",
-    "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false,
-    "extractor": "page",
-    "selectors": null
-  },
-  {
     "name": "Hands-on Gastronomic Experiences in Madrid",
     "url": "https://thecookingclubhouse.es/",
     "city": "Madrid",
@@ -392,15 +383,6 @@
     "selectors": null
   },
   {
-    "name": "Tickets for Cata para emprendedoras",
-    "url": "https://feverup.com/m/325423/en?srsltid\\u003dAfmBOop_gn5_RN0AQKtM4vTs_skrbGzautypklqZArfEa0jUSgezSJtO",
-    "city": "Madrid",
-    "promoted_by": "explorer/PlanCategory.food_drink",
-    "is_general_listing": false,
-    "extractor": "page",
-    "selectors": null
-  },
-  {
     "name": "Wellness events in Madrid",
     "url": "https://ma.to/events/madrid/anytime/wellness",
     "city": "Madrid",
@@ -414,15 +396,6 @@
     "url": "https://juliatravel.com/en/destinations/madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.day_trips",
-    "is_general_listing": false,
-    "extractor": "page",
-    "selectors": null
-  },
-  {
-    "name": "Autumn Craft Fair 2025",
-    "url": "https://www.madineurope.eu/en/events/autumn-craft-fair-2025-made-for-you-made-in-madrid/",
-    "city": "Madrid",
-    "promoted_by": "explorer/PlanCategory.festivals_markets",
     "is_general_listing": false,
     "extractor": "page",
     "selectors": null
@@ -533,7 +506,7 @@
     "is_general_listing": true,
     "extractor": "page",
     "selectors": {
-      "card": ".c-snippet.js-snippet",
+      "card": ".snippet-container--destacado .c-snippet.js-snippet",
       "title": ":scope .c-snippet__titular p",
       "link": ":scope .c-snippet__titular",
       "date": ".c-snippet__time .c-titular",
