@@ -5,7 +5,11 @@ from datetime import date
 from urllib.parse import urlparse
 
 from agora.backend.application.ports import LLMProvider
-from agora.backend.domain.event_parsing import extract_dice_event_details, extract_ld_events
+from agora.backend.domain.event_parsing import (
+    extract_dice_event_details,
+    extract_dice_listing_events,
+    extract_ld_events,
+)
 from agora.backend.domain.schemas import PlanData
 from agora.backend.domain.url_safety import effective_base_url, is_late_night, normalise_url
 from agora.backend.infrastructure.http.fetcher import fetch_page
@@ -226,6 +230,19 @@ async def extract_plans_from_html(
         plans = [p for p in plans if p]
         if plans:
             logger.info("  ✓ %d plan(s) from JSON-LD on %s", len(plans), source_url)
+            return await _apply_dice_details(plans)
+
+    # dice.fm listings have no JSON-LD, but embed every listed event as JSON
+    # in the page (see extract_dice_listing_events). Only on dice.fm: other
+    # Next.js sites lay out their page data differently.
+    if urlparse(source_url).hostname == "dice.fm":
+        plans = [
+            _plan_from_ld_event(ev, source_url, source_type, category)
+            for ev in extract_dice_listing_events(html)
+        ]
+        plans = [p for p in plans if p]
+        if plans:
+            logger.info("  ✓ %d plan(s) from dice.fm page data on %s", len(plans), source_url)
             return await _apply_dice_details(plans)
 
     system = EXTRACTION_SYSTEM.format(

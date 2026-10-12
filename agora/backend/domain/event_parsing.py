@@ -220,6 +220,81 @@ def extract_dice_event_details(html: str) -> dict | None:
     return out or None
 
 
+def extract_dice_listing_events(html: str) -> list[dict]:
+    """Events from a dice.fm browse/listing page, without an LLM.
+
+    The listing's visible text only shows dates, but Next.js's serialized page
+    state (__NEXT_DATA__ → props.pageProps.events) carries every listed event
+    in full: exact start time, venue address and country, price, image.
+    Undocumented and specific to dice.fm's frontend, so parsing is defensive —
+    any structural mismatch returns [] and the caller falls back to the LLM.
+
+    Description and genre tags aren't in the listing; extraction's
+    _apply_dice_details fetches each event's own page for those.
+
+    Returns PlanData-shaped dicts, like extract_ld_events.
+    """
+    m = re.search(
+        r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL,
+    )
+    if not m:
+        return []
+    try:
+        events = json.loads(m.group(1))["props"]["pageProps"]["events"]
+    except (KeyError, TypeError, json.JSONDecodeError):
+        return []
+    if not isinstance(events, list):
+        return []
+
+    out: list[dict] = []
+    for ev in events:
+        if not isinstance(ev, dict) or not ev.get("id") or not str(ev.get("name") or "").strip():
+            continue
+        dates = ev.get("dates") if isinstance(ev.get("dates"), dict) else {}
+        start = dates.get("event_start_date")
+        if start and is_late_night(str(start)):
+            continue
+
+        # The listing's own links use /event/{id}, which redirects to the
+        # event's full slug URL — also the page tickets are bought on.
+        url = f"https://dice.fm/event/{ev['id']}"
+        item: dict = {"title": str(ev["name"]).strip(), "url": url, "ticket_url": url}
+        if start:
+            item["start_date"] = str(start)[:10]
+        # A single night's end is the next morning — only a real multi-day
+        # event gets an end_date.
+        if dates.get("is_multi_days_event") and dates.get("event_end_date"):
+            item["end_date"] = str(dates["event_end_date"])[:10]
+
+        images = ev.get("images")
+        if isinstance(images, dict):
+            image = images.get("square") or next(iter(images.values()), None)
+            image_url = normalise_url(image) if isinstance(image, str) else None
+            if image_url:
+                item["image_url"] = image_url
+
+        venues = ev.get("venues")
+        venue = venues[0] if isinstance(venues, list) and venues and isinstance(venues[0], dict) else {}
+        location = ", ".join(str(p) for p in (venue.get("name"), venue.get("address")) if p)
+        if location:
+            item["location"] = location
+        city = venue.get("city") if isinstance(venue.get("city"), dict) else {}
+        if city.get("country_code"):
+            item["country"] = str(city["country_code"])
+
+        # In cents (2876 → 28.76 €, checked against event pages). Fixed-price
+        # events set `amount`, tiered ones `amount_from` (the lowest tier).
+        price = ev.get("price")
+        amount = price.get("amount_from") if isinstance(price, dict) else None
+        if amount is None and isinstance(price, dict):
+            amount = price.get("amount")
+        if isinstance(amount, (int, float)):
+            item["price"] = amount / 100
+
+        out.append(item)
+    return out
+
+
 def extract_item_list_urls(html: str, base_url: str | None = None) -> list[str]:
     """Detail-page URLs from a JSON-LD ``ItemList`` (listing pages only)."""
     urls = [ev["url"] for ev in extract_ld_events(html, base_url) if ev.get("url")]
