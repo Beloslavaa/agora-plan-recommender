@@ -1,5 +1,6 @@
 from datetime import date
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -122,6 +123,11 @@ class FixedSource(BaseModel):
     # e.g. concerts and exhibitions scraped from it as whatever category
     # happened to find it first. See cli.py's run_fixed_pipeline.
     is_general_listing: bool = False
+    # How run_fixed_pipeline reads this source, recorded once by
+    # scripts/detect_extractors.py: "wp_api" = the site's WordPress events
+    # API only, "page" = fetch the page (JSON-LD → dice.fm data → LLM) without
+    # probing the API first. None (new, unchecked source) = try both.
+    extractor: Literal["wp_api", "page"] | None = None
 
 
 class PlanData(BaseModel):

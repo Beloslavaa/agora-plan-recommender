@@ -59,10 +59,16 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
 
             # A WordPress site with an events plugin publishes the same events
             # as JSON — when it does, that replaces scraping its pages.
-            wp_plans = await extract_plans_from_wp_api(source.url, "fixed", category)
-            if wp_plans:
-                plans.extend(wp_plans)
-                continue
+            # source.extractor (see FixedSource) says whether this site has
+            # one, so the other sources skip the probe; unchecked ones try it.
+            if source.extractor != "page":
+                wp_plans = await extract_plans_from_wp_api(source.url, "fixed", category)
+                if wp_plans:
+                    plans.extend(wp_plans)
+                    continue
+                if source.extractor == "wp_api":
+                    logger.warning("  ! %s: WordPress events API returned nothing, "
+                                   "scraping its page instead", source.name)
 
             page_htmls = await fetch_fixed_source_with_details(source)
 

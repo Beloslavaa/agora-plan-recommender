@@ -4,468 +4,535 @@
     "url": "https://www.eventbrite.com/b/spain--madrid/film-and-media/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Songkick Madrid",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Rock Events & Tickets in Madrid, Spain - Music",
     "url": "https://www.eventbrite.com/b/spain--madrid/music/rock/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Rock Tickets in Madrid - Music",
     "url": "https://www.ticketmaster.es/discover/madrid?language=en-us&categoryId=KZFzniwnSyZfZ7v7nJ&classificationId=KnvZfZ7vAeA",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "The 20 must-see exhibitions in Madrid this June",
     "url": "https://madridsecreto.co/en/exhibitions-madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Madrid Concerts, Festivals, Tickets & Tour Dates 2026 & ...",
     "url": "https://www.songkick.com/metro-areas/28755-spain-madrid",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Concerts in Spain",
     "url": "https://www.vividseats.com/geo/spain/concerts",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Discover Pop Up Events & Activities in Madrid, Spain",
     "url": "https://www.eventbrite.com/d/spain--madrid/pop-up/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Madrid Events Calendar 2026",
     "url": "https://www.visitmadrid.es/en/madrid-events-calendar",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Things to Do in Madrid, Spain This Month - Events & Activities",
     "url": "https://www.eventbrite.com/d/spain--madrid/events--this-month/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Fashion Events in Madrid, Spain - Clothing Fairs & ...",
     "url": "https://www.eventbrite.com/b/spain--madrid/fashion/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Cibeles de Cine",
     "url": "https://www.cibelesdecine.com/es/",
     "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Sala Equis",
     "url": "https://salaequis.es/",
     "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Yelmo Cines Ideal",
     "url": "https://yelmocines.es/cartelera/madrid/ideal",
     "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Cinesa",
     "url": "https://www.cinesa.es/",
     "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Cines Renoir",
     "url": "https://www.cinesrenoir.com/",
     "city": "Madrid",
     "promoted_by": "manual/cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Dice Madrid",
     "url": "https://dice.fm/browse/madrid-5d8cef380de1e404dc962211",
     "city": "Madrid",
     "promoted_by": "manual/music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Dice Barcelona",
     "url": "https://dice.fm/browse/barcelona-5d8cefe1e3e6e374e99e8cbe",
     "city": "Barcelona",
     "promoted_by": "manual/music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Condeduquemadrid",
     "url": "https://www.condeduquemadrid.es/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Time Out Madrid",
     "url": "https://www.timeout.es/madrid/es",
     "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Time Out Barcelona",
     "url": "https://www.timeout.es/barcelona/es",
     "city": "Barcelona",
     "promoted_by": "manual/cultural",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Comunidad de Madrid - Cultura",
     "url": "https://www.comunidad.madrid/cultura",
     "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Exhibitions in Madrid",
     "url": "https://www.esmadrid.com/en/whats-on-exhibitions-madrid",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Cinema - Madrid",
     "url": "https://www.capitolgranvia.com/en/cine/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Movies in English at cinemas in Madrid",
     "url": "https://englishcinemamadrid.com/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Best Pop Up Stores in Madrid",
     "url": "https://app.gopopup.com/en/collection/pop-up-stores-madrid",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Madrid Events Calendar: 2026",
     "url": "https://www.esmadrid.com/en/events-calendar",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
-    "name": "Exhibitions Barcelona \u2013 Digital & Modern Art at ...",
+    "name": "Exhibitions Barcelona – Digital & Modern Art at ...",
     "url": "https://www.mocomuseum.com/exhibitions/barcelona/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Find all Barcelona exhibitions on one page: Information 2026",
     "url": "https://www.museos.com/en/barcelona/barcelona-exhibitions/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Photography Exhibitions in Barcelona",
     "url": "https://kbr.fundacionmapfre.org/en/exhibitions/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.photography",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Photography Exhibitions in Barcelona 2026",
     "url": "https://expo-barcelona.com/exhibitions/photography",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.photography",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Movies in English at cinemas in Barcelona",
     "url": "https://englishcinemabarcelona.com/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Barcelona Concerts, Festivals, Tickets & Tour Dates 2026 ...",
     "url": "https://www.songkick.com/metro-areas/28714-spain-barcelona",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.music_concerts",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Markets and pop ups - Barcelona - Book Style",
     "url": "https://www.bookstyle.net/en/sugerencias/barcelona/markets-and-pop-ups",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Fashion Events in Barcelona, Spain - Clothing Fairs & ...",
     "url": "https://www.eventbrite.com/b/spain--barcelona/fashion/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Upcoming Events",
     "url": "https://www.barcelona-metropolitan.com/search/event/upcoming-events/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
-    "name": "Exhibitions in Madrid in Fundaci\u00f3n Mapfre's Sala Recoletos",
+    "name": "Exhibitions in Madrid in Fundación Mapfre's Sala Recoletos",
     "url": "https://www.fundacionmapfre.org/en/art-and-culture/exhibitions/recoletos-hall/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.photography",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "IBERIFF",
     "url": "https://iberiff.org/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Top 10 Flea Markets in Madrid: Ten Trails Worth Following",
     "url": "https://www.leonardohotels.co.uk/blog/top-10-flea-markets-in-madrid-ten-trails-worth-following",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Pottery studio in Madrid",
     "url": "https://martaceramica.com/en/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Hands-on Gastronomic Experiences in Madrid",
     "url": "https://thecookingclubhouse.es/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Theatre and dance in Madrid",
     "url": "https://www.esmadrid.com/en/whats-on-theatre-and-dance-madrid",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.comedy_theatre",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Tickets for Cata para emprendedoras",
     "url": "https://feverup.com/m/325423/en?srsltid\\u003dAfmBOop_gn5_RN0AQKtM4vTs_skrbGzautypklqZArfEa0jUSgezSJtO",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.food_drink",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Wellness events in Madrid",
     "url": "https://ma.to/events/madrid/anytime/wellness",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.sports_wellness",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Day trips, guided visits and tours in Madrid",
     "url": "https://juliatravel.com/en/destinations/madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.day_trips",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Some (craft) markets in Spain",
     "url": "https://www.spain.info/en/top/some-markets-fairs-crafts-spain/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Autumn Craft Fair 2025",
     "url": "https://www.madineurope.eu/en/events/autumn-craft-fair-2025-made-for-you-made-in-madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Gastronomy, food and tapas fairs",
     "url": "https://www.ifema.es/en/calendar/gastronomy",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "What's On in Madrid",
     "url": "https://www.esmadrid.com/en/whats-on-madrid",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Corrie Bain International Ceramics School in Barcelona",
     "url": "https://corriebain.com/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "wp_api"
   },
   {
     "name": "Paella Cooking Class Barcelona",
     "url": "https://www.gastronomicartsbarcelona.com/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Cook&Taste",
     "url": "https://cookandtaste.net/en/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "The Comedy Clubhouse: Home",
     "url": "https://thecomedyclubhouse.es/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.comedy_theatre",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "wp_api"
   },
   {
     "name": "Tasting Experiences in Barcelona - Food & Drink",
     "url": "https://feverup.com/en/barcelona/tasting?srsltid\\u003dAfmBOoqdb3kV1NmljgL6FI4TLe5VvsSRcgICxRFAR8ByXs7y5bC4IkCY",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.food_drink",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Explore Catalunya: Small Group Day Trips from Barcelona",
     "url": "https://explorecatalunya.com/",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.day_trips",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Barcelona Food Festivals, Markets & Events Calendar 2026",
     "url": "https://guidavera.com/spain/barcelona/food-events",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "WHAT'S ON",
     "url": "https://www.barcelona-metropolitan.com/whats-on",
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Fundación Juan March Madrid",
     "url": "https://www.march.es/es/madrid",
     "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Teatros del Canal",
     "url": "https://www.teatroscanal.com/cartelera-madrid/",
     "city": "Madrid",
     "promoted_by": "manual/comedy_theatre",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "wp_api"
   },
   {
     "name": "La Casa Encendida",
     "url": "https://www.lacasaencendida.es/actividades",
     "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Espacio Fundación Telefónica",
     "url": "https://espacio.fundaciontelefonica.com/agenda/exposiciones/",
     "city": "Madrid",
     "promoted_by": "manual/art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Fundación Canal",
     "url": "https://www.fundacioncanal.com/exposiciones/",
     "city": "Madrid",
     "promoted_by": "manual/art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Museo Lázaro Galdiano",
     "url": "https://www.museolazarogaldiano.es/",
     "city": "Madrid",
     "promoted_by": "manual/cultural",
-    "is_general_listing": true
+    "is_general_listing": true,
+    "extractor": "page"
   },
   {
     "name": "Fundació Joan Miró",
     "url": "https://www.fmirobcn.org/es/exposiciones/",
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Foto Colectania",
     "url": "https://fotocolectania.org/",
     "city": "Barcelona",
     "promoted_by": "manual/photography",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Fundació Vila Casas",
     "url": "https://www.fundaciovilacasas.com/ca/exposicions/actuals",
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   },
   {
     "name": "Fundació Suñol",
     "url": "https://www.fundaciosunol.org/ca/exposicions/",
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
-    "is_general_listing": false
+    "is_general_listing": false,
+    "extractor": "page"
   }
 ]

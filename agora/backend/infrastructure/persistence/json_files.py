@@ -20,7 +20,7 @@ def load_fixed_sources() -> list[FixedSource]:
 def save_fixed_sources(sources: list[FixedSource]) -> None:
     SOURCES_FILE.parent.mkdir(parents=True, exist_ok=True)
     SOURCES_FILE.write_text(
-        json.dumps([s.model_dump() for s in sources], indent=2)
+        json.dumps([s.model_dump() for s in sources], indent=2, ensure_ascii=False)
     )
 
 
