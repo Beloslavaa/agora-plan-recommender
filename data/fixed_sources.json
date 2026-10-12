@@ -5,7 +5,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Songkick Madrid",
@@ -13,7 +14,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Rock Events & Tickets in Madrid, Spain - Music",
@@ -21,7 +23,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Rock Tickets in Madrid - Music",
@@ -29,7 +32,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "The 20 must-see exhibitions in Madrid this June",
@@ -37,7 +41,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Madrid Concerts, Festivals, Tickets & Tour Dates 2026 & ...",
@@ -45,7 +50,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Concerts in Spain",
@@ -53,7 +59,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Discover Pop Up Events & Activities in Madrid, Spain",
@@ -61,7 +68,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Madrid Events Calendar 2026",
@@ -69,7 +77,16 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": "li.min-w-0 > div.overflow-hidden",
+      "title": "span.font-semibold.line-clamp-2",
+      "link": ":scope > a",
+      "date": "div.flex-col.gap-3 > p.contents > span.line-clamp-2",
+      "image": "img",
+      "location": "div.flex.gap-2 > p.contents > span.line-clamp-1 > span.taxonomy_term--municipality > label",
+      "description": null
+    }
   },
   {
     "name": "Things to Do in Madrid, Spain This Month - Events & Activities",
@@ -77,7 +94,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fashion Events in Madrid, Spain - Clothing Fairs & ...",
@@ -85,7 +103,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Cibeles de Cine",
@@ -93,7 +112,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Sala Equis",
@@ -101,7 +121,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Yelmo Cines Ideal",
@@ -109,7 +130,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Cines Renoir",
@@ -117,7 +139,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Dice Madrid",
@@ -125,7 +148,8 @@
     "city": "Madrid",
     "promoted_by": "manual/music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Dice Barcelona",
@@ -133,7 +157,8 @@
     "city": "Barcelona",
     "promoted_by": "manual/music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Condeduquemadrid",
@@ -141,7 +166,16 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".view-contenidos-home .views-row .node--type-activity",
+      "title": ".middle .title a",
+      "link": ".middle .title a",
+      "date": ".middle .field--name-field-friendly-date",
+      "image": ".top img",
+      "location": null,
+      "description": ".middle .island p"
+    }
   },
   {
     "name": "Time Out Madrid",
@@ -149,7 +183,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Time Out Barcelona",
@@ -157,7 +192,8 @@
     "city": "Barcelona",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Exhibitions in Madrid",
@@ -165,7 +201,16 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".node-event.view-mode-grid_2col, .node-event.view-mode-teaser_gadget_full",
+      "title": "h2.field-name-title-field div.field-item, h3.field-name-title-field div.field-item",
+      "link": "a",
+      "date": "p",
+      "image": "img",
+      "location": null,
+      "description": "div.field-name-body div.field-item p, div.field-name-resumen div.field-item p"
+    }
   },
   {
     "name": "Cinema - Madrid",
@@ -173,7 +218,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Movies in English at cinemas in Madrid",
@@ -181,7 +227,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Best Pop Up Stores in Madrid",
@@ -189,7 +236,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Madrid Events Calendar: 2026",
@@ -197,7 +245,16 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".node-event.view-mode-lista_calendario",
+      "title": "h1 a",
+      "link": "h1 a",
+      "date": ".field-name-body .field-item",
+      "image": null,
+      "location": ".field-name-body .field-item",
+      "description": ".field-name-body .field-item"
+    }
   },
   {
     "name": "Exhibitions Barcelona – Digital & Modern Art at ...",
@@ -205,7 +262,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Find all Barcelona exhibitions on one page: Information 2026",
@@ -213,7 +271,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Photography Exhibitions in Barcelona",
@@ -221,7 +280,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.photography",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Photography Exhibitions in Barcelona 2026",
@@ -229,7 +289,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.photography",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Movies in English at cinemas in Barcelona",
@@ -237,7 +298,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Barcelona Concerts, Festivals, Tickets & Tour Dates 2026 ...",
@@ -245,7 +307,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.music_concerts",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Markets and pop ups - Barcelona - Book Style",
@@ -253,7 +316,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fashion Events in Barcelona, Spain - Clothing Fairs & ...",
@@ -261,7 +325,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Upcoming Events",
@@ -269,7 +334,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Exhibitions in Madrid in Fundación Mapfre's Sala Recoletos",
@@ -277,7 +343,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.photography",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "IBERIFF",
@@ -285,7 +352,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cinema",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Top 10 Flea Markets in Madrid: Ten Trails Worth Following",
@@ -293,7 +361,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.fashion",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Pottery studio in Madrid",
@@ -301,7 +370,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.workshops",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Hands-on Gastronomic Experiences in Madrid",
@@ -309,7 +379,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.workshops",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Theatre and dance in Madrid",
@@ -317,7 +388,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.comedy_theatre",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Tickets for Cata para emprendedoras",
@@ -325,7 +397,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.food_drink",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Wellness events in Madrid",
@@ -333,7 +406,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.sports_wellness",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Day trips, guided visits and tours in Madrid",
@@ -341,7 +415,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.day_trips",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Autumn Craft Fair 2025",
@@ -349,7 +424,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Gastronomy, food and tapas fairs",
@@ -357,7 +433,8 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "What's On in Madrid",
@@ -365,7 +442,16 @@
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".node-event.view-mode-grid_2col, .node-event.view-mode-teaser_gadget_full",
+      "title": "h2.field-name-title-field .field-item",
+      "link": "a",
+      "date": ".field-name-resumen .field-item p",
+      "image": "img",
+      "location": null,
+      "description": ".field-name-resumen .field-item p"
+    }
   },
   {
     "name": "Corrie Bain International Ceramics School in Barcelona",
@@ -373,7 +459,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
     "is_general_listing": false,
-    "extractor": "wp_api"
+    "extractor": "wp_api",
+    "selectors": null
   },
   {
     "name": "Paella Cooking Class Barcelona",
@@ -381,7 +468,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Cook&Taste",
@@ -389,7 +477,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.workshops",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "The Comedy Clubhouse: Home",
@@ -397,7 +486,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.comedy_theatre",
     "is_general_listing": false,
-    "extractor": "wp_api"
+    "extractor": "wp_api",
+    "selectors": null
   },
   {
     "name": "Tasting Experiences in Barcelona - Food & Drink",
@@ -405,7 +495,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.food_drink",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Explore Catalunya: Small Group Day Trips from Barcelona",
@@ -413,7 +504,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.day_trips",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Barcelona Food Festivals, Markets & Events Calendar 2026",
@@ -421,7 +513,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.festivals_markets",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "WHAT'S ON",
@@ -429,7 +522,8 @@
     "city": "Barcelona",
     "promoted_by": "explorer/PlanCategory.cultural",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fundación Juan March Madrid",
@@ -437,7 +531,16 @@
     "city": "Madrid",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".c-snippet.js-snippet",
+      "title": ":scope .c-snippet__titular p",
+      "link": ":scope .c-snippet__titular",
+      "date": ".c-snippet__time .c-titular",
+      "image": ".c-snippet__img img",
+      "location": null,
+      "description": ".c-snippet__autores .c-titular"
+    }
   },
   {
     "name": "Teatros del Canal",
@@ -445,7 +548,8 @@
     "city": "Madrid",
     "promoted_by": "manual/comedy_theatre",
     "is_general_listing": true,
-    "extractor": "wp_api"
+    "extractor": "wp_api",
+    "selectors": null
   },
   {
     "name": "La Casa Encendida",
@@ -453,7 +557,16 @@
     "city": "Madrid",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": "article.results-list__item",
+      "title": "h2.results-list__title",
+      "link": "a.results-list__link",
+      "date": "span.results-list__date",
+      "image": "figure.results-list__image img",
+      "location": null,
+      "description": null
+    }
   },
   {
     "name": "Espacio Fundación Telefónica",
@@ -461,7 +574,16 @@
     "city": "Madrid",
     "promoted_by": "manual/art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": ".event.exposicion",
+      "title": ".titulo-destacado a",
+      "link": ".wrapimg a",
+      "date": ".wrapfechasevents",
+      "image": ".wrapimg img",
+      "location": null,
+      "description": ".texto-destacado p"
+    }
   },
   {
     "name": "Fundación Canal",
@@ -469,7 +591,8 @@
     "city": "Madrid",
     "promoted_by": "manual/art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Museo Lázaro Galdiano",
@@ -477,7 +600,8 @@
     "city": "Madrid",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fundació Joan Miró",
@@ -485,7 +609,16 @@
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": {
+      "card": "article.panel-box",
+      "title": "h2",
+      "link": "a:first-of-type",
+      "date": ".article-metas p:first-of-type",
+      "image": "img:first-of-type",
+      "location": ".lloc",
+      "description": "p:nth-of-type(2)"
+    }
   },
   {
     "name": "Foto Colectania",
@@ -493,7 +626,8 @@
     "city": "Barcelona",
     "promoted_by": "manual/photography",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fundació Vila Casas",
@@ -501,7 +635,8 @@
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   },
   {
     "name": "Fundació Suñol",
@@ -509,6 +644,7 @@
     "city": "Barcelona",
     "promoted_by": "manual/art_exhibitions",
     "is_general_listing": false,
-    "extractor": "page"
+    "extractor": "page",
+    "selectors": null
   }
 ]

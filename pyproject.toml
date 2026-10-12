@@ -12,6 +12,9 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "openai>=1.55.0",
     "httpx>=0.28.0",
+    # CSS selectors for listing pages read without the LLM
+    # (domain/card_selectors.py).
+    "beautifulsoup4>=4.12",
     "duckduckgo_search>=6.2.0",
     # vectorized recommender scoring (domain/ranking.py) — was previously only
     # a transitive dep via torch, made explicit since the live API imports it

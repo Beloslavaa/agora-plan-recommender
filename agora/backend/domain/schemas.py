@@ -109,6 +109,18 @@ class City(BaseModel):
     language: str = "en"
 
 
+class CardSelectors(BaseModel):
+    """CSS selectors for a listing page's event cards (domain/card_selectors.py):
+    `card` matches one element per event, the rest are relative to it."""
+    card: str
+    title: str
+    link: str | None = None
+    date: str | None = None
+    image: str | None = None
+    location: str | None = None
+    description: str | None = None
+
+
 class FixedSource(BaseModel):
     name: str
     url: str
@@ -128,6 +140,9 @@ class FixedSource(BaseModel):
     # API only, "page" = fetch the page (JSON-LD → dice.fm data → LLM) without
     # probing the API first. None (new, unchecked source) = try both.
     extractor: Literal["wp_api", "page"] | None = None
+    # CSS selectors for this page's event cards, learned and checked once by
+    # scripts/learn_selectors.py — when set, the page is read without the LLM.
+    selectors: CardSelectors | None = None
 
 
 class PlanData(BaseModel):

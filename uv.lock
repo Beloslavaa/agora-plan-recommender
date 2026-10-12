@@ -12,6 +12,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "bcrypt" },
+    { name = "beautifulsoup4" },
     { name = "duckduckgo-search" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -40,6 +41,7 @@ dev = [
 requires-dist = [
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.40.0" },
     { name = "bcrypt", specifier = ">=4.0" },
+    { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "duckduckgo-search", specifier = ">=6.2.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "httpx", specifier = ">=0.28.0" },

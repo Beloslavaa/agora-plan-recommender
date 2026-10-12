@@ -5,15 +5,18 @@ ingest_cli.py for the CLI adapter that drives this."""
 
 import asyncio
 import logging
+from datetime import date
 
 from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
 from agora.backend.application.explorer import explore_for_plans
+from agora.backend.application.selector_learning import check_selectors
 from agora.backend.application.extraction import extract_plans_from_html, extract_plans_from_wp_api
 from agora.backend.application.sources_admin import correct_city_from_location
+from agora.backend.domain.card_selectors import plans_from_cards
 from agora.backend.domain.schemas import PlanCategory, PlanData
 from agora.backend.domain.validation import validate_and_filter
 from agora.backend.infrastructure.config import settings
-from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details
+from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details, fetch_page
 from agora.backend.infrastructure.llm.providers import get_llm_provider
 from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
 from agora.backend.infrastructure.search.providers import get_search_provider
@@ -69,6 +72,21 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                 if source.extractor == "wp_api":
                     logger.warning("  ! %s: WordPress events API returned nothing, "
                                    "scraping its page instead", source.name)
+
+            # Listing pages with learned CSS selectors (scripts/learn_selectors.py)
+            # are read without the LLM — unless the selectors no longer fit the
+            # page (usually a redesign), which falls through to the LLM below.
+            if source.selectors:
+                html = await fetch_page(source.url)
+                ok, summary = check_selectors(html, source.selectors, source.url, date.today())
+                if ok:
+                    card_plans = plans_from_cards(html, source.selectors, source.url, "fixed",
+                                                  date.today(), category)
+                    logger.info("  ✓ %d plan(s) from CSS selectors on %s", len(card_plans), source.url)
+                    plans.extend(card_plans)
+                    continue
+                logger.warning("  ! %s: selectors no longer fit the page (%s), "
+                               "using the LLM — re-run scripts/learn_selectors.py", source.name, summary)
 
             page_htmls = await fetch_fixed_source_with_details(source)
 
