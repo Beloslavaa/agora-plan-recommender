@@ -238,7 +238,7 @@
   // Sane fallback so the switcher never has to wait on a network round-trip
   // before it can render; refreshed from the real list once loadCitiesList()
   // resolves (in case more cities get added later without a frontend change).
-  let CITIES_LIST = ["Madrid", "Barcelona"];
+  let CITIES_LIST = ["Madrid", "Barcelona", "Sofia", "New York"];
   // city -> { feed, ids, offset, done } snapshot, so switching BACK to a city
   // already loaded this session is instant instead of re-fetching everything
   // (cinemas + recommendations + first /plans page) over the network again.

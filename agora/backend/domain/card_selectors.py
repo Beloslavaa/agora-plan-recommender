@@ -85,7 +85,7 @@ def apply_selectors(html: str, selectors: CardSelectors, base_url: str) -> list[
 
 
 # ── Dates ─────────────────────────────────────────────────────────────────
-# Spanish, English and Catalan month names, matched on their first 3 letters
+# Spanish, English, Catalan and Bulgarian month names, matched on their first 3 letters
 # (accents stripped). Catalan "de gener", "d'octubre" etc. are covered too.
 _MONTHS = {
     "ene": 1, "jan": 1, "gen": 1,
@@ -100,6 +100,9 @@ _MONTHS = {
     "oct": 10,
     "nov": 11,
     "dic": 12, "dec": 12, "des": 12,
+    # Bulgarian, after _fold (which turns "май" into "маи").
+    "яну": 1, "фев": 2, "мар": 3, "апр": 4, "маи": 5, "юни": 6,
+    "юли": 7, "авг": 8, "сеп": 9, "окт": 10, "ное": 11, "дек": 12,
 }
 # Full words only — "mar" alone must not match "Mar Menor", hence the list of
 # real month spellings rather than any word starting with a prefix.
@@ -108,11 +111,14 @@ _MONTH_WORDS = (
     "|january|february|march|april|may|june|july|august|september|october|november|december"
     "|gener|febrer|marc|maig|juny|juliol|agost|setembre|octubre|novembre|desembre"
     "|ene|feb|mar|abr|apr|jun|jul|ago|aug|sep|sept|set|oct|nov|dic|dec|des|jan|gen"
+    "|януари|февруари|март|април|маи|юни|юли|август|септември|октомври|ноември|декември"
+    "|яну|фев|мар|апр|авг|сеп|окт|ное|дек"
 )
 _WEEKDAYS = (
     "lunes|martes|miercoles|jueves|viernes|sabado|domingo"
     "|monday|tuesday|wednesday|thursday|friday|saturday|sunday"
     "|dilluns|dimarts|dimecres|dijous|divendres|dissabte|diumenge"
+    "|понеделник|вторник|сряда|четвъртък|петък|събота|неделя"
 )
 _DAY = r"(?<![\d:.,])([0-3]?\d)(?:st|nd|rd|th)?(?![\d:.]|\s*h\b)"
 # A run of days before a month: "15, viernes 16 y sábado 17 de octubre",
@@ -120,7 +126,7 @@ _DAY = r"(?<![\d:.,])([0-3]?\d)(?:st|nd|rd|th)?(?![\d:.]|\s*h\b)"
 # brackets ("21 (¡nueva fecha!) y 22") may sit between days, so
 # "Edición 3 desde el 12 oct" reads as the 12th, not the 3rd.
 _DAY_RUN = re.compile(
-    rf"((?:{_DAY}\s*(?:\([^)]{{0,30}}\)\s*)?(?:(?:,|y|i|and|&|al|a|to|-|–|—)\s*)?(?:(?:{_WEEKDAYS})\s+)?)+?)"
+    rf"((?:{_DAY}\s*(?:\([^)]{{0,30}}\)\s*)?(?:(?:,|y|i|and|&|al|a|to|и|до|-|–|—)\s*)?(?:(?:{_WEEKDAYS})\s+)?)+?)"
     rf"(?:de\s+|d')?\b({_MONTH_WORDS})\b\.?"
     r"(?:\s*(?:de|,)?\s*((?:19|20)\d\d))?"
 )

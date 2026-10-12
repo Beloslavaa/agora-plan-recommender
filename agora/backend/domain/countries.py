@@ -28,13 +28,17 @@ _COUNTRY_NAMES: dict[str, str] = {
     "peru": "PE", "perú": "PE",
     "venezuela": "VE",
     "philippines": "PH", "filipinas": "PH",
+    "bulgaria": "BG", "българия": "BG", "bulgarie": "BG",
 }
 
 # Postal code formats, keyed by the EXPECTED country. Only used to spot a code
 # that can't belong to that country (Spanish codes are 5 digits starting with
-# a province number 01–52, so the US ZIP of Madrid, NM — 87010 — can't be one).
+# a province number 01–52, so the US ZIP of Madrid, NM — 87010 — can't be one;
+# Bulgarian codes are 4 digits). No US entry: a 5-digit ZIP pattern would also
+# accept every Spanish code, so it could never reject anything useful.
 _POSTAL_PATTERNS: dict[str, re.Pattern] = {
     "ES": re.compile(r"(?<!\d)(0[1-9]|[1-4]\d|5[0-2])\d{3}(?!\d)"),
+    "BG": re.compile(r"(?<!\d)\d{4}(?!\d)"),
 }
 
 
@@ -56,14 +60,14 @@ def country_code(value) -> str | None:
 
 _LANGUAGE_NAMES: dict[str, str] = {
     "en": "English", "es": "Spanish", "ca": "Catalan", "pt": "Portuguese",
-    "fr": "French", "it": "Italian", "de": "German",
+    "fr": "French", "it": "Italian", "de": "German", "bg": "Bulgarian",
 }
 
 # The word people search for alongside an event title to find where to buy —
 # enrichment's URL lookup ("<title>" <venue> entradas).
 _TICKETS_WORD: dict[str, str] = {
     "en": "tickets", "es": "entradas", "ca": "entrades", "pt": "bilhetes",
-    "fr": "billets", "it": "biglietti", "de": "tickets",
+    "fr": "billets", "it": "biglietti", "de": "tickets", "bg": "билети",
 }
 
 

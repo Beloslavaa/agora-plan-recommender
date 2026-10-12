@@ -619,5 +619,247 @@
     "is_general_listing": false,
     "extractor": "page",
     "selectors": null
+  },
+  {
+    "name": "Актуални изложби в София",
+    "url": "https://sofia-art-galleries.com/aktualni-izlozhbi-v-sofiia/",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Изложби",
+    "url": "https://www.visitsofia.bg/bg/%D0%B8%D0%B7%D0%BB%D0%BE%D0%B6%D0%B1%D0%B8",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".jev_list_row .jev_list_container",
+      "title": ".jev_list_title a",
+      "link": ".jev_list_title a",
+      "date": ".jev_list_img span",
+      "image": ".jev_list_img img",
+      "location": null,
+      "description": ".jev_list_desc"
+    }
+  },
+  {
+    "name": "Кино",
+    "url": "https://mallofsofia.bg/cinema/",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Събитиен календар на София - ☛",
+    "url": "https://www.visitsofia.bg/bg/%D1%82%D0%B0%D0%B7%D0%B8-%D1%81%D0%B5%D0%B4%D0%BC%D0%B8%D1%86%D0%B0",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".jev_list_row .jev_list_container",
+      "title": ".jev_list_title a",
+      "link": ".jev_list_title a",
+      "date": ".jev_list_img span",
+      "image": ".jev_list_img img",
+      "location": null,
+      "description": ".jev_list_desc"
+    }
+  },
+  {
+    "name": "Събития в София",
+    "url": "https://aroundyou-bg.com/city/sofia/",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.card.event-active",
+      "title": ".card-title",
+      "link": ".card-main-link",
+      "date": ".badge.event-date-badge-wrapper",
+      "image": ".card-thumb img",
+      "location": ".card-meta a.venue span",
+      "description": null
+    }
+  },
+  {
+    "name": "всички - Theatre.Art.Bg",
+    "url": "https://theatre.art.bg/t/%D0%B2%D1%81%D0%B8%D1%87%D0%BA%D0%B8",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Календар - София",
+    "url": "https://bilet.bg/bg/calendar",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.sports_wellness",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.group",
+      "title": "p.line-clamp-2",
+      "link": "a.relative",
+      "date": "p.mt-2 span.line-clamp-1",
+      "image": "img",
+      "location": "p.mt-1\\.5 span.line-clamp-2",
+      "description": null
+    }
+  },
+  {
+    "name": "Go Sofia events",
+    "url": "https://www.go-sofia.com/Events",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".card.event-card",
+      "title": ".event-title a",
+      "link": ".event-title a",
+      "date": ".event-date",
+      "image": ".event-image-full",
+      "location": ".event-venue a",
+      "description": "p.text-muted.small"
+    }
+  },
+  {
+    "name": "Фестивали в София - localz",
+    "url": "https://localz.events/bg/sofia/festival",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Exhibitions - NYC Galleries Showcasing Emerging Artists",
+    "url": "https://www.amny.com/news/exhibitions-109/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".sidebar-section .events-widget-content .article-container",
+      "title": ".magma-tribe-events-title a",
+      "link": ".magma-tribe-events-title a",
+      "date": ".magma-list-date",
+      "image": ".tribe-event-image img",
+      "location": ".magma-widget-venue",
+      "description": null
+    }
+  },
+  {
+    "name": "Events - APA New York",
+    "url": "https://ny.apanational.org/events/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "ul.indexlist > li",
+      "title": "h2 > a",
+      "link": "h2 > a",
+      "date": "p.meta",
+      "image": "img.squib",
+      "location": null,
+      "description": "p:last-of-type"
+    }
+  },
+  {
+    "name": "Discover Pop Up Shop Events & Activities in New York, NY",
+    "url": "https://www.eventbrite.co.uk/d/ny--new-york/pop-up-shop/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "New York Shows",
+    "url": "https://ucbcomedy.com/shows/new-york/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.wpgb-card",
+      "title": "h3.ucb-event-post-title a",
+      "link": "h3.ucb-event-post-title a",
+      "date": ".wpgb-block.event-post-date",
+      "image": ".wpgb-card-media-thumbnail img",
+      "location": ".wpgb-block.ucb-event-post-location .wpgb-block-term",
+      "description": null
+    }
+  },
+  {
+    "name": "Unique Food & Drink Experiences in NYC",
+    "url": "https://bucketlisters.com/explore/collection/62",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "New York Day Tours & City Tours",
+    "url": "https://www.urbanadventures.com/en/new-york",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.day_trips",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Theseaport",
+    "url": "https://theseaport.nyc/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Toplocentrala – performances",
+    "url": "https://toplocentrala.bg/program/performance",
+    "city": "Sofia",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "li.program-list-item",
+      "title": ".program-title div",
+      "link": ":scope > a",
+      "date": ".program-date",
+      "image": null,
+      "location": ".program-hall",
+      "description": ".program-type"
+    }
+  },
+  {
+    "name": "Toplocentrala – visual arts",
+    "url": "https://toplocentrala.bg/program/visual",
+    "city": "Sofia",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".events-wrapper .events",
+      "title": ".info .program-heading a",
+      "link": ".info .program-heading a",
+      "date": ".info .dates p.fs14 strong",
+      "image": ".col-img-holder img",
+      "location": ".info .program-heading .hall",
+      "description": ".info p.about"
+    }
   }
 ]
