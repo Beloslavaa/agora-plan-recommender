@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from datetime import date
+from datetime import date, timedelta
 from urllib.parse import urlparse
 
 from agora.backend.application.ports import LLMProvider
@@ -9,10 +9,11 @@ from agora.backend.domain.event_parsing import (
     extract_dice_event_details,
     extract_dice_listing_events,
     extract_ld_events,
+    parse_wp_events,
 )
 from agora.backend.domain.schemas import PlanData
 from agora.backend.domain.url_safety import effective_base_url, is_late_night, normalise_url
-from agora.backend.infrastructure.http.fetcher import fetch_page
+from agora.backend.infrastructure.http.fetcher import fetch_page, fetch_wp_events
 
 logger = logging.getLogger(__name__)
 # A bit larger than before because we now keep link/image URLs inline in the text.
@@ -153,6 +154,34 @@ def _plan_from_ld_event(
         country=ev.get("country"),
         postal_code=ev.get("postal_code"),
     )
+
+
+# WordPress events API (see fetcher.fetch_wp_events): a busy venue's API lists
+# every date of every recurring show, far more than its homepage — a comedy
+# club returned 191 dates of 70 shows over 60 days. Kept to the next month
+# and a handful per source so one venue doesn't flood the feed.
+WP_WINDOW_DAYS = 30
+WP_MAX_PLANS_PER_SOURCE = 10
+
+
+async def extract_plans_from_wp_api(
+    source_url: str, source_type: str, category: str | None = None,
+) -> list[PlanData]:
+    """Plans from the source site's WordPress events API, or [] if it has
+    none — the caller then scrapes the page as usual."""
+    today = _today()
+    events = await fetch_wp_events(source_url, today, today + timedelta(days=WP_WINDOW_DAYS))
+    if not events:
+        return []
+    plans = [
+        _plan_from_ld_event(ev, source_url, source_type, category)
+        for ev in parse_wp_events(events, max_events=WP_MAX_PLANS_PER_SOURCE)
+    ]
+    plans = [p for p in plans if p]
+    if plans:
+        logger.info("  ✓ %d plan(s) from WordPress events API on %s (%d dates listed)",
+                    len(plans), source_url, len(events))
+    return plans
 
 
 async def _apply_dice_details(plans: list[PlanData]) -> list[PlanData]:

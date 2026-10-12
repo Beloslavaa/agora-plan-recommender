@@ -5,6 +5,7 @@ extraction.py) owns actually fetching the HTML."""
 import json
 import logging
 import re
+from html import unescape
 
 from agora.backend.domain.url_safety import SONGKICK_BLANK_IMAGE, is_late_night, normalise_url
 
@@ -292,6 +293,87 @@ def extract_dice_listing_events(html: str) -> list[dict]:
             item["price"] = amount / 100
 
         out.append(item)
+    return out
+
+
+def _wp_text(value) -> str:
+    """Plain text from a WordPress HTML field: tags stripped, entities decoded."""
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    return re.sub(r"\s+", " ", unescape(text)).strip()
+
+
+def parse_wp_events(events: list, max_events: int) -> list[dict]:
+    """PlanData-shaped dicts from The Events Calendar's REST API
+    (/wp-json/tribe/events/v1/events — see fetcher.fetch_wp_events).
+
+    Recurring shows (a comedy club's weekly open mic) come back as one entry
+    per date; only the NEXT date of each is kept — the same "include it ONCE"
+    rule the LLM extractor follows — soonest first, capped at *max_events*.
+    """
+    def _start(ev) -> str:
+        return str(ev.get("start_date") or "") if isinstance(ev, dict) else ""
+
+    out: list[dict] = []
+    seen_titles: set[str] = set()
+    for ev in sorted((e for e in events if isinstance(e, dict)), key=_start):
+        title = _wp_text(ev.get("title"))
+        if not title or ev.get("is_virtual") or ev.get("hide_from_listings"):
+            continue
+        start = _start(ev)
+        if start and is_late_night(start):
+            continue
+        key = title.lower()
+        if key in seen_titles:
+            continue
+        seen_titles.add(key)
+
+        item: dict = {"title": title}
+        url = normalise_url(ev.get("url"))
+        if url:
+            item["url"] = url
+        if start:
+            item["start_date"] = start[:10]
+        end = str(ev.get("end_date") or "")[:10]
+        if end and end != item.get("start_date"):
+            item["end_date"] = end
+
+        description = _wp_text(ev.get("description"))
+        if description:
+            item["description"] = description
+
+        image = ev.get("image")
+        image_url = normalise_url(image.get("url")) if isinstance(image, dict) else None
+        if image_url:
+            item["image_url"] = image_url
+
+        # Lowest listed price; "Free" comes through as ["0"].
+        values = (ev.get("cost_details") or {}).get("values") if isinstance(ev.get("cost_details"), dict) else None
+        prices = []
+        for v in values or []:
+            try:
+                prices.append(float(str(v).replace(",", ".")))
+            except ValueError:
+                pass
+        if prices:
+            item["price"] = min(prices)
+
+        venue = ev.get("venue") if isinstance(ev.get("venue"), dict) else {}
+        location = ", ".join(
+            _wp_text(p) for p in (venue.get("venue"), venue.get("address"), venue.get("city")) if p
+        )
+        if location:
+            item["location"] = location
+        if venue.get("country"):
+            item["country"] = _wp_text(venue["country"])
+        if venue.get("zip"):
+            item["postal_code"] = str(venue["zip"]).strip()
+        # The site's own categories aren't used as tags: on some sites they're
+        # topics ("Stand-Up Comedy"), on others ticketing labels ("abono",
+        # "carné joven") or month names.
+
+        out.append(item)
+        if len(out) >= max_events:
+            break
     return out
 
 

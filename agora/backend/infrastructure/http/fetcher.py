@@ -5,8 +5,10 @@ check in _assert_public_url can never be bypassed."""
 
 import asyncio
 import ipaddress
+import json
 import logging
 import socket
+from datetime import date
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -145,3 +147,41 @@ async def fetch_fixed_source_with_details(
     site, which has a ``FixedSource`` rather than a bare URL.
     """
     return await fetch_page_with_details(source.url)
+
+
+# The Events Calendar (a common WordPress events plugin) publishes a site's
+# events as JSON at this path — same site, same events as its pages.
+_WP_EVENTS_PATH = "/wp-json/tribe/events/v1/events"
+_WP_MAX_PAGES = 5
+# Probed on every fixed source, most of which aren't WordPress — some of those
+# hang on the unknown path instead of returning a 404.
+_WP_REQUEST_TIMEOUT = 10
+
+
+async def fetch_wp_events(site_url: str, start: date, end: date) -> list[dict]:
+    """Raw events between *start* and *end* from *site_url*'s WordPress
+    events API, or [] when the site has none (most sites: a 404 or an HTML
+    page, both of which just mean "not WordPress with this plugin").
+    """
+    parsed = urlparse(site_url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    url: str | None = (
+        f"{base}{_WP_EVENTS_PATH}?per_page=50"
+        f"&start_date={start.isoformat()}&end_date={end.isoformat()}"
+    )
+    events: list[dict] = []
+    for _ in range(_WP_MAX_PAGES):
+        if not url:
+            break
+        try:
+            data = json.loads(await asyncio.wait_for(fetch_page(url, max_redirects=2), _WP_REQUEST_TIMEOUT))
+        except Exception:
+            break
+        if not isinstance(data, dict) or not isinstance(data.get("events"), list):
+            break
+        events.extend(data["events"])
+        # Follow pagination only on the same site — next_rest_url comes from
+        # the response, i.e. from the site.
+        nxt = data.get("next_rest_url")
+        url = nxt if isinstance(nxt, str) and urlparse(nxt).netloc == parsed.netloc else None
+    return events

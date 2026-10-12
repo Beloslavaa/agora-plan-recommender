@@ -8,7 +8,7 @@ import logging
 
 from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
 from agora.backend.application.explorer import explore_for_plans
-from agora.backend.application.extraction import extract_plans_from_html
+from agora.backend.application.extraction import extract_plans_from_html, extract_plans_from_wp_api
 from agora.backend.application.sources_admin import correct_city_from_location
 from agora.backend.domain.schemas import PlanCategory, PlanData
 from agora.backend.domain.validation import validate_and_filter
@@ -52,11 +52,19 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
             continue
         try:
             logger.info("Scraping fixed source: %s", source.name)
-            page_htmls = await fetch_fixed_source_with_details(source)
             # Skip for a general listing — promoted_by only records which
             # category search discovered it under, not what every event on
             # a multi-category page actually is (see FixedSource docstring).
             category = None if source.is_general_listing else _category_from_promoted_by(source.promoted_by)
+
+            # A WordPress site with an events plugin publishes the same events
+            # as JSON — when it does, that replaces scraping its pages.
+            wp_plans = await extract_plans_from_wp_api(source.url, "fixed", category)
+            if wp_plans:
+                plans.extend(wp_plans)
+                continue
+
+            page_htmls = await fetch_fixed_source_with_details(source)
 
             async def _extract(html: str, page_url: str) -> list[PlanData]:
                 async with _sem:
