@@ -26,6 +26,15 @@ _BLOCKED_HOSTS = {
     "metadata.goog",
 }
 
+# Browser-shaped, but still names us: some sites (visitmadrid.es) answer 404
+# to any user agent that doesn't look like a browser, even Googlebot. Sites
+# that block bots outright (Cloudflare challenges etc.) are dropped as sources
+# rather than worked around.
+_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/130.0 Safari/537.36 AgoraBot/1.0"
+)
+
 
 async def _assert_public_url(url: str) -> None:
     """Raise ValueError if *url* is not a public http(s) address.
@@ -77,7 +86,7 @@ async def fetch_page(url: str, *, max_redirects: int | None = None) -> str:
     if max_redirects is None:
         max_redirects = settings.scraper_max_redirects
 
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; AgoraBot/1.0)"}
+    headers = {"User-Agent": _USER_AGENT}
     async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
         current = url
         for _ in range(max_redirects + 1):

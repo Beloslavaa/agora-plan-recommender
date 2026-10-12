@@ -112,14 +112,6 @@
     "extractor": "page"
   },
   {
-    "name": "Cinesa",
-    "url": "https://www.cinesa.es/",
-    "city": "Madrid",
-    "promoted_by": "manual/cinema",
-    "is_general_listing": false,
-    "extractor": "page"
-  },
-  {
     "name": "Cines Renoir",
     "url": "https://www.cinesrenoir.com/",
     "city": "Madrid",
@@ -165,14 +157,6 @@
     "city": "Barcelona",
     "promoted_by": "manual/cultural",
     "is_general_listing": true,
-    "extractor": "page"
-  },
-  {
-    "name": "Comunidad de Madrid - Cultura",
-    "url": "https://www.comunidad.madrid/cultura",
-    "city": "Madrid",
-    "promoted_by": "manual/cultural",
-    "is_general_listing": false,
     "extractor": "page"
   },
   {
@@ -356,14 +340,6 @@
     "url": "https://juliatravel.com/en/destinations/madrid/",
     "city": "Madrid",
     "promoted_by": "explorer/PlanCategory.day_trips",
-    "is_general_listing": false,
-    "extractor": "page"
-  },
-  {
-    "name": "Some (craft) markets in Spain",
-    "url": "https://www.spain.info/en/top/some-markets-fairs-crafts-spain/",
-    "city": "Madrid",
-    "promoted_by": "explorer/PlanCategory.festivals_markets",
     "is_general_listing": false,
     "extractor": "page"
   },
