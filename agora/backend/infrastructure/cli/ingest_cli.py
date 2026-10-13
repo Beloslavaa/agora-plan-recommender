@@ -1,9 +1,12 @@
 import argparse
 import asyncio
+import json
 import logging
 import sys
+from pathlib import Path
 
 from agora.backend.application.ingestion import run_one_city
+from agora.backend.application.source_setup import SourceSetup, set_up_sources, sources_to_set_up
 from agora.backend.domain.schemas import PlanCategory
 from agora.backend.infrastructure.persistence.json_files import load_cities, load_fixed_sources
 
@@ -14,11 +17,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Agora ingestion pipeline")
     parser.add_argument(
         "--mode",
-        choices=["explorer", "fixed", "full"],
+        choices=["explorer", "fixed", "full", "setup-sources"],
         default="explorer",
         help="explorer (default): search categories & promote good sources | "
         "fixed: scrape promoted sources | "
-        "full: both",
+        "full: both | "
+        "setup-sources: record how each new fixed source is read (extractor, "
+        "CSS selectors) in data/fixed_sources.json",
     )
     parser.add_argument(
         "--city",
@@ -43,12 +48,27 @@ def main() -> None:
         action="store_true",
         help="Print what would be done without calling external services",
     )
+    parser.add_argument(
+        "--redo",
+        action="store_true",
+        help="setup-sources: re-check every source, not only ones never set up",
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        help="setup-sources: also write a Markdown summary here (the source-discovery "
+        "Action puts it in its PR)",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s %(message)s",
     )
+
+    if args.mode == "setup-sources":
+        _setup_sources(args)
+        return
 
     cities = args.city if args.city else load_cities()
     if not cities:
@@ -128,6 +148,40 @@ def main() -> None:
     print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
 
     pool.close()
+
+
+def _setup_sources(args: argparse.Namespace) -> None:
+    names = set(args.source) if args.source else None
+    if args.dry_run:
+        todo = sources_to_set_up(args.city, names, args.redo)
+        print(f"Would set up {len(todo)} fixed source(s):")
+        for s in todo:
+            print(f"  · {s.city} | {s.name} — {s.url}")
+        return
+
+    from agora.backend.infrastructure.llm.providers import get_llm_provider
+
+    results = asyncio.run(set_up_sources(get_llm_provider(), args.city, names, args.redo))
+    report = _setup_report(results)
+    print(report)
+    if args.report:
+        args.report.write_text(report, encoding="utf-8")
+
+
+def _setup_report(results: list[SourceSetup]) -> str:
+    """Markdown summary of a setup-sources run — what each source will be read
+    with, and for learned selectors a few sample plans to check them by."""
+    if not results:
+        return "No fixed sources needed setting up.\n"
+    lines = [f"Set up {len(results)} fixed source(s):", ""]
+    for r in sorted(results, key=lambda r: (r.source.city, r.source.name)):
+        s = r.source
+        lines.append(f"- **{s.city} — {s.name}** ({s.url}): `{r.method}`" + (f" — {r.note}" if r.note else ""))
+        if r.method == "selectors" and s.selectors:
+            lines.append(f"  - selectors: `{json.dumps(s.selectors.model_dump(exclude_none=True), ensure_ascii=False)}`")
+            for p in r.sample:
+                lines.append(f"  - {p.title[:70]} · {p.start_date or 'no date'} → {p.end_date or '–'} · {p.url or 'no link'}")
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

@@ -44,6 +44,44 @@ jobs:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: uv run --frozen --no-dev python main.py --mode explorer
 
+      # Records how each newly promoted source is read (extractor, and CSS
+      # selectors for pages that would otherwise go to the LLM every run) —
+      # see application/source_setup.py. Only sources without an extractor
+      # yet, so a month that promoted nothing makes no LLM calls here. Its
+      # Markdown report goes into the PR body below for review.
+      - name: Set up newly promoted sources
+        env:
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: uv run --frozen --no-dev python main.py --mode setup-sources --report "$RUNNER_TEMP/setup_report.md"
+
+      - name: Write PR body
+        run: |
+          {
+            cat <<'BODY'
+          Proposed by the monthly source-discovery run
+          (`.github/workflows/ingestion.yml`, `--mode explorer` then `--mode setup-sources`).
+
+          Each new entry was found by search and passed the explorer's checks,
+          but nothing here has been scraped for plans yet — ingestion only
+          picks a source up after this merges and Dokploy redeploys.
+
+          Worth a look before merging:
+          - does each URL actually list events for the city it's filed under,
+            and is it a real listing page rather than a search-results or
+            aggregator dead end?
+          - for sources set up with `selectors`: do the sample plans below look
+            like that page's real events (titles, dates, links)? If not, delete
+            the source's `selectors` block in `data/fixed_sources.json` before
+            merging — it then stays on the LLM extractor.
+
+          ## How each source will be read
+
+          BODY
+            cat "$RUNNER_TEMP/setup_report.md"
+          } > "$RUNNER_TEMP/pr_body.md"
+
       # A PR rather than a direct push to master: newly-promoted sources are
       # LLM/search suggestions and get a human read before they start being
       # scraped. Merging is also what deploys them — the worker only sees a
@@ -59,14 +97,4 @@ jobs:
           add-paths: data/fixed_sources.json
           commit-message: "Auto-promote newly discovered fixed sources"
           title: "Newly discovered fixed sources"
-          body: |
-            Proposed by the monthly source-discovery run
-            (`.github/workflows/ingestion.yml`, `--mode explorer`).
-
-            Each entry was found by search and passed the explorer's checks,
-            but nothing here has been scraped for plans yet — ingestion only
-            picks a source up after this merges and Dokploy redeploys.
-
-            Worth a look before merging: does each URL actually list events
-            for the city it's filed under, and is it a real listing page
-            rather than a search-results or aggregator dead end?
+          body-path: ${{ runner.temp }}/pr_body.md

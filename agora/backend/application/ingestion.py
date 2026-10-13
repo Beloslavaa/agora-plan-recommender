@@ -73,7 +73,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                     logger.warning("  ! %s: WordPress events API returned nothing, "
                                    "scraping its page instead", source.name)
 
-            # Listing pages with learned CSS selectors (scripts/learn_selectors.py)
+            # Listing pages with learned CSS selectors (application/source_setup.py)
             # are read without the LLM — unless the selectors no longer fit the
             # page (usually a redesign), which falls through to the LLM below.
             if source.selectors:
@@ -86,7 +86,8 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                     plans.extend(card_plans)
                     continue
                 logger.warning("  ! %s: selectors no longer fit the page (%s), "
-                               "using the LLM — re-run scripts/learn_selectors.py", source.name, summary)
+                               "using the LLM — re-run main.py --mode setup-sources --source %r",
+                               source.name, summary, source.name)
 
             page_htmls = await fetch_fixed_source_with_details(source)
 

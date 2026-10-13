@@ -127,6 +127,7 @@ Open `http://localhost:8000`.
 python main.py --mode explorer   # discover new sources for each category
 python main.py --mode fixed      # scrape the known/promoted sources
 python main.py --mode full       # both
+python main.py --mode setup-sources   # record how each new fixed source is read (see below)
 python main.py --city Madrid Barcelona   # omit to run every city in data/cities.json
 ```
 
@@ -156,6 +157,16 @@ them against the existing list, and opens a PR proposing additions to
 `data/fixed_sources.json` — a git operation a GitHub-hosted runner can do
 and a Dokploy container can't. It never touches the DB; plans it happens to
 extract while exploring are discarded, since ingestion is the worker's job.
+
+After exploring, the same job runs `--mode setup-sources` on the newly
+promoted sources: it records whether each site publishes its events through
+the WordPress events API (`extractor`), and for pages that would otherwise go
+to the LLM extractor on every run, has the LLM learn CSS selectors for the
+event cards once (`selectors`), checked against the live page. The PR body
+lists the result per source with a few sample plans, so wrong selectors can
+be removed before merging. Locally, `--redo` re-checks every source and
+`--source NAME` a single one (e.g. after a site redesign — the worker logs a
+warning when saved selectors stop fitting a page and falls back to the LLM).
 
 Discoveries land as a PR rather than a direct push so suggested sources get
 reviewed before anything scrapes them. The PR uses a fixed branch

@@ -136,12 +136,12 @@ class FixedSource(BaseModel):
     # happened to find it first. See cli.py's run_fixed_pipeline.
     is_general_listing: bool = False
     # How run_fixed_pipeline reads this source, recorded once by
-    # scripts/detect_extractors.py: "wp_api" = the site's WordPress events
+    # `main.py --mode setup-sources`: "wp_api" = the site's WordPress events
     # API only, "page" = fetch the page (JSON-LD → dice.fm data → LLM) without
     # probing the API first. None (new, unchecked source) = try both.
     extractor: Literal["wp_api", "page"] | None = None
     # CSS selectors for this page's event cards, learned and checked once by
-    # scripts/learn_selectors.py — when set, the page is read without the LLM.
+    # `main.py --mode setup-sources` — when set, the page is read without the LLM.
     selectors: CardSelectors | None = None
 
 
