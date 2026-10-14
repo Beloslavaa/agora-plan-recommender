@@ -2,7 +2,7 @@
 .venv/
 __pycache__/
 *.pyc
-agora.db
+agora.db*
 .DS_Store
 .claude/
 notebooks/runs/

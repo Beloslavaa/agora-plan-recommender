@@ -11,10 +11,6 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     google_cse_id: str = ""
 
-    # Single source of truth for the database location. Everything that opens
-    # the DB derives its path from here (previously store.py hardcoded
-    # "data/agora.db" while an unused database_url pointed somewhere else).
-    db_path: str = "data/agora.db"
     # Postgres connection string (Supabase). Required in production — store.py's
     # connection pool reads this. Use Supabase's pooled ("Transaction mode",
     # port 6543) URI, not the direct 5432 one.
