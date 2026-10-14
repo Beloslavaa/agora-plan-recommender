@@ -20,7 +20,7 @@ CLI adapters).
 | Layer | Where | What it does |
 |---|---|---|
 | Domain | `agora/backend/domain/` | Entities (`schemas.py`), dedup rules (`plan_matching.py`), URL/content safety (`url_safety.py`), JSON-LD/dice.fm parsing (`event_parsing.py`), plan validation (`validation.py`), recommender scoring math (`ranking.py`). No I/O. |
-| Application | `agora/backend/application/` | Use-cases: `extraction.py`/`explorer.py`/`enrichment.py`/`sources_admin.py`/`ingestion.py` (the scraping pipeline) and `recommendation.py` (ranking for a user). Orchestrates domain rules + infrastructure ports. |
+| Application | `agora/backend/application/` | Use-cases: `extraction.py`/`source_discovery.py`/`enrichment.py`/`sources_admin.py`/`ingestion.py` (the scraping pipeline) and `recommendation.py` (ranking for a user). Orchestrates domain rules + infrastructure ports. |
 | Infrastructure | `agora/backend/infrastructure/` | `persistence/postgres_repository.py` (Supabase — `plans`, `interactions`, `users`, schema owned by `init_db()`), `persistence/json_files.py` (fixed sources/cities), `llm/`, `search/`, `embeddings/` (provider adapters), `http/fetcher.py` (SSRF-guarded fetching), `web/api.py` (FastAPI), `cli/ingest_cli.py` (ingestion CLI). |
 | Frontend | `index.html` | Single-file vanilla HTML/JS UI, served directly by the API — no build step. |
 
@@ -124,9 +124,8 @@ Open `http://localhost:8000`.
 ## Running ingestion
 
 ```bash
-python main.py --mode explorer   # discover new sources for each category
+python main.py --mode explorer   # discover new sources (promotes to data/fixed_sources.json)
 python main.py --mode fixed      # scrape the known/promoted sources
-python main.py --mode full       # both
 python main.py --mode setup-sources   # record how each new fixed source is read (see below)
 python main.py --city Madrid Barcelona   # omit to run every city in data/cities.json
 ```
@@ -155,8 +154,13 @@ GitHub Actions (`.github/workflows/ingestion.yml`, `--mode explorer`, also
 triggerable from the Actions tab). It searches for new sources, compares
 them against the existing list, and opens a PR proposing additions to
 `data/fixed_sources.json` — a git operation a GitHub-hosted runner can do
-and a Dokploy container can't. It never touches the DB; plans it happens to
-extract while exploring are discarded, since ingestion is the worker's job.
+and a Dokploy container can't. It never touches the DB and never produces
+plans, since ingestion is the worker's job: for each search hit it samples
+3 events with one small LLM call and promotes the page when it's an events
+listing with at least 2 good ones. A hit that's a single event or an
+article leads to the listing it belongs to instead. Pages it turns down go
+to `data/rejected_sources.json` and are skipped for 90 days. See
+`application/source_discovery.py`.
 
 After exploring, the same job runs `--mode setup-sources` on the newly
 promoted sources: it records whether each site publishes its events through

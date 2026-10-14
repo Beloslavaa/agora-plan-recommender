@@ -6,6 +6,11 @@ import sys
 from pathlib import Path
 
 from agora.backend.application.ingestion import run_one_city
+from agora.backend.application.source_discovery import (
+    DISCOVERY_CATEGORIES,
+    DiscoveryReport,
+    discover_sources,
+)
 from agora.backend.application.source_setup import SourceSetup, set_up_sources, sources_to_set_up
 from agora.backend.domain.schemas import PlanCategory
 from agora.backend.infrastructure.persistence.json_files import load_cities, load_fixed_sources
@@ -17,11 +22,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Agora ingestion pipeline")
     parser.add_argument(
         "--mode",
-        choices=["explorer", "fixed", "full", "setup-sources"],
+        choices=["explorer", "fixed", "setup-sources"],
         default="explorer",
         help="explorer (default): search categories & promote good sources | "
         "fixed: scrape promoted sources | "
-        "full: both | "
         "setup-sources: record how each new fixed source is read (extractor, "
         "CSS selectors) in data/fixed_sources.json",
     )
@@ -36,7 +40,8 @@ def main() -> None:
         "--only",
         nargs="*",
         choices=[c.value for c in PlanCategory],
-        help="Only run specific categories (e.g. --only music_concerts fashion)",
+        help="explorer: only search these categories (e.g. --only music_concerts "
+        "fashion) — default: " + ", ".join(c.value for c in DISCOVERY_CATEGORIES),
     )
     parser.add_argument(
         "--source",
@@ -56,8 +61,8 @@ def main() -> None:
     parser.add_argument(
         "--report",
         type=Path,
-        help="setup-sources: also write a Markdown summary here (the source-discovery "
-        "Action puts it in its PR)",
+        help="explorer / setup-sources: also write a Markdown summary here (the "
+        "source-discovery Action puts it in its PR)",
     )
     args = parser.parse_args()
 
@@ -75,22 +80,19 @@ def main() -> None:
         print("No cities configured — add some to data/cities.json (or pass --city).")
         return
 
+    if args.mode == "explorer":
+        _discover(args, cities)
+        return
+
     if args.dry_run:
         print(f"Would run for {len(cities)} cities: {', '.join(cities)}")
         for city in cities:
-            print(f"\n[{city}]")
-            if args.mode in ("explorer", "full"):
-                cats = [PlanCategory(c) for c in args.only] if args.only else list(PlanCategory)
-                print(f"  Would explore {len(cats)} categories:")
-                for cat in cats:
-                    print(f"    · {cat.value}")
-            if args.mode in ("fixed", "full"):
-                sources = [s for s in load_fixed_sources() if s.city == city]
-                if args.source:
-                    sources = [s for s in sources if s.name in args.source]
-                print(f"  Would scrape {len(sources)} fixed sources:")
-                for s in sources:
-                    print(f"    · {s.name} — {s.url}")
+            sources = [s for s in load_fixed_sources() if s.city == city]
+            if args.source:
+                sources = [s for s in sources if s.name in args.source]
+            print(f"\n[{city}]\n  Would scrape {len(sources)} fixed sources:")
+            for s in sources:
+                print(f"    · {s.name} — {s.url}")
         return
 
     only_names = set(args.source) if args.source else None
@@ -98,7 +100,7 @@ def main() -> None:
     failed = 0
     for city in cities:
         try:
-            plans = asyncio.run(run_one_city(args.mode, city, args.only, only_names))
+            plans = asyncio.run(run_one_city(city, only_names))
         except Exception as e:
             # One city's bad source / LLM hiccup must not take down the rest
             # of an unattended multi-city run.
@@ -116,10 +118,6 @@ def main() -> None:
     if failed == len(cities):
         logger.error("All %d city pipeline(s) failed — nothing was processed.", failed)
         sys.exit(1)
-
-    if args.mode == "explorer":
-        print(f"\nDiscovery only — {len(all_plans)} plan(s) found this run were not persisted (see --mode fixed).")
-        return
 
     from agora.backend.application.graph_recommendation import backfill_graph_embeddings
     from agora.backend.application.recommendation import backfill_embeddings
@@ -148,6 +146,71 @@ def main() -> None:
     print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
 
     pool.close()
+
+
+def _discover(args: argparse.Namespace, cities: list[str]) -> None:
+    categories = [PlanCategory(c) for c in args.only] if args.only else DISCOVERY_CATEGORIES
+    if args.dry_run:
+        print(f"Would discover sources for {len(cities)} cities: {', '.join(cities)}")
+        print(f"  {len(categories)} categories × 2 queries = {2 * len(categories)} searches per city:")
+        for cat in categories:
+            print(f"    · {cat.value}")
+        return
+
+    from agora.backend.infrastructure.llm.providers import get_llm_provider
+    from agora.backend.infrastructure.search.providers import get_search_provider
+
+    async def _all() -> tuple[list[DiscoveryReport], int]:
+        # One event loop for every city: LLM/HTTP clients bind to the loop
+        # they were created on, so one asyncio.run per city breaks them.
+        llm, search = get_llm_provider(), get_search_provider()
+        reports, failed = [], 0
+        for city in cities:
+            try:
+                reports.append(await discover_sources(llm, search, city, categories))
+            except Exception as e:
+                # One city's failure must not take down the rest of the run.
+                logger.error("[%s] discovery failed: %s", city, e)
+                failed += 1
+        return reports, failed
+
+    reports, failed = asyncio.run(_all())
+    report = _discovery_report(reports)
+    print(report)
+    if args.report:
+        args.report.write_text(report, encoding="utf-8")
+    if failed == len(cities):
+        logger.error("Discovery failed for all %d city(ies).", failed)
+        sys.exit(1)
+
+
+def _discovery_report(reports: list[DiscoveryReport], max_rejected: int = 150) -> str:
+    """Summary for the PR body: every promotion with its sampled events,
+    rejections folded away (capped, the PR body has a size limit)."""
+    lines = []
+    for r in reports:
+        skipped = sum(r.skipped.values())
+        lines.append(f"### {r.city}")
+        lines.append(f"{r.searches} searches, {r.llm_calls} LLM calls — "
+                     f"{len(r.promoted)} promoted, {len(r.rejected)} rejected, {skipped} skipped without a check.")
+        lines.append("")
+        for p in r.promoted:
+            general = ", general listing" if p.is_general_listing else ""
+            lines.append(f"- **{p.name}** ({p.url}) — `{p.category}`{general}")
+            for e in p.events:
+                lines.append(f"  - {e.title[:70]} · {e.start_date or 'no date'} · `{e.category}`")
+        if r.rejected:
+            lines.append("")
+            lines.append(f"<details><summary>Rejected ({len(r.rejected)})</summary>")
+            lines.append("")
+            for url, reason in r.rejected[:max_rejected]:
+                lines.append(f"- {url} — {reason}")
+            if len(r.rejected) > max_rejected:
+                lines.append(f"- … and {len(r.rejected) - max_rejected} more (see data/rejected_sources.json)")
+            lines.append("")
+            lines.append("</details>")
+        lines.append("")
+    return "\n".join(lines)
 
 
 def _setup_sources(args: argparse.Namespace) -> None:

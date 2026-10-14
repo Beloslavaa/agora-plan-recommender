@@ -22,8 +22,8 @@ _MAX_HTML_CHARS = 60_000
 # Fence used to mark untrusted page text. We strip any occurrence of these
 # markers from the scraped text before wrapping it, so a hostile page can't
 # close the fence early and smuggle in its own "instructions".
-_FENCE_OPEN = "<PAGE_CONTENT>"
-_FENCE_CLOSE = "</PAGE_CONTENT>"
+FENCE_OPEN = "<PAGE_CONTENT>"
+FENCE_CLOSE = "</PAGE_CONTENT>"
 
 
 def _today() -> date:
@@ -38,7 +38,7 @@ def _attr(tag: str, name: str) -> str | None:
     return m.group(1) if m else None
 
 
-def _html_to_text(html: str, base_url: str | None = None) -> str:
+def html_to_text(html: str, base_url: str | None = None) -> str:
     """Convert HTML to plain text WHILE preserving link and image URLs inline.
 
     Anchors become ``label [link: URL]`` and images become ``[image: URL]`` so the
@@ -276,14 +276,14 @@ async def extract_plans_from_html(
 
     system = EXTRACTION_SYSTEM.format(
         today=_today().isoformat(),
-        open=_FENCE_OPEN,
-        close=_FENCE_CLOSE,
+        open=FENCE_OPEN,
+        close=FENCE_CLOSE,
     )
-    trimmed = _html_to_text(html, base_url=resolve_base)
+    trimmed = html_to_text(html, base_url=resolve_base)
     # Neutralise any fence markers the page itself contains, so it can't break
     # out of the DATA region and pose as trusted instructions.
-    safe = trimmed.replace(_FENCE_OPEN, "").replace(_FENCE_CLOSE, "")
-    prompt = f"{_FENCE_OPEN}\n{safe}\n{_FENCE_CLOSE}"
+    safe = trimmed.replace(FENCE_OPEN, "").replace(FENCE_CLOSE, "")
+    prompt = f"{FENCE_OPEN}\n{safe}\n{FENCE_CLOSE}"
     # A dense listing page (a full events calendar, say) can have enough events
     # that their JSON output alone exceeds the default budget and gets cut off
     # mid-array — seen in practice on esmadrid.com's events-calendar page,

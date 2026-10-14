@@ -861,5 +861,185 @@
       "location": ".info .program-heading .hall",
       "description": ".info p.about"
     }
+  },
+  {
+    "name": "Fever Madrid – Music events",
+    "url": "https://feverup.com/en/madrid/music-events",
+    "city": "Madrid",
+    "promoted_by": "manual/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Exhibitions",
+    "url": "https://feverup.com/en/madrid/exhibitions",
+    "city": "Madrid",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Cinema",
+    "url": "https://feverup.com/en/madrid/cinema",
+    "city": "Madrid",
+    "promoted_by": "manual/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Culture, art & fashion",
+    "url": "https://feverup.com/en/madrid/culture-art-fashion",
+    "city": "Madrid",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Courses, talks & workshops",
+    "url": "https://feverup.com/en/madrid/courses-talks-workshops",
+    "city": "Madrid",
+    "promoted_by": "manual/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Theatre & comedy",
+    "url": "https://feverup.com/en/madrid/theater-comedy-shows",
+    "city": "Madrid",
+    "promoted_by": "manual/comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Madrid – Food",
+    "url": "https://feverup.com/en/madrid/food",
+    "city": "Madrid",
+    "promoted_by": "manual/food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Music events",
+    "url": "https://feverup.com/en/barcelona/music-events",
+    "city": "Barcelona",
+    "promoted_by": "manual/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Exhibitions",
+    "url": "https://feverup.com/en/barcelona/exhibitions",
+    "city": "Barcelona",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Cinema",
+    "url": "https://feverup.com/en/barcelona/cinema",
+    "city": "Barcelona",
+    "promoted_by": "manual/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Culture, art & fashion",
+    "url": "https://feverup.com/en/barcelona/culture-art-fashion",
+    "city": "Barcelona",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Courses, talks & workshops",
+    "url": "https://feverup.com/en/barcelona/courses-talks-workshops",
+    "city": "Barcelona",
+    "promoted_by": "manual/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Theatre & comedy",
+    "url": "https://feverup.com/en/barcelona/theater-comedy-shows",
+    "city": "Barcelona",
+    "promoted_by": "manual/comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever Barcelona – Food",
+    "url": "https://feverup.com/en/barcelona/food",
+    "city": "Barcelona",
+    "promoted_by": "manual/food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Music events",
+    "url": "https://feverup.com/en/new-york/music-events",
+    "city": "New York",
+    "promoted_by": "manual/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Exhibitions",
+    "url": "https://feverup.com/en/new-york/exhibitions",
+    "city": "New York",
+    "promoted_by": "manual/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Culture, art & fashion",
+    "url": "https://feverup.com/en/new-york/culture-art-fashion",
+    "city": "New York",
+    "promoted_by": "manual/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Courses, talks & workshops",
+    "url": "https://feverup.com/en/new-york/courses-talks-workshops",
+    "city": "New York",
+    "promoted_by": "manual/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Theatre & comedy",
+    "url": "https://feverup.com/en/new-york/theater-comedy-shows",
+    "city": "New York",
+    "promoted_by": "manual/comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fever New York – Food",
+    "url": "https://feverup.com/en/new-york/food",
+    "city": "New York",
+    "promoted_by": "manual/food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
   }
 ]

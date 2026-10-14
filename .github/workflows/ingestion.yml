@@ -42,7 +42,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SEARCH_PROVIDER: ${{ secrets.SEARCH_PROVIDER }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
-        run: uv run --frozen --no-dev python main.py --mode explorer
+        run: uv run --frozen --no-dev python main.py --mode explorer --report "$RUNNER_TEMP/discovery_report.md"
 
       # Records how each newly promoted source is read (extractor, and CSS
       # selectors for pages that would otherwise go to the LLM every run) —
@@ -63,9 +63,12 @@ jobs:
           Proposed by the monthly source-discovery run
           (`.github/workflows/ingestion.yml`, `--mode explorer` then `--mode setup-sources`).
 
-          Each new entry was found by search and passed the explorer's checks,
-          but nothing here has been scraped for plans yet — ingestion only
-          picks a source up after this merges and Dokploy redeploys.
+          Each new entry was found by search and passed discovery's checks
+          (an events listing, at least 2 of 3 sampled events upcoming, in the
+          city and fitting a category), but nothing here has been scraped for
+          plans yet — ingestion only picks a source up after this merges and
+          Dokploy redeploys. Merging also records this run's rejections in
+          `data/rejected_sources.json`, so next month skips them.
 
           Worth a look before merging:
           - does each URL actually list events for the city it's filed under,
@@ -76,9 +79,11 @@ jobs:
             the source's `selectors` block in `data/fixed_sources.json` before
             merging — it then stays on the LLM extractor.
 
-          ## How each source will be read
+          ## What discovery found
 
           BODY
+            cat "$RUNNER_TEMP/discovery_report.md"
+            printf '\n## How each source will be read\n\n'
             cat "$RUNNER_TEMP/setup_report.md"
           } > "$RUNNER_TEMP/pr_body.md"
 
@@ -87,14 +92,18 @@ jobs:
       # scraped. Merging is also what deploys them — the worker only sees a
       # source once data/fixed_sources.json is baked into a new image.
       #
-      # No-ops on its own when the run promoted nothing (no diff → no PR).
+      # Opens a PR even when nothing was promoted, as long as something was
+      # rejected — data/rejected_sources.json changed, and merging it is what
+      # makes next month skip those pages. No diff at all → no PR.
       # The fixed branch name means a run while a PR is still open updates
       # that PR instead of opening a second one.
       - name: Open PR for newly promoted fixed sources
         uses: peter-evans/create-pull-request@v8
         with:
           branch: auto/source-discovery
-          add-paths: data/fixed_sources.json
+          add-paths: |
+            data/fixed_sources.json
+            data/rejected_sources.json
           commit-message: "Auto-promote newly discovered fixed sources"
           title: "Newly discovered fixed sources"
           body-path: ${{ runner.temp }}/pr_body.md

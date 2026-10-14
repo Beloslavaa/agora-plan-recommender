@@ -1,5 +1,5 @@
-"""Use-cases for running the ingestion pipeline: scrape fixed sources,
-explore for new ones, or both, then validate the results. Orchestrates the
+"""Use-cases for running the ingestion pipeline: scrape fixed sources, then
+validate the results. (Finding new sources is source_discovery.py's job.) Orchestrates the
 LLM/search/http ports plus domain validation — see infrastructure/cli/
 ingest_cli.py for the CLI adapter that drives this."""
 
@@ -8,14 +8,12 @@ import logging
 from datetime import date
 
 from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
-from agora.backend.application.explorer import explore_for_plans
 from agora.backend.application.selector_learning import check_selectors
 from agora.backend.application.extraction import extract_plans_from_html, extract_plans_from_wp_api
 from agora.backend.application.sources_admin import correct_city_from_location
 from agora.backend.domain.card_selectors import plans_from_cards
 from agora.backend.domain.schemas import PlanCategory, PlanData
 from agora.backend.domain.validation import validate_and_filter
-from agora.backend.infrastructure.config import settings
 from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details, fetch_page
 from agora.backend.infrastructure.llm.providers import get_llm_provider
 from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
@@ -140,60 +138,19 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
     return validate_and_filter(plans, load_city_countries())
 
 
-async def run_exploratory_pipeline(llm, city: str, only_categories: set[str] | None = None) -> list[PlanData]:
-    search_provider = get_search_provider(settings.search_provider)
-    cats = {PlanCategory(c) for c in only_categories} if only_categories else None
-    plans = await explore_for_plans(
-        llm=llm,
-        city=city,
-        search_provider=search_provider,
-        min_per_category=3,
-        max_per_category=10,
-        only_categories=cats,
-    )
-    return validate_and_filter(plans, load_city_countries())
-
-
-async def run_full_pipeline(city: str) -> list[PlanData]:
-    llm = get_llm_provider()
-    fixed = await run_fixed_pipeline(llm, city)
-    logger.info("[%s] Fixed pipeline: %d plans", city, len(fixed))
-
-    exploratory = await run_exploratory_pipeline(llm, city)
-    logger.info("[%s] Exploratory pipeline: %d plans", city, len(exploratory))
-
-    return validate_and_filter(fixed + exploratory, load_city_countries())
-
-
-async def run_one_city(
-    mode: str,
-    city: str,
-    only_categories: list[str] | None,
-    only_names: set[str] | None,
-) -> list[PlanData]:
-    """Run the selected mode for a single city, then classify/enrich the results.
+async def run_one_city(city: str, only_names: set[str] | None) -> list[PlanData]:
+    """Scrape a single city's fixed sources, then classify/enrich the results.
 
     Split out so a multi-city (cron) run can call this once per configured
     city, in its own try/except — one city's failure must never abort the
     rest of the run.
     """
     llm = get_llm_provider()
-    if mode == "fixed":
-        plans = await run_fixed_pipeline(llm, city, only_names=only_names)
-    elif mode == "explorer":
-        # Explorer only promotes sources to fixed_sources.json (see
-        # explorer.py) — the plans it happens to extract along the way are
-        # never persisted (ingest_cli.py discards them for this mode), so
-        # classifying/enriching them below would just spend LLM and search
-        # calls on data nobody keeps.
-        return await run_exploratory_pipeline(llm, city, only_categories=only_categories)
-    else:
-        plans = await run_full_pipeline(city)
+    plans = await run_fixed_pipeline(llm, city, only_names=only_names)
 
-    # Neither pipeline guesses a category for every plan (see
-    # enrichment.classify_missing_categories) — fixed-source general
-    # listings and every exploratory-sourced plan reach here with
-    # category=None. Classify from content before this batch is ever
+    # Not every plan gets a category while scraping (see
+    # enrichment.classify_missing_categories) — general listings' plans
+    # reach here with category=None. Classify from content before this batch is ever
     # written to the DB, instead of leaving it null for a separate manual
     # backfill run (scripts/backfill_categories.py remains for the
     # pre-existing backlog only).

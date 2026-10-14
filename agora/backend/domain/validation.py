@@ -88,7 +88,7 @@ def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) 
 
     # ── City ─────────────────────────────────────
     # Safety net: city is stamped by the ingestion orchestration layer
-    # (cli.py/explorer.py), never asked of the LLM — an empty one here means
+    # (ingestion.py / source_discovery.py), never asked of the LLM — an empty one here means
     # some call path forgot to stamp it, not a real data-quality issue.
     if not plan.city or not plan.city.strip():
         issues.append("city missing (ingestion pipeline bug, not scraped data)")

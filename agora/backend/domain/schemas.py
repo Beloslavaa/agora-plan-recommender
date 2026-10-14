@@ -44,7 +44,7 @@ CATEGORY_LABELS: dict[PlanCategory, str] = {
 }
 
 # These are style examples for the LLM (query phrasing), not target content —
-# the actual city is injected separately via {city} in explorer.QUERY_SYSTEM.
+# the actual city is injected separately via {city} in source_discovery.QUERY_SYSTEM.
 # Deliberately no city name here, so they don't bias generation toward
 # whichever city happened to be used when these were written.
 CATEGORY_EXAMPLES: dict[PlanCategory, list[str]] = {
@@ -105,7 +105,7 @@ class City(BaseModel):
     name: str
     country: str
     # ISO 639-1 code of the language locals search in — discovery writes one
-    # query in it and one in English (see explorer.QUERY_SYSTEM).
+    # query in it and one in English (see source_discovery.QUERY_SYSTEM).
     language: str = "en"
 
 
@@ -160,7 +160,7 @@ class PlanData(BaseModel):
     category: str | None = None
     source_url: str
     source_type: str  # "fixed" or "exploratory"
-    # Stamped by the ingestion orchestration layer (cli.py/explorer.py), never
+    # Stamped by the ingestion orchestration layer (ingestion.py / source_discovery.py), never
     # asked of the LLM extractor — always non-empty by the time a plan is
     # validated/stored. Defaults "" only so PlanData stays constructible
     # before that stamping happens.

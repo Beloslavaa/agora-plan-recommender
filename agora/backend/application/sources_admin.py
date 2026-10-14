@@ -34,10 +34,14 @@ def correct_city_from_location(plans: list, assumed_city: str) -> None:
                 break
 
 
-def promote_source(name: str, url: str, city: str, promoted_by: str | None = None) -> bool:
+def promote_source(
+    name: str, url: str, city: str, promoted_by: str | None = None, is_general_listing: bool = False,
+) -> bool:
     sources = load_fixed_sources()
     if any(s.url == url for s in sources):
         return False
-    sources.append(FixedSource(name=name, url=url, city=city, promoted_by=promoted_by))
+    sources.append(FixedSource(
+        name=name, url=url, city=city, promoted_by=promoted_by, is_general_listing=is_general_listing,
+    ))
     save_fixed_sources(sources)
     return True
