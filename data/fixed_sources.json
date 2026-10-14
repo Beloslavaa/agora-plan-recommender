@@ -1041,5 +1041,393 @@
     "is_general_listing": false,
     "extractor": "page",
     "selectors": null
+  },
+  {
+    "name": "Las 18 exposiciones imprescindibles de octubre en Madrid",
+    "url": "https://madridsecreto.co/exposiciones-madrid/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".wp-block-smn-listicle .smn-module",
+      "title": ".module-title",
+      "link": ".module-title a, .module-buy-tickets-cta",
+      "date": ".module-dates-value",
+      "image": ".module-image img",
+      "location": ".module-direction-location, .module-direction-lines",
+      "description": ".wp-block-smn-rich-text"
+    }
+  },
+  {
+    "name": "Arte en Madrid - Time Out",
+    "url": "https://www.timeout.es/madrid/es/arte",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Agenda Exposiciones",
+    "url": "https://www.esmadrid.com/agenda-exposiciones-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".gadget-mixto-grid-3col .node-event",
+      "title": ".field-name-title-field",
+      "link": "a[href*='/agenda/']",
+      "date": ".field-name-resumen",
+      "image": "img",
+      "location": null,
+      "description": ".field-name-resumen"
+    }
+  },
+  {
+    "name": "Cartelera para hoy de Cines Princesa",
+    "url": "https://www.cinesrenoir.com/cine/cines-princesa/cartelera/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Fashion and Beauty fairs",
+    "url": "https://www.ifema.es/en/calendar/fashion-beauty",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.fashion",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Talleres de Cerámica en Madrid los Fines de Semana",
+    "url": "https://nossaceramica.es/talleres-de-ceramica/",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".mep_event_list_item",
+      "title": ".mep_list_title",
+      "link": "a.mep_event_minimal_list__link",
+      "date": ".upcomming_date_only_only",
+      "image": null,
+      "location": ".upcomming_location",
+      "description": null
+    }
+  },
+  {
+    "name": "Entradas de Humor/Monólogos en Madrid",
+    "url": "https://www.taquilla.com/espectaculos/humor-monologos/madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Experiencias de Degustación en Madrid - Comida y Bebida",
+    "url": "https://feverup.com/es/madrid/degustacion-catas?srsltid=AU7gw4XLxZMVwOewHBJbw0167ctCG_fcEV9WGWScgnvvcjlC9mBPaMOk",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Calendario de eventos Madrid 2026",
+    "url": "https://www.esmadrid.com/calendario-eventos-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".view-gadget-calendario .views-row",
+      "title": ".field-name-title-field a",
+      "link": ".field-name-title-field a",
+      "date": ".field-name-body",
+      "image": null,
+      "location": null,
+      "description": ".field-name-body"
+    }
+  },
+  {
+    "name": "64 Exposiciones puedes ver hoy en Barcelona, España",
+    "url": "https://www.arteinformado.com/agenda/exposiciones/exposiciones-barcelona-3212090_4_20",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".row.top30 > .col-md-4.col-sm-8",
+      "title": "h3",
+      "link": "h3 a",
+      "date": ".txt-date",
+      "image": null,
+      "location": ".min-alto-agenda .font17:not(.txt-gris)",
+      "description": null
+    }
+  },
+  {
+    "name": "Cinema Maldà - Películas VOSE en Barcelona",
+    "url": "https://www.cinemamalda.com/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Agenda",
+    "url": "https://palausantjordi.barcelona/es/agenda",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".events-list__item",
+      "title": ".events-list__content-title",
+      "link": ".events-list__item-top a",
+      "date": ".events-list__content-date",
+      "image": ".events-list__item-top img",
+      "location": ".events-list__content-name",
+      "description": null
+    }
+  },
+  {
+    "name": "Monólogos en Barcelona: toda la cartelera y entradas ...",
+    "url": "https://www.teatrebarcelona.com/es/genero/monologos",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".billboard__items a.card_session_2",
+      "title": ".card_session_2__title",
+      "link": ":scope",
+      "date": ".card_session_2__date",
+      "image": ".card_session_2__poster img",
+      "location": ".card_session_2__venue",
+      "description": null
+    }
+  },
+  {
+    "name": "Torneos de padel en Barcelona",
+    "url": "https://www.padelnest.com/torneos?location=Barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.sports_wellness",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "ul.items > li",
+      "title": "h3",
+      "link": "a.item",
+      "date": ".fa-calendar + span",
+      "image": "img.p",
+      "location": ".fa-flag",
+      "description": null
+    }
+  },
+  {
+    "name": "Excursiones desde Barcelona - Reserva Online",
+    "url": "https://www.guruwalk.com/es/a/barcelona/v13-excursiones-barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.day_trips",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Guía Barcelona: agenda de actividades, directorios y cursos y ...",
+    "url": "https://guia.barcelona.cat/es/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "#agenda-recomenada .item",
+      "title": "h3 a",
+      "link": "h3 a",
+      "date": ".dades dd:last-child",
+      "image": ".media img",
+      "location": ".dades dd:first-of-type",
+      "description": ".resum"
+    }
+  },
+  {
+    "name": "Cine Grand Park Center",
+    "url": "https://programata.bg/kino/kino-saloni/sofia/cine-grand-park-center/",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".program .program-item",
+      "title": "a strong, a",
+      "link": "a",
+      "date": "div:nth-child(n+2)",
+      "image": null,
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Програма на стендъп комедията в София - Stand up ...",
+    "url": "https://thecomedyclub.bg/program/",
+    "city": "Sofia",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "figure.wp-block-table table tbody tr:not(:first-child)",
+      "title": "td:nth-child(2)",
+      "link": "td:nth-child(3) a",
+      "date": "td:nth-child(1)",
+      "image": null,
+      "location": "td:nth-child(3)",
+      "description": null
+    }
+  },
+  {
+    "name": "MoMA: The Museum of Modern Art, New York City",
+    "url": "https://www.moma.org/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "#exhibitions .swiper-slide",
+      "title": "a > div > div > p",
+      "link": "a",
+      "date": "a > div > div > div p",
+      "image": "img",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "NYC Current Photography Shows, Galleries, and Museums",
+    "url": "https://jamesmaherphotography.com/shows/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".tribe-events-widget-events-list__event-row article.tribe-events-widget-list__event",
+      "title": ".tribe-events-widget-events-list__event-title",
+      "link": ".tribe-events-widget-events-list__event-title a",
+      "date": ".tribe-event-duration",
+      "image": ".tribe-events-widget-list__event-thumbnail img",
+      "location": ".tribe-events-widget-events-list__venue-address",
+      "description": ".event-desc-hidden"
+    }
+  },
+  {
+    "name": "Film Forum",
+    "url": "https://filmforum.org/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".full-listing",
+      "title": ".title",
+      "link": ".title a",
+      "date": ".details",
+      "image": ".image-container img",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Concerts in New York (NYC) this weekend",
+    "url": "https://www.songkick.com/metro-areas/7644-us-new-york-nyc/this-weekend",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "The Joyce Theater",
+    "url": "https://www.joyce.org/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".featuredSlidesCard",
+      "title": ".card__title",
+      "link": ".card__title a",
+      "date": ".card__date",
+      "image": ".card__image",
+      "location": null,
+      "description": ".card__subtitle"
+    }
+  },
+  {
+    "name": "Dance in NYC",
+    "url": "https://www.newyorktheatreguide.com/whats-on/dance",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.comedy_theatre",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "New York City Rooftop Bar Events",
+    "url": "https://starchildrooftop.com/events/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.food_drink",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "#uvevents-agenda .eventitem",
+      "title": ".uv-events-name",
+      "link": null,
+      "date": ".uv-events-date",
+      "image": ".uv-lazyimage.bg",
+      "location": ".venueurl",
+      "description": null
+    }
+  },
+  {
+    "name": "New York City",
+    "url": "https://tours.yankeetrails.com/Tours/New_York_City",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.day_trips",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "New York Fall Festivals",
+    "url": "https://www.iloveny.com/blog/post/new-yorks-best-fall-festivals/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ThoughtGallery.org - Discover Dozens of Upcoming Talks ...",
+    "url": "https://thoughtgallery.org/",
+    "city": "New York",
+    "promoted_by": "explorer/PlanCategory.cultural",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".home_slider_event",
+      "title": ".home_slider_title",
+      "link": "a.home_slider_title",
+      "date": ".home_slider_date",
+      "image": "img",
+      "location": null,
+      "description": null
+    }
   }
 ]
