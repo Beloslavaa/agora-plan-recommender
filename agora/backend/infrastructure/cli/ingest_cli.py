@@ -13,7 +13,12 @@ from agora.backend.application.source_discovery import (
 )
 from agora.backend.application.source_setup import SourceSetup, set_up_sources, sources_to_set_up
 from agora.backend.domain.schemas import PlanCategory
-from agora.backend.infrastructure.persistence.json_files import load_cities, load_fixed_sources
+from agora.backend.infrastructure.http import fetcher
+from agora.backend.infrastructure.persistence import json_files
+
+# The adapters behind the PageFetcher and SourceStore ports — modules of
+# functions, passed to the use-cases as they are (see application/ports.py).
+store = json_files
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +80,7 @@ def main() -> None:
         _setup_sources(args)
         return
 
-    cities = args.city if args.city else load_cities()
+    cities = args.city if args.city else store.load_cities()
     if not cities:
         print("No cities configured — add some to data/cities.json (or pass --city).")
         return
@@ -87,7 +92,7 @@ def main() -> None:
     if args.dry_run:
         print(f"Would run for {len(cities)} cities: {', '.join(cities)}")
         for city in cities:
-            sources = [s for s in load_fixed_sources() if s.city == city]
+            sources = [s for s in store.load_fixed_sources() if s.city == city]
             if args.source:
                 sources = [s for s in sources if s.name in args.source]
             print(f"\n[{city}]\n  Would scrape {len(sources)} fixed sources:")
@@ -95,22 +100,33 @@ def main() -> None:
                 print(f"    · {s.name} — {s.url}")
         return
 
+    from agora.backend.infrastructure.llm.providers import get_llm_provider
+    from agora.backend.infrastructure.search.providers import get_search_provider
+
     only_names = set(args.source) if args.source else None
-    all_plans = []
-    failed = 0
-    for city in cities:
-        try:
-            plans = asyncio.run(run_one_city(city, only_names))
-        except Exception as e:
-            # One city's bad source / LLM hiccup must not take down the rest
-            # of an unattended multi-city run.
-            logger.error("[%s] pipeline failed: %s", city, e)
-            failed += 1
-            continue
-        all_plans.extend(plans)
-        print(f"\n[{city}] Scraped this run: {len(plans)}")
-        for p in plans:
-            print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
+
+    async def _all() -> tuple[list, int]:
+        # One event loop for every city: LLM/HTTP clients and the pipeline's
+        # semaphore bind to the loop they're first used on, so one
+        # asyncio.run per city broke them ("Event loop is closed").
+        llm, search = get_llm_provider(), get_search_provider()
+        all_plans, failed = [], 0
+        for city in cities:
+            try:
+                plans = await run_one_city(llm, search, fetcher, store, city, only_names)
+            except Exception as e:
+                # One city's bad source / LLM hiccup must not take down the
+                # rest of an unattended multi-city run.
+                logger.error("[%s] pipeline failed: %s", city, e)
+                failed += 1
+                continue
+            all_plans.extend(plans)
+            print(f"\n[{city}] Scraped this run: {len(plans)}")
+            for p in plans:
+                print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
+        return all_plans, failed
+
+    all_plans, failed = asyncio.run(_all())
 
     # Partial failure stays tolerated above, but if *every* city blew up the
     # run accomplished nothing — exit non-zero so CI shows red instead of a
@@ -121,6 +137,8 @@ def main() -> None:
 
     from agora.backend.application.graph_recommendation import backfill_graph_embeddings
     from agora.backend.application.recommendation import backfill_embeddings
+    from agora.backend.infrastructure.embeddings import gemini_embeddings
+    from agora.backend.infrastructure.persistence import postgres_repository
     from agora.backend.infrastructure.persistence.postgres_repository import (
         get_plan_count,
         mark_stale_plans,
@@ -132,7 +150,7 @@ def main() -> None:
     total = get_plan_count()
     print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
 
-    embedded = backfill_embeddings()
+    embedded = backfill_embeddings(gemini_embeddings, postgres_repository)
     print(f"Embedded {embedded} plan(s) for the semantic recommender")
 
     staled = mark_stale_plans()
@@ -142,7 +160,7 @@ def main() -> None:
 
     # After staling, so no proxy is spent on a plan that just went stale.
     # Cold-start proxies only, no retraining — see backfill_graph_embeddings.
-    graphed = backfill_graph_embeddings()
+    graphed = backfill_graph_embeddings(postgres_repository)
     print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
 
     pool.close()
@@ -167,7 +185,7 @@ def _discover(args: argparse.Namespace, cities: list[str]) -> None:
         reports, failed = [], 0
         for city in cities:
             try:
-                reports.append(await discover_sources(llm, search, city, categories))
+                reports.append(await discover_sources(llm, search, fetcher, store, city, categories))
             except Exception as e:
                 # One city's failure must not take down the rest of the run.
                 logger.error("[%s] discovery failed: %s", city, e)
@@ -216,7 +234,7 @@ def _discovery_report(reports: list[DiscoveryReport], max_rejected: int = 150) -
 def _setup_sources(args: argparse.Namespace) -> None:
     names = set(args.source) if args.source else None
     if args.dry_run:
-        todo = sources_to_set_up(args.city, names, args.redo)
+        todo = sources_to_set_up(store, args.city, names, args.redo)
         print(f"Would set up {len(todo)} fixed source(s):")
         for s in todo:
             print(f"  · {s.city} | {s.name} — {s.url}")
@@ -224,7 +242,7 @@ def _setup_sources(args: argparse.Namespace) -> None:
 
     from agora.backend.infrastructure.llm.providers import get_llm_provider
 
-    results = asyncio.run(set_up_sources(get_llm_provider(), args.city, names, args.redo))
+    results = asyncio.run(set_up_sources(get_llm_provider(), fetcher, store, args.city, names, args.redo))
     report = _setup_report(results)
     print(report)
     if args.report:

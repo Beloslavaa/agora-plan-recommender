@@ -6,11 +6,11 @@ at the edges (infrastructure/web/api.py, infrastructure/cli/ingest_cli.py).
 """
 
 import json
-from datetime import datetime
 from abc import ABC, abstractmethod
+from datetime import date, datetime
 from typing import Protocol
 
-from agora.backend.domain.schemas import SearchResult
+from agora.backend.domain.schemas import City, FixedSource, SearchResult
 
 
 class LLMProvider(ABC):
@@ -112,3 +112,34 @@ class PlanRepository(Protocol):
     def get_plans_missing_graph_embedding(self) -> list[dict]: ...
     def get_graph_anchor_plans(self, city: str) -> list[dict]: ...
     def set_plan_graph_embeddings_bulk(self, rows: list[tuple[int, list[float]]]) -> None: ...
+
+
+class PageFetcher(Protocol):
+    """Fetching web pages for ingestion and discovery. Satisfied by the
+    infrastructure/http/fetcher.py module itself (same module-of-functions
+    approach as PlanRepository), which owns the SSRF guard."""
+
+    async def fetch_page(self, url: str) -> str: ...
+    async def fetch_page_with_details(self, url: str) -> list[tuple[str, str]]: ...
+    async def fetch_wp_events(self, site_url: str, start: date, end: date) -> list[dict]: ...
+
+
+class SourceStore(Protocol):
+    """The fixed-source list, the configured cities, and the candidates
+    discovery rejected. Satisfied by the infrastructure/persistence/
+    json_files.py module (plain JSON files under data/)."""
+
+    def load_fixed_sources(self) -> list[FixedSource]: ...
+    def save_fixed_sources(self, sources: list[FixedSource]) -> None: ...
+    def load_cities(self) -> list[str]: ...
+    def load_city_settings(self) -> dict[str, City]: ...
+    def load_city_countries(self) -> dict[str, str]: ...
+    def load_rejected_sources(self) -> list[dict]: ...
+    def save_rejected_sources(self, entries: list[dict]) -> None: ...
+
+
+class Embedder(Protocol):
+    """Text -> vector. Satisfied by the infrastructure/embeddings/
+    gemini_embeddings.py module."""
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]: ...

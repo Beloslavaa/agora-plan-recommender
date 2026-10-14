@@ -18,6 +18,7 @@ import argparse
 import logging
 
 from agora.backend.application.recommendation import rank_for_user
+from agora.backend.infrastructure.persistence import postgres_repository
 from agora.backend.infrastructure.persistence.postgres_repository import (
     get_plans_for_scoring,
     init_db,
@@ -67,7 +68,7 @@ def main() -> None:
     else:
         seed = candidates[0]
 
-    before = rank_for_user(TEST_USER, args.city, limit=5)
+    before = rank_for_user(postgres_repository, TEST_USER, args.city, limit=5)
     print(f"\nBefore any interaction (popularity fallback), top 5 for {args.city}:")
     for r in before:
         print(f"  {r['score']:>8.2f}  [{r.get('category')}]  {r['title'][:60]}")
@@ -76,7 +77,7 @@ def main() -> None:
     record_interaction(TEST_USER, seed["id"], "saved")
 
     try:
-        after = rank_for_user(TEST_USER, args.city, limit=5)
+        after = rank_for_user(postgres_repository, TEST_USER, args.city, limit=5)
         print(f"After saving it, top 5 for {args.city}:")
         for r in after:
             print(f"  {r['score']:>8.4f}  [{r.get('category')}]  {r['title'][:60]}")

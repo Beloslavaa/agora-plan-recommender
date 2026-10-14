@@ -29,10 +29,11 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 
-from agora.backend.application.extraction import FENCE_CLOSE, FENCE_OPEN, html_to_text
-from agora.backend.application.ports import LLMProvider, SearchProvider
+from agora.backend.application.extraction import FENCE_CLOSE, FENCE_OPEN
+from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider, SourceStore
 from agora.backend.application.sources_admin import promote_source
 from agora.backend.domain.countries import language_name, search_country
+from agora.backend.domain.event_parsing import html_to_text
 from agora.backend.domain.schemas import (
     CATEGORY_EXAMPLES,
     CATEGORY_LABELS,
@@ -52,14 +53,6 @@ from agora.backend.domain.source_rules import (
     url_key,
 )
 from agora.backend.domain.url_safety import effective_base_url
-from agora.backend.infrastructure.http.fetcher import fetch_page
-from agora.backend.infrastructure.persistence.json_files import (
-    load_city_countries,
-    load_city_settings,
-    load_fixed_sources,
-    load_rejected_sources,
-    save_rejected_sources,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -242,13 +235,17 @@ class _CityDiscovery:
     """State for one city's run: what's already a source, what was rejected
     recently, and what this run already checked."""
 
-    def __init__(self, llm: LLMProvider, search: SearchProvider, city: City):
+    def __init__(
+        self, llm: LLMProvider, search: SearchProvider, fetcher: PageFetcher, store: SourceStore, city: City,
+    ):
         self.llm = llm
         self.search = search
+        self.fetcher = fetcher
+        self.store = store
         self.city = city
-        self.city_countries = load_city_countries()
-        self.source_keys = [url_key(s.url) for s in load_fixed_sources()]
-        self.rejected = {url_key(e["url"]): e for e in load_rejected_sources()}
+        self.city_countries = store.load_city_countries()
+        self.source_keys = [url_key(s.url) for s in store.load_fixed_sources()]
+        self.rejected = {url_key(e["url"]): e for e in store.load_rejected_sources()}
         self.outcomes: dict[UrlKey, _Outcome] = {}
         self.report = DiscoveryReport(city=city.name)
 
@@ -282,7 +279,7 @@ class _CityDiscovery:
                     continue
                 for hit in hits:
                     await self._process_hit(hit.url)
-        save_rejected_sources([e for e in self.rejected.values() if recently_rejected(e, date.today())])
+        self.store.save_rejected_sources([e for e in self.rejected.values() if recently_rejected(e, date.today())])
         return self.report
 
     async def _process_hit(self, url: str) -> None:
@@ -324,7 +321,7 @@ class _CityDiscovery:
 
         logger.info("  ? %s", url)
         try:
-            html = await fetch_page(url)
+            html = await self.fetcher.fetch_page(url)
         except Exception as e:
             self._reject(url, f"fetch failed: {type(e).__name__}")
             return outcome
@@ -342,6 +339,7 @@ class _CityDiscovery:
             self._reject(url, verdict.reason)
             return outcome
         if promote_source(
+            self.store,
             name=verdict.name, url=url, city=self.city.name,
             promoted_by=f"explorer/{verdict.category}", is_general_listing=verdict.is_general_listing,
         ):
@@ -385,10 +383,12 @@ class _CityDiscovery:
 async def discover_sources(
     llm: LLMProvider,
     search: SearchProvider,
+    fetcher: PageFetcher,
+    store: SourceStore,
     city: str,
     categories: list[PlanCategory] | None = None,
 ) -> DiscoveryReport:
     # A city missing from data/cities.json still gets explored, just in
     # English with no country hint.
-    settings = load_city_settings().get(city) or City(name=city, country="")
-    return await _CityDiscovery(llm, search, settings).run(categories or DISCOVERY_CATEGORIES)
+    settings = store.load_city_settings().get(city) or City(name=city, country="")
+    return await _CityDiscovery(llm, search, fetcher, store, settings).run(categories or DISCOVERY_CATEGORIES)

@@ -8,16 +8,11 @@ import logging
 from datetime import date
 
 from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
-from agora.backend.application.selector_learning import check_selectors
+from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider, SourceStore
 from agora.backend.application.extraction import extract_plans_from_html, extract_plans_from_wp_api
-from agora.backend.application.sources_admin import correct_city_from_location
-from agora.backend.domain.card_selectors import plans_from_cards
-from agora.backend.domain.schemas import PlanCategory, PlanData
-from agora.backend.domain.validation import validate_and_filter
-from agora.backend.infrastructure.http.fetcher import fetch_fixed_source_with_details, fetch_page
-from agora.backend.infrastructure.llm.providers import get_llm_provider
-from agora.backend.infrastructure.persistence.json_files import load_city_countries, load_fixed_sources
-from agora.backend.infrastructure.search.providers import get_search_provider
+from agora.backend.domain.card_selectors import check_selectors, plans_from_cards
+from agora.backend.domain.schemas import PlanData
+from agora.backend.domain.validation import correct_city_from_location, validate_and_filter
 
 logger = logging.getLogger(__name__)
 
@@ -25,25 +20,10 @@ logger = logging.getLogger(__name__)
 _sem = asyncio.Semaphore(5)
 
 
-def _category_from_promoted_by(promoted_by: str | None) -> str | None:
-    """Fixed sources record which category they were promoted under, e.g.
-    "explorer/PlanCategory.music_concerts" or "manual/cinema" (see
-    application.sources_admin.promote_source and data/fixed_sources.json).
-    Recover it so run_fixed_pipeline can pass it to the extractor the same
-    way the exploratory pipeline already does — otherwise every plan scraped
-    from a fixed source comes in with category=None, since nothing else ever
-    infers a category from page content."""
-    if not promoted_by:
-        return None
-    token = promoted_by.rsplit(".", 1)[-1].rsplit("/", 1)[-1]
-    try:
-        return PlanCategory(token).value
-    except ValueError:
-        return None
-
-
-async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None) -> list[PlanData]:
-    sources = [s for s in load_fixed_sources() if s.city == city]
+async def run_fixed_pipeline(
+    llm: LLMProvider, fetcher: PageFetcher, store: SourceStore, city: str, only_names: set[str] | None = None,
+) -> list[PlanData]:
+    sources = [s for s in store.load_fixed_sources() if s.city == city]
     if not sources:
         logger.info("No fixed sources yet for %s — run explorer mode first", city)
         return []
@@ -56,14 +36,14 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
             # Skip for a general listing — promoted_by only records which
             # category search discovered it under, not what every event on
             # a multi-category page actually is (see FixedSource docstring).
-            category = None if source.is_general_listing else _category_from_promoted_by(source.promoted_by)
+            category = None if source.is_general_listing else source.promoted_category()
 
             # A WordPress site with an events plugin publishes the same events
             # as JSON — when it does, that replaces scraping its pages.
             # source.extractor (see FixedSource) says whether this site has
             # one, so the other sources skip the probe; unchecked ones try it.
             if source.extractor != "page":
-                wp_plans = await extract_plans_from_wp_api(source.url, "fixed", category)
+                wp_plans = await extract_plans_from_wp_api(fetcher, source.url, "fixed", category)
                 if wp_plans:
                     plans.extend(wp_plans)
                     continue
@@ -75,7 +55,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
             # are read without the LLM — unless the selectors no longer fit the
             # page (usually a redesign), which falls through to the LLM below.
             if source.selectors:
-                html = await fetch_page(source.url)
+                html = await fetcher.fetch_page(source.url)
                 ok, summary = check_selectors(html, source.selectors, source.url, date.today())
                 if ok:
                     card_plans = plans_from_cards(html, source.selectors, source.url, "fixed",
@@ -87,7 +67,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                                "using the LLM — re-run main.py --mode setup-sources --source %r",
                                source.name, summary, source.name)
 
-            page_htmls = await fetch_fixed_source_with_details(source)
+            page_htmls = await fetcher.fetch_page_with_details(source.url)
 
             async def _extract(html: str, page_url: str) -> list[PlanData]:
                 async with _sem:
@@ -98,7 +78,7 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
                         # broke the UI's "view source" link and the point of
                         # fetching detail pages at all.
                         extracted = await extract_plans_from_html(
-                            html, page_url, "fixed", llm, category=category,
+                            html, page_url, "fixed", llm, fetcher, category=category,
                         )
                         return extracted
                     except Exception as e:
@@ -134,19 +114,26 @@ async def run_fixed_pipeline(llm, city: str, only_names: set[str] | None = None)
     # Some fixed sources (e.g. a cinema chain with branches in more than one
     # city) span cities under one URL scraped for only one of them — correct
     # the ones whose actual location says otherwise before validating.
-    correct_city_from_location(plans, city)
-    return validate_and_filter(plans, load_city_countries())
+    correct_city_from_location(plans, city, store.load_cities())
+    return validate_and_filter(plans, store.load_city_countries())
 
 
-async def run_one_city(city: str, only_names: set[str] | None) -> list[PlanData]:
+async def run_one_city(
+    llm: LLMProvider,
+    search: SearchProvider,
+    fetcher: PageFetcher,
+    store: SourceStore,
+    city: str,
+    only_names: set[str] | None,
+) -> list[PlanData]:
     """Scrape a single city's fixed sources, then classify/enrich the results.
 
     Split out so a multi-city (cron) run can call this once per configured
     city, in its own try/except — one city's failure must never abort the
-    rest of the run.
+    rest of the run. The providers come from the caller, created once for
+    the whole run on its one event loop.
     """
-    llm = get_llm_provider()
-    plans = await run_fixed_pipeline(llm, city, only_names=only_names)
+    plans = await run_fixed_pipeline(llm, fetcher, store, city, only_names=only_names)
 
     # Not every plan gets a category while scraping (see
     # enrichment.classify_missing_categories) — general listings' plans
@@ -156,5 +143,4 @@ async def run_one_city(city: str, only_names: set[str] | None) -> list[PlanData]
     # pre-existing backlog only).
     await classify_missing_categories(plans, llm)
 
-    search_provider = get_search_provider()
-    return await enrich_plans(plans, llm=llm, search=search_provider)
+    return await enrich_plans(plans, fetcher, store.load_city_settings(), llm=llm, search=search)

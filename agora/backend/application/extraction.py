@@ -1,11 +1,12 @@
 import asyncio
 import logging
-import re
 from datetime import date, timedelta
 from urllib.parse import urlparse
 
-from agora.backend.application.ports import LLMProvider
+from agora.backend.application.ports import LLMProvider, PageFetcher
 from agora.backend.domain.event_parsing import (
+    html_to_text,
+    plan_from_ld_event,
     extract_dice_event_details,
     extract_dice_listing_events,
     extract_ld_events,
@@ -13,12 +14,8 @@ from agora.backend.domain.event_parsing import (
 )
 from agora.backend.domain.schemas import PlanData
 from agora.backend.domain.url_safety import effective_base_url, is_late_night, normalise_url
-from agora.backend.infrastructure.http.fetcher import fetch_page, fetch_wp_events
 
 logger = logging.getLogger(__name__)
-# A bit larger than before because we now keep link/image URLs inline in the text.
-_MAX_HTML_CHARS = 60_000
-
 # Fence used to mark untrusted page text. We strip any occurrence of these
 # markers from the scraped text before wrapping it, so a hostile page can't
 # close the fence early and smuggle in its own "instructions".
@@ -29,48 +26,6 @@ FENCE_CLOSE = "</PAGE_CONTENT>"
 def _today() -> date:
     # Computed per call so a long-running worker doesn't freeze "today" at import time.
     return date.today()
-
-
-def _attr(tag: str, name: str) -> str | None:
-    """Read an attribute value out of a raw start-tag string."""
-    m = (re.search(rf'{name}\s*=\s*"([^"]*)"', tag, re.IGNORECASE)
-         or re.search(rf"{name}\s*=\s*'([^']*)'", tag, re.IGNORECASE))
-    return m.group(1) if m else None
-
-
-def html_to_text(html: str, base_url: str | None = None) -> str:
-    """Convert HTML to plain text WHILE preserving link and image URLs inline.
-
-    Anchors become ``label [link: URL]`` and images become ``[image: URL]`` so the
-    LLM can associate each event with its dedicated page, ticket link, and photo.
-    Relative URLs are resolved against *base_url* and validated via ``normalise_url``.
-
-    (The old version stripped every tag first, which destroyed all href/src — the
-    model then had no URLs to extract, so url/ticket_url/image_url were mostly empty.)
-    """
-    # Drop non-content elements entirely (including their contents).
-    html = re.sub(r'<(script|style|noscript|template|svg)\b[^>]*>.*?</\1>', ' ',
-                  html, flags=re.DOTALL | re.IGNORECASE)
-
-    # Images → " [image: URL] "
-    def _img(m: re.Match) -> str:
-        src = _attr(m.group(0), 'src') or _attr(m.group(0), 'data-src')
-        u = normalise_url(src, base_url) if src else None
-        return f" [image: {u}] " if u else " "
-    html = re.sub(r'<img\b[^>]*>', _img, html, flags=re.IGNORECASE)
-
-    # Anchors → " label [link: URL] "
-    def _a(m: re.Match) -> str:
-        href = _attr(m.group(1), 'href')
-        label = re.sub(r'<[^>]+>', ' ', m.group(2))
-        u = normalise_url(href, base_url) if href else None
-        return f" {label} [link: {u}] " if u else f" {label} "
-    html = re.sub(r'<a\b([^>]*)>(.*?)</a>', _a, html, flags=re.IGNORECASE | re.DOTALL)
-
-    # Strip whatever tags remain, collapse whitespace, keep the START of the page.
-    text = re.sub(r'<[^>]+>', ' ', html)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text[:_MAX_HTML_CHARS]
 
 
 EXTRACTION_SYSTEM = """\
@@ -133,30 +88,7 @@ Rules:
 """
 
 
-def _plan_from_ld_event(
-    ev: dict, source_url: str, source_type: str, category: str | None,
-) -> PlanData | None:
-    if not ev.get("title"):
-        return None
-    return PlanData(
-        title=ev["title"],
-        description=ev.get("description") or "",
-        start_date=ev.get("start_date"),
-        end_date=ev.get("end_date"),
-        url=ev.get("url"),
-        ticket_url=ev.get("ticket_url"),
-        location=ev.get("location"),
-        image_url=ev.get("image_url"),
-        price=ev.get("price"),
-        category=category,
-        source_url=source_url,
-        source_type=source_type,
-        country=ev.get("country"),
-        postal_code=ev.get("postal_code"),
-    )
-
-
-# WordPress events API (see fetcher.fetch_wp_events): a busy venue's API lists
+# WordPress events API (see PageFetcher.fetch_wp_events): a busy venue's API lists
 # every date of every recurring show, far more than its homepage — a comedy
 # club returned 191 dates of 70 shows over 60 days. Kept to the next month
 # and a handful per source so one venue doesn't flood the feed.
@@ -165,16 +97,16 @@ WP_MAX_PLANS_PER_SOURCE = 10
 
 
 async def extract_plans_from_wp_api(
-    source_url: str, source_type: str, category: str | None = None,
+    fetcher: PageFetcher, source_url: str, source_type: str, category: str | None = None,
 ) -> list[PlanData]:
     """Plans from the source site's WordPress events API, or [] if it has
     none — the caller then scrapes the page as usual."""
     today = _today()
-    events = await fetch_wp_events(source_url, today, today + timedelta(days=WP_WINDOW_DAYS))
+    events = await fetcher.fetch_wp_events(source_url, today, today + timedelta(days=WP_WINDOW_DAYS))
     if not events:
         return []
     plans = [
-        _plan_from_ld_event(ev, source_url, source_type, category)
+        plan_from_ld_event(ev, source_url, source_type, category)
         for ev in parse_wp_events(events, max_events=WP_MAX_PLANS_PER_SOURCE)
     ]
     plans = [p for p in plans if p]
@@ -184,7 +116,7 @@ async def extract_plans_from_wp_api(
     return plans
 
 
-async def _apply_dice_details(plans: list[PlanData]) -> list[PlanData]:
+async def _apply_dice_details(fetcher: PageFetcher, plans: list[PlanData]) -> list[PlanData]:
     """Fetch each dice.fm plan's own page once and use it to filter + enrich.
 
     Dice's listing pages only ever show a date, never a time, and give the LLM
@@ -206,7 +138,7 @@ async def _apply_dice_details(plans: list[PlanData]) -> list[PlanData]:
         if not link or urlparse(link).hostname != "dice.fm":
             return p
         try:
-            html = await fetch_page(link)
+            html = await fetcher.fetch_page(link)
         except Exception:
             return p  # can't confirm → keep rather than silently drop
         details = extract_dice_event_details(html)
@@ -235,6 +167,7 @@ async def extract_plans_from_html(
     source_url: str,
     source_type: str,
     llm: LLMProvider,
+    fetcher: PageFetcher,
     category: str | None = None,
 ) -> list[PlanData]:
     # A page can declare <base href> to override its own URL as the base for
@@ -253,26 +186,26 @@ async def extract_plans_from_html(
     ld_events = extract_ld_events(html, base_url=resolve_base)
     if ld_events:
         plans = [
-            _plan_from_ld_event(ev, source_url, source_type, category)
+            plan_from_ld_event(ev, source_url, source_type, category)
             for ev in ld_events
         ]
         plans = [p for p in plans if p]
         if plans:
             logger.info("  ✓ %d plan(s) from JSON-LD on %s", len(plans), source_url)
-            return await _apply_dice_details(plans)
+            return await _apply_dice_details(fetcher, plans)
 
     # dice.fm listings have no JSON-LD, but embed every listed event as JSON
     # in the page (see extract_dice_listing_events). Only on dice.fm: other
     # Next.js sites lay out their page data differently.
     if urlparse(source_url).hostname == "dice.fm":
         plans = [
-            _plan_from_ld_event(ev, source_url, source_type, category)
+            plan_from_ld_event(ev, source_url, source_type, category)
             for ev in extract_dice_listing_events(html)
         ]
         plans = [p for p in plans if p]
         if plans:
             logger.info("  ✓ %d plan(s) from dice.fm page data on %s", len(plans), source_url)
-            return await _apply_dice_details(plans)
+            return await _apply_dice_details(fetcher, plans)
 
     system = EXTRACTION_SYSTEM.format(
         today=_today().isoformat(),
@@ -328,4 +261,4 @@ async def extract_plans_from_html(
         for item in data
         if isinstance(item, dict) and item.get("title")
     ]
-    return await _apply_dice_details(plans)
+    return await _apply_dice_details(fetcher, plans)

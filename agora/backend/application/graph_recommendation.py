@@ -3,7 +3,7 @@ offline — see notebooks/train_lightgcn.ipynb) with Tier 1's semantic score.
 
 The backend never runs the model here. Every embedding is read straight
 from Postgres; the only computation on this request path is cosine
-similarity, a percentile-rank normalization (see _percentile_rank), and a
+similarity, a percentile-rank normalization (see domain/ranking.py's percentile_rank), and a
 weighted sum — training is always offline, per AGENTS.md.
 
 Falls through to pure Tier 1 (recommendation.rank_for_user) when there's no
@@ -28,26 +28,19 @@ from agora.backend.application.ports import PlanRepository
 from agora.backend.application.recommendation import cached_city_plans
 from agora.backend.domain.ranking import (
     FRESHNESS_BOOST,
+    blend_scores,
     cinema_pseudo_plan,
     cold_start_graph_embeddings,
+    field_scores,
     live_user_embedding,
     mmr_rerank,
+    percentile_rank,
     plan_freshness,
     prepare_scoring_items,
-    score_candidates,
     user_profile,
 )
-from agora.backend.infrastructure.persistence import postgres_repository as _default_repository
 
 logger = logging.getLogger(__name__)
-
-# A 5-fold cross-validated sweep found ALPHA=0.3-0.9 all sit in a flat
-# recall@10 plateau (within ~1 std of each other) on current synthetic
-# data — pure semantic and pure graph both lose clearly, but the exact
-# weight between them doesn't. 0.7 is a deliberate lean toward graph
-# within that plateau.
-ALPHA = 0.7
-
 
 _freshness_cache: dict[str, tuple[list[dict], dict[int, float]]] = {}
 
@@ -68,7 +61,7 @@ def _city_freshness(city: str, candidates: list[dict], cinemas: dict) -> dict[in
     return result
 
 
-def backfill_graph_embeddings(repository: PlanRepository = _default_repository) -> int:
+def backfill_graph_embeddings(repository: PlanRepository) -> int:
     """Give every live plan that has a semantic embedding but no graph
     embedding a cold-start proxy (see domain/ranking.py's
     cold_start_graph_embeddings), so plans scraped since the last training
@@ -104,65 +97,8 @@ def backfill_graph_embeddings(repository: PlanRepository = _default_repository) 
     return written
 
 
-def _field_scores(
-    profile: list[float] | None, items: list[tuple[float, list[float]]], plans: list[dict], field: str,
-) -> np.ndarray:
-    """score_candidates (see its docstring) over *plans*, but NaN at any
-    position where that plan doesn't carry *field* at all — rather than
-    scoring it against a meaningless placeholder vector. NaN is also what
-    score_candidates itself returns when *profile* is None and *items* is
-    empty, i.e. this user has no signal in this embedding space at all; both
-    cases get resolved together in _blend_scores below."""
-    n = len(plans)
-    out = np.full(n, np.nan)
-    idx = [i for i, p in enumerate(plans) if p.get(field)]
-    if not idx:
-        return out
-    embeddings = [json.loads(plans[i][field]) for i in idx]
-    out[idx] = score_candidates(profile, items, embeddings)
-    return out
-
-
-def _percentile_rank(scores: np.ndarray) -> np.ndarray:
-    """Replace each non-NaN value with its percentile rank (0=lowest,
-    1=highest) among the other non-NaN values in *scores*; NaN stays NaN.
-
-    Why: graph and semantic cosine scores have different absolute scales
-    that don't reflect relevance — `cultural` (~44% of the catalog, densely
-    connected in the graph) runs structurally higher graph scores than a
-    niche category like `photography`, regardless of which actually matches
-    the user. Percentile rank scores "relative to everything else this
-    request" on both axes, so blending goes by relative standing instead of
-    which axis has the structurally bigger raw number."""
-    out = np.full_like(scores, np.nan, dtype=np.float64)
-    valid = np.where(~np.isnan(scores))[0]
-    if valid.size == 0:
-        return out
-    order = np.argsort(scores[valid])
-    ranks = np.empty(valid.size)
-    ranks[order] = np.arange(valid.size)
-    out[valid] = ranks / max(1, valid.size - 1)
-    return out
-
-
-def _blend_scores(graph_scores: np.ndarray, semantic_scores: np.ndarray) -> np.ndarray:
-    """Vectorized equivalent of the old scalar _blend's None-handling:
-    ALPHA*graph + (1-ALPHA)*semantic where a plan has both, whichever one
-    it has where it only has one, NaN (excluded downstream) where it has
-    neither. Callers pass percentile ranks (see _percentile_rank), not raw
-    cosine values, so the 0.0 fill for a missing side sits at the bottom of
-    the SAME 0-1 scale as real values rather than a different one."""
-    g_nan = np.isnan(graph_scores)
-    s_nan = np.isnan(semantic_scores)
-    blended = ALPHA * np.where(g_nan, 0.0, graph_scores) + (1 - ALPHA) * np.where(s_nan, 0.0, semantic_scores)
-    result = np.where(g_nan & ~s_nan, semantic_scores, blended)
-    result = np.where(s_nan & ~g_nan, graph_scores, result)
-    result = np.where(g_nan & s_nan, np.nan, result)
-    return result
-
-
 def rank_for_user(
-    user_id: str, city: str, limit: int = 10, repository: PlanRepository = _default_repository,
+    repository: PlanRepository, user_id: str, city: str, limit: int = 10,
 ) -> list[dict]:
     """Score every not-yet-interacted plan in `city` by the graph/semantic
     blend. Falls back to Tier 1 (and, through it, popularity) for users or
@@ -178,7 +114,7 @@ def rank_for_user(
     semantic_profile = user_profile(rows)
 
     if user_graph is None and semantic_profile is None:
-        return recommendation.rank_for_user(user_id, city, limit, repository)
+        return recommendation.rank_for_user(repository, user_id, city, limit)
 
     # Parsed ONCE per request — scoring runs once per candidate plan (hundreds
     # per city), so this must not re-parse the same handful of saved items'
@@ -200,9 +136,9 @@ def rank_for_user(
     # just for being the top of its own small catalogue, regardless of how
     # it actually compares to the rest of the city.
     pooled = scoreable + [m for movies in cinema_embedded.values() for m in movies]
-    graph_scores = _field_scores(user_graph, graph_items, pooled, "graph_embedding")
-    semantic_scores = _field_scores(semantic_profile, semantic_items, pooled, "embedding")
-    final_scores = _blend_scores(_percentile_rank(graph_scores), _percentile_rank(semantic_scores))
+    graph_scores = field_scores(user_graph, graph_items, pooled, "graph_embedding")
+    semantic_scores = field_scores(semantic_profile, semantic_items, pooled, "embedding")
+    final_scores = blend_scores(percentile_rank(graph_scores), percentile_rank(semantic_scores))
 
     # Recently ingested plans get a multiplicative nudge (see
     # domain/ranking.py's plan_freshness) — applied to the blended score,
@@ -232,7 +168,7 @@ def rank_for_user(
         scored.append((float(movie_scores.max()), cinema_pseudo_plan(domain, info, movies)))
 
     if not scored:
-        return recommendation.rank_for_user(user_id, city, limit, repository)
+        return recommendation.rank_for_user(repository, user_id, city, limit)
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     out = []

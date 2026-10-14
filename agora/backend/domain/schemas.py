@@ -133,7 +133,7 @@ class FixedSource(BaseModel):
     # which category SEARCH discovered the source, not what every event ON
     # it actually is — trusting it for a general listing would blanket-tag
     # e.g. concerts and exhibitions scraped from it as whatever category
-    # happened to find it first. See cli.py's run_fixed_pipeline.
+    # happened to find it first. See ingestion.py's run_fixed_pipeline.
     is_general_listing: bool = False
     # How run_fixed_pipeline reads this source, recorded once by
     # `main.py --mode setup-sources`: "wp_api" = the site's WordPress events
@@ -143,6 +143,21 @@ class FixedSource(BaseModel):
     # CSS selectors for this page's event cards, learned and checked once by
     # `main.py --mode setup-sources` — when set, the page is read without the LLM.
     selectors: CardSelectors | None = None
+
+    def promoted_category(self) -> str | None:
+        """The category this source was promoted under, e.g.
+        "explorer/music_concerts", "explorer/PlanCategory.music_concerts"
+        (older entries) or "manual/cinema" → that category's value; None
+        when promoted_by names none. run_fixed_pipeline stamps it on the
+        source's plans — otherwise every plan scraped from a fixed source
+        comes in with category=None."""
+        if not self.promoted_by:
+            return None
+        token = self.promoted_by.rsplit(".", 1)[-1].rsplit("/", 1)[-1]
+        try:
+            return PlanCategory(token).value
+        except ValueError:
+            return None
 
 
 class PlanData(BaseModel):

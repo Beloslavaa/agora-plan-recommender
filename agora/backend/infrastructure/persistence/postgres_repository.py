@@ -509,7 +509,7 @@ def set_plan_embedding(plan_id: int, embedding: list[float]) -> None:
 def get_plans_missing_category() -> list[dict]:
     """Plans with no category — mainly older fixed-source scrapes from
     before run_fixed_pipeline threaded the source's category through (see
-    cli.py's _category_from_promoted_by). Safe to call repeatedly."""
+    FixedSource.promoted_category). Safe to call repeatedly."""
     with _conn() as conn:
         rows = conn.execute(
             "SELECT id, title, description, tags FROM plans WHERE category IS NULL"
@@ -519,7 +519,7 @@ def get_plans_missing_category() -> list[dict]:
 
 def set_plan_category(plan_id: int, category: str) -> None:
     """Also nulls the semantic embedding: it's computed from title +
-    CATEGORY + tags + description (gemini_embeddings.plan_text), so an
+    CATEGORY + tags + description (domain/ranking.py's plan_text), so an
     embedding computed under the old category is stale the moment this
     changes it. get_plans_missing_embedding()/backfill_embeddings() picks
     up the null and re-embeds on the next run — this is the only writer of

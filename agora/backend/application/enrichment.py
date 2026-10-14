@@ -15,45 +15,15 @@ calls:
 """
 
 import logging
-import re
-from html import unescape
 from urllib.parse import urlparse
 
-from agora.backend.application.ports import LLMProvider, SearchProvider
+from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider
 from agora.backend.domain.countries import search_country, tickets_word
+from agora.backend.domain.event_parsing import extract_meta_description, extract_og_image, extract_ticket_url
 from agora.backend.domain.schemas import CATEGORY_LABELS, City, PlanCategory, PlanData
 from agora.backend.domain.url_safety import effective_base_url, normalise_url
-from agora.backend.infrastructure.http.fetcher import fetch_page
-from agora.backend.infrastructure.persistence.json_files import load_city_settings
 
 logger = logging.getLogger(__name__)
-
-# ── Image (og:image / twitter:image / image_src) ─────────
-_IMAGE_METAS = [
-    re.compile(r'<meta\s[^>]*property=["\']og:image(?::url)?["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
-    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:image(?::url)?["\']', re.IGNORECASE),
-    re.compile(r'<meta\s[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
-    re.compile(r'<link\s[^>]*rel=["\']image_src["\'][^>]*href=["\']([^"\']+)["\']', re.IGNORECASE),
-]
-
-# ── Description (og:description / meta description) ──────
-_DESCRIPTION_METAS = [
-    re.compile(r'<meta\s[^>]*property=["\']og:description["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
-    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:description["\']', re.IGNORECASE),
-    re.compile(r'<meta\s[^>]*name=["\']description["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
-    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*name=["\']description["\']', re.IGNORECASE),
-]
-
-# ── Ticket / purchase link detection ─────────────────────
-_TICKET_HREF = re.compile(
-    r'(entrad|ticket|comprar|checkout|/buy\b|boleto|taquilla|reserva|'
-    r'pillalas|ticketmaster|entradas\.com|eventbrite|tiqets|wegow|seetickets|dice\.fm|fever)',
-    re.IGNORECASE,
-)
-_TICKET_TEXT = re.compile(
-    r'(entrad|comprar|tickets?|\bbuy\b|\bbook\b|reserva|adquirir|taquilla|sacar entradas)',
-    re.IGNORECASE,
-)
 
 # Listing pages often put a bare category tag next to each event ("Exposición
 # / Instalación", "Concierto"...) which the bulk extractor picks up as
@@ -100,48 +70,6 @@ _SKIP_SEARCH_DOMAINS = {
     "scribd.com", "calameo.com", "merriam-webster.com", "dictionary.com",
     "readflaneur.com", "fliff.com",
 }
-
-
-def _extract_og_image(html: str, base_url: str | None = None) -> str | None:
-    for rx in _IMAGE_METAS:
-        m = rx.search(html)
-        if m:
-            u = normalise_url(m.group(1), base_url=base_url)
-            if u:
-                return u
-    return None
-
-
-def _extract_meta_description(html: str) -> str | None:
-    """Generic fallback: an event's own page often carries a real, per-event
-    description in its og:description/meta description tag even when the
-    listing page it was discovered on has none. Not every site has this (e.g.
-    dice.fm's event pages carry neither tag at all — those need their own
-    dedicated extraction), so this is best-effort and returns None rather than
-    guessing when nothing is found.
-    """
-    for rx in _DESCRIPTION_METAS:
-        m = rx.search(html)
-        if m:
-            text = unescape(m.group(1)).strip()
-            if text:
-                return text
-    return None
-
-
-def _extract_ticket_url(html: str, base_url: str | None = None) -> str | None:
-    """Find a purchase/ticket link on an event's own page."""
-    for m in re.finditer(
-        r'<a\b[^>]*?href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
-        html, re.IGNORECASE | re.DOTALL,
-    ):
-        href = m.group(1)
-        label = re.sub(r'<[^>]+>', ' ', m.group(2))
-        if _TICKET_HREF.search(href) or _TICKET_TEXT.search(label):
-            u = normalise_url(href, base_url=base_url)
-            if u:
-                return u
-    return None
 
 
 async def _generate_short_title(plan: PlanData, llm: LLMProvider) -> str:
@@ -254,6 +182,7 @@ def _needs_enrichment(p: PlanData) -> bool:
 
 async def enrich_plan(
     plan: PlanData,
+    fetcher: PageFetcher,
     llm: LLMProvider | None = None,
     search: SearchProvider | None = None,
     city: City | None = None,
@@ -280,7 +209,7 @@ async def enrich_plan(
     # ── 3. Own-page scrape: og:image + ticket link + description ─
     if plan.url and (not plan.image_url or not plan.ticket_url or _is_thin_description(plan.description)):
         try:
-            html = await fetch_page(plan.url)
+            html = await fetcher.fetch_page(plan.url)
         except Exception as e:
             logger.debug("  ~ enrich fetch failed for %s: %s", plan.url, e)
             html = None
@@ -294,19 +223,19 @@ async def enrich_plan(
             resolve_base = effective_base_url(html, plan.url)
 
             if not plan.image_url:
-                og = _extract_og_image(html, base_url=resolve_base)
+                og = extract_og_image(html, base_url=resolve_base)
                 if og:
                     plan.image_url = og
                     logger.info("  ✓ OG image from %s", plan.url)
 
             if not plan.ticket_url:
-                tk = _extract_ticket_url(html, base_url=resolve_base)
+                tk = extract_ticket_url(html, base_url=resolve_base)
                 if tk:
                     plan.ticket_url = tk
                     logger.info("  ✓ ticket link from %s: %s", plan.url, tk)
 
             if _is_thin_description(plan.description):
-                desc = _extract_meta_description(html)
+                desc = extract_meta_description(html)
                 if desc:
                     plan.description = desc
                     logger.info("  ✓ description from %s", plan.url)
@@ -323,10 +252,14 @@ async def enrich_plan(
 
 async def enrich_plans(
     plans: list[PlanData],
+    fetcher: PageFetcher,
+    cities: dict[str, City],
     llm: LLMProvider | None = None,
     search: SearchProvider | None = None,
 ) -> list[PlanData]:
-    """Enrich a list of plans concurrently. Only processes plans that need it."""
+    """Enrich a list of plans concurrently. Only processes plans that need it.
+    *cities*: city name -> settings (SourceStore.load_city_settings), for the
+    URL search's country/language."""
     import asyncio
 
     to_enrich = [p for p in plans if _needs_enrichment(p)]
@@ -334,11 +267,10 @@ async def enrich_plans(
         return plans
 
     sem = asyncio.Semaphore(5)
-    cities = load_city_settings()
 
     async def _enrich(p: PlanData) -> PlanData:
         async with sem:
-            return await enrich_plan(p, llm=llm, search=search, city=cities.get(p.city))
+            return await enrich_plan(p, fetcher, llm=llm, search=search, city=cities.get(p.city))
 
     # enrich_plan mutates in place, so `plans` already reflects the changes;
     # we still await so the fetches/LLM calls complete before returning.

@@ -214,7 +214,7 @@ def recommend(user_id: str, city: str, limit: int = Query(default=10, le=50)) ->
     # score. Falls back to Tier 1 (and, through it, popularity) internally
     # for users/cities with no usable graph signal yet — see
     # graph_recommendation.py's module docstring.
-    rows = graph_recommendation.rank_for_user(user_id, city, limit)
+    rows = graph_recommendation.rank_for_user(repository, user_id, city, limit)
     return [
         RecommendationOut(plan=_row_to_plan(r), score=float(r["score"]))
         for r in rows

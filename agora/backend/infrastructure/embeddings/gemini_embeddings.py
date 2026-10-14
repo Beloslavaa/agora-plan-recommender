@@ -1,9 +1,8 @@
 """Embedding provider adapter: text -> vector, via Gemini's OpenAI-compatible
 endpoint. This is the only file that talks to the embeddings API — the
-recommender use-case (application/recommendation.py) calls embed_texts and
-never sees the client."""
-
-import json
+recommender use-case (application/recommendation.py) calls embed_texts — as
+its Embedder port — and never sees the client. What text a plan is embedded
+from is domain/ranking.py's plan_text."""
 
 from openai import OpenAI
 
@@ -23,16 +22,6 @@ def _get_client() -> OpenAI:
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         )
     return _client
-
-
-def plan_text(row: dict) -> str:
-    """The text a plan is embedded from. Title/category first (highest
-    signal-to-noise), free-text description last."""
-    tags = row.get("tags") or []
-    if isinstance(tags, str):
-        tags = json.loads(tags) if tags else []
-    parts = [row.get("title") or "", row.get("category") or "", ", ".join(tags), row.get("description") or ""]
-    return "\n".join(p for p in parts if p)
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:

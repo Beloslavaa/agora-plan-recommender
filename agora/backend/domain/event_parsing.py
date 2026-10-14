@@ -1,4 +1,5 @@
-"""Turning already-fetched HTML into PlanData-shaped event dicts. Pure text/
+"""Turning already-fetched HTML into PlanData-shaped event dicts, page text
+for the LLM, and an event page's meta image/description/ticket link. Pure text/
 JSON parsing — the caller (infrastructure/http/fetcher.py, application/
 extraction.py) owns actually fetching the HTML."""
 
@@ -7,6 +8,7 @@ import logging
 import re
 from html import unescape
 
+from agora.backend.domain.schemas import PlanData
 from agora.backend.domain.url_safety import SONGKICK_BLANK_IMAGE, is_late_night, normalise_url
 
 logger = logging.getLogger(__name__)
@@ -388,3 +390,145 @@ def extract_item_list_urls(html: str, base_url: str | None = None) -> list[str]:
             seen.add(u)
             out.append(u)
     return out
+
+
+# ── Page text and metadata (used by application/extraction.py, enrichment.py,
+#    source_discovery.py) ──
+
+# A bit larger than before because we now keep link/image URLs inline in the text.
+_MAX_HTML_CHARS = 60_000
+
+
+def _attr(tag: str, name: str) -> str | None:
+    """Read an attribute value out of a raw start-tag string."""
+    m = (re.search(rf'{name}\s*=\s*"([^"]*)"', tag, re.IGNORECASE)
+         or re.search(rf"{name}\s*=\s*'([^']*)'", tag, re.IGNORECASE))
+    return m.group(1) if m else None
+
+
+def html_to_text(html: str, base_url: str | None = None) -> str:
+    """Convert HTML to plain text WHILE preserving link and image URLs inline.
+
+    Anchors become ``label [link: URL]`` and images become ``[image: URL]`` so the
+    LLM can associate each event with its dedicated page, ticket link, and photo.
+    Relative URLs are resolved against *base_url* and validated via ``normalise_url``.
+
+    (The old version stripped every tag first, which destroyed all href/src — the
+    model then had no URLs to extract, so url/ticket_url/image_url were mostly empty.)
+    """
+    # Drop non-content elements entirely (including their contents).
+    html = re.sub(r'<(script|style|noscript|template|svg)\b[^>]*>.*?</\1>', ' ',
+                  html, flags=re.DOTALL | re.IGNORECASE)
+
+    # Images → " [image: URL] "
+    def _img(m: re.Match) -> str:
+        src = _attr(m.group(0), 'src') or _attr(m.group(0), 'data-src')
+        u = normalise_url(src, base_url) if src else None
+        return f" [image: {u}] " if u else " "
+    html = re.sub(r'<img\b[^>]*>', _img, html, flags=re.IGNORECASE)
+
+    # Anchors → " label [link: URL] "
+    def _a(m: re.Match) -> str:
+        href = _attr(m.group(1), 'href')
+        label = re.sub(r'<[^>]+>', ' ', m.group(2))
+        u = normalise_url(href, base_url) if href else None
+        return f" {label} [link: {u}] " if u else f" {label} "
+    html = re.sub(r'<a\b([^>]*)>(.*?)</a>', _a, html, flags=re.IGNORECASE | re.DOTALL)
+
+    # Strip whatever tags remain, collapse whitespace, keep the START of the page.
+    text = re.sub(r'<[^>]+>', ' ', html)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text[:_MAX_HTML_CHARS]
+
+
+def plan_from_ld_event(
+    ev: dict, source_url: str, source_type: str, category: str | None,
+) -> PlanData | None:
+    if not ev.get("title"):
+        return None
+    return PlanData(
+        title=ev["title"],
+        description=ev.get("description") or "",
+        start_date=ev.get("start_date"),
+        end_date=ev.get("end_date"),
+        url=ev.get("url"),
+        ticket_url=ev.get("ticket_url"),
+        location=ev.get("location"),
+        image_url=ev.get("image_url"),
+        price=ev.get("price"),
+        category=category,
+        source_url=source_url,
+        source_type=source_type,
+        country=ev.get("country"),
+        postal_code=ev.get("postal_code"),
+    )
+
+
+# ── Image (og:image / twitter:image / image_src) ─────────
+_IMAGE_METAS = [
+    re.compile(r'<meta\s[^>]*property=["\']og:image(?::url)?["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
+    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:image(?::url)?["\']', re.IGNORECASE),
+    re.compile(r'<meta\s[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
+    re.compile(r'<link\s[^>]*rel=["\']image_src["\'][^>]*href=["\']([^"\']+)["\']', re.IGNORECASE),
+]
+
+# ── Description (og:description / meta description) ──────
+_DESCRIPTION_METAS = [
+    re.compile(r'<meta\s[^>]*property=["\']og:description["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
+    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:description["\']', re.IGNORECASE),
+    re.compile(r'<meta\s[^>]*name=["\']description["\'][^>]*content=["\']([^"\']+)["\']', re.IGNORECASE),
+    re.compile(r'<meta\s[^>]*content=["\']([^"\']+)["\'][^>]*name=["\']description["\']', re.IGNORECASE),
+]
+
+# ── Ticket / purchase link detection ─────────────────────
+_TICKET_HREF = re.compile(
+    r'(entrad|ticket|comprar|checkout|/buy\b|boleto|taquilla|reserva|'
+    r'pillalas|ticketmaster|entradas\.com|eventbrite|tiqets|wegow|seetickets|dice\.fm|fever)',
+    re.IGNORECASE,
+)
+_TICKET_TEXT = re.compile(
+    r'(entrad|comprar|tickets?|\bbuy\b|\bbook\b|reserva|adquirir|taquilla|sacar entradas)',
+    re.IGNORECASE,
+)
+
+
+def extract_og_image(html: str, base_url: str | None = None) -> str | None:
+    for rx in _IMAGE_METAS:
+        m = rx.search(html)
+        if m:
+            u = normalise_url(m.group(1), base_url=base_url)
+            if u:
+                return u
+    return None
+
+
+def extract_meta_description(html: str) -> str | None:
+    """Generic fallback: an event's own page often carries a real, per-event
+    description in its og:description/meta description tag even when the
+    listing page it was discovered on has none. Not every site has this (e.g.
+    dice.fm's event pages carry neither tag at all — those need their own
+    dedicated extraction), so this is best-effort and returns None rather than
+    guessing when nothing is found.
+    """
+    for rx in _DESCRIPTION_METAS:
+        m = rx.search(html)
+        if m:
+            text = unescape(m.group(1)).strip()
+            if text:
+                return text
+    return None
+
+
+def extract_ticket_url(html: str, base_url: str | None = None) -> str | None:
+    """Find a purchase/ticket link on an event's own page."""
+    for m in re.finditer(
+        r'<a\b[^>]*?href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+        html, re.IGNORECASE | re.DOTALL,
+    ):
+        href = m.group(1)
+        label = re.sub(r'<[^>]+>', ' ', m.group(2))
+        if _TICKET_HREF.search(href) or _TICKET_TEXT.search(label):
+            u = normalise_url(href, base_url=base_url)
+            if u:
+                return u
+    return None

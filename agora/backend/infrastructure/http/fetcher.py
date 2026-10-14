@@ -14,7 +14,6 @@ from urllib.parse import urljoin, urlparse
 import httpx
 
 from agora.backend.domain.event_parsing import extract_item_list_urls
-from agora.backend.domain.schemas import FixedSource
 from agora.backend.infrastructure.config import settings
 
 logger = logging.getLogger(__name__)
@@ -114,10 +113,6 @@ async def fetch_page(url: str, *, max_redirects: int | None = None) -> str:
     raise RuntimeError(f"too many redirects (> {max_redirects}) fetching {url}")
 
 
-async def scrape_fixed_source(source: FixedSource) -> str:
-    return await fetch_page(source.url)
-
-
 async def fetch_page_with_details(url: str) -> list[tuple[str, str]]:
     """Fetch *url*, following detail links from a JSON-LD ItemList if present.
 
@@ -145,17 +140,6 @@ async def fetch_page_with_details(url: str) -> list[tuple[str, str]]:
 
     results = await asyncio.gather(*[_fetch(u) for u in urls])
     return [r for r in results if r is not None]
-
-
-async def fetch_fixed_source_with_details(
-    source: FixedSource,
-) -> list[tuple[str, str]]:
-    """Fetch a fixed source, following detail links from JSON-LD ItemList if present.
-
-    Thin wrapper over ``fetch_page_with_details`` kept for the fixed-source call
-    site, which has a ``FixedSource`` rather than a bare URL.
-    """
-    return await fetch_page_with_details(source.url)
 
 
 # The Events Calendar (a common WordPress events plugin) publishes a site's

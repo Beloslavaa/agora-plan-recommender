@@ -18,30 +18,29 @@ import json
 import logging
 import time
 
-from agora.backend.application.ports import PlanRepository
+from agora.backend.application.ports import Embedder, PlanRepository
 from agora.backend.domain.cinemas import CINEMA_SOURCES
 from agora.backend.domain.ranking import (
     cinema_domain,
     cinema_pseudo_plan,
     mmr_rerank,
+    plan_text,
     prepare_scoring_items,
     score_candidates,
     user_profile,
 )
-from agora.backend.infrastructure.embeddings.gemini_embeddings import embed_texts, plan_text
-from agora.backend.infrastructure.persistence import postgres_repository as _default_repository
 
 logger = logging.getLogger(__name__)
 
 
-def backfill_embeddings(batch_size: int = 100, repository: PlanRepository = _default_repository) -> int:
+def backfill_embeddings(embedder: Embedder, repository: PlanRepository, batch_size: int = 100) -> int:
     """Embed every plan that doesn't have one yet (new scrapes, or anything
     ingested before this column existed). Safe to re-run — only ever touches
     rows where embedding IS NULL. Returns how many were embedded."""
     missing = repository.get_plans_missing_embedding()
     for i in range(0, len(missing), batch_size):
         batch = missing[i:i + batch_size]
-        vectors = embed_texts([plan_text(p) for p in batch])
+        vectors = embedder.embed_texts([plan_text(p) for p in batch])
         for plan, vector in zip(batch, vectors):
             repository.set_plan_embedding(plan["id"], vector)
     return len(missing)
@@ -57,7 +56,7 @@ _city_plans_cache: dict[str, tuple[float, tuple[list[dict], dict[str, tuple[dict
 
 
 def cached_city_plans(
-    city: str, repository: PlanRepository = _default_repository,
+    city: str, repository: PlanRepository,
 ) -> tuple[list[dict], dict[str, tuple[dict, list[dict]]]]:
     """(scoring_candidates, {domain: (info, movies)}) for a city, from ONE
     query instead of one for the main list plus one ILIKE query per cinema."""
@@ -86,7 +85,7 @@ def cached_city_plans(
 
 def _rank_with_semantic(
     profile: list[float], items: list[tuple[float, list[float]]], city: str, limit: int,
-    interacted_ids: set[int], repository: PlanRepository = _default_repository,
+    interacted_ids: set[int], repository: PlanRepository,
 ) -> list[dict]:
     candidates, cinemas = cached_city_plans(city, repository)
 
@@ -119,7 +118,7 @@ def _rank_with_semantic(
 
 
 def _rank_with_popularity(
-    user_id: str, city: str, limit: int, repository: PlanRepository = _default_repository,
+    user_id: str, city: str, limit: int, repository: PlanRepository,
 ) -> list[dict]:
     _, cinemas = cached_city_plans(city, repository)
     # Headroom so merging in cinema candidates doesn't crowd out plans that
@@ -144,7 +143,7 @@ def _rank_with_popularity(
 
 
 def rank_for_user(
-    user_id: str, city: str, limit: int = 10, repository: PlanRepository = _default_repository,
+    repository: PlanRepository, user_id: str, city: str, limit: int = 10,
 ) -> list[dict]:
     """Score every not-yet-interacted plan in `city` (cinemas included, via
     their single best-matching movie) by cosine similarity to the user's

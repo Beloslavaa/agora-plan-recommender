@@ -23,7 +23,9 @@ from datetime import date
 
 from agora.backend.application.enrichment import enrich_plans
 from agora.backend.domain.schemas import PlanData
+from agora.backend.infrastructure.http import fetcher
 from agora.backend.infrastructure.llm.providers import get_llm_provider
+from agora.backend.infrastructure.persistence import json_files
 from agora.backend.infrastructure.persistence.postgres_repository import get_all_plans, pool, upsert_plans
 from agora.backend.infrastructure.search.providers import get_search_provider
 
@@ -78,7 +80,7 @@ def main() -> None:
     search = None if args.no_search else get_search_provider()
 
     plans = [_to_plan(r) for r in before]
-    asyncio.run(enrich_plans(plans, llm=llm, search=search))
+    asyncio.run(enrich_plans(plans, fetcher, json_files.load_city_settings(), llm=llm, search=search))
     upsert_plans(plans)  # backfills empty columns; returns new-row count (≈0 here)
 
     after = get_all_plans()

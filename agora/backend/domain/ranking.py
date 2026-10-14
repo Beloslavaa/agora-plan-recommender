@@ -314,3 +314,78 @@ def cinema_domain(source_url: str | None) -> str | None:
         if domain in (source_url or ""):
             return domain
     return None
+
+
+# A 5-fold cross-validated sweep found ALPHA=0.3-0.9 all sit in a flat
+# recall@10 plateau (within ~1 std of each other) on current synthetic
+# data — pure semantic and pure graph both lose clearly, but the exact
+# weight between them doesn't. 0.7 is a deliberate lean toward graph
+# within that plateau.
+ALPHA = 0.7
+
+
+def field_scores(
+    profile: list[float] | None, items: list[tuple[float, list[float]]], plans: list[dict], field: str,
+) -> np.ndarray:
+    """score_candidates (see its docstring) over *plans*, but NaN at any
+    position where that plan doesn't carry *field* at all — rather than
+    scoring it against a meaningless placeholder vector. NaN is also what
+    score_candidates itself returns when *profile* is None and *items* is
+    empty, i.e. this user has no signal in this embedding space at all; both
+    cases get resolved together in blend_scores below."""
+    n = len(plans)
+    out = np.full(n, np.nan)
+    idx = [i for i, p in enumerate(plans) if p.get(field)]
+    if not idx:
+        return out
+    embeddings = [json.loads(plans[i][field]) for i in idx]
+    out[idx] = score_candidates(profile, items, embeddings)
+    return out
+
+
+def percentile_rank(scores: np.ndarray) -> np.ndarray:
+    """Replace each non-NaN value with its percentile rank (0=lowest,
+    1=highest) among the other non-NaN values in *scores*; NaN stays NaN.
+
+    Why: graph and semantic cosine scores have different absolute scales
+    that don't reflect relevance — `cultural` (~44% of the catalog, densely
+    connected in the graph) runs structurally higher graph scores than a
+    niche category like `photography`, regardless of which actually matches
+    the user. Percentile rank scores "relative to everything else this
+    request" on both axes, so blending goes by relative standing instead of
+    which axis has the structurally bigger raw number."""
+    out = np.full_like(scores, np.nan, dtype=np.float64)
+    valid = np.where(~np.isnan(scores))[0]
+    if valid.size == 0:
+        return out
+    order = np.argsort(scores[valid])
+    ranks = np.empty(valid.size)
+    ranks[order] = np.arange(valid.size)
+    out[valid] = ranks / max(1, valid.size - 1)
+    return out
+
+
+def blend_scores(graph_scores: np.ndarray, semantic_scores: np.ndarray) -> np.ndarray:
+    """Vectorized equivalent of the old scalar _blend's None-handling:
+    ALPHA*graph + (1-ALPHA)*semantic where a plan has both, whichever one
+    it has where it only has one, NaN (excluded downstream) where it has
+    neither. Callers pass percentile ranks (see percentile_rank), not raw
+    cosine values, so the 0.0 fill for a missing side sits at the bottom of
+    the SAME 0-1 scale as real values rather than a different one."""
+    g_nan = np.isnan(graph_scores)
+    s_nan = np.isnan(semantic_scores)
+    blended = ALPHA * np.where(g_nan, 0.0, graph_scores) + (1 - ALPHA) * np.where(s_nan, 0.0, semantic_scores)
+    result = np.where(g_nan & ~s_nan, semantic_scores, blended)
+    result = np.where(s_nan & ~g_nan, graph_scores, result)
+    result = np.where(g_nan & s_nan, np.nan, result)
+    return result
+
+
+def plan_text(row: dict) -> str:
+    """The text a plan is embedded from. Title/category first (highest
+    signal-to-noise), free-text description last."""
+    tags = row.get("tags") or []
+    if isinstance(tags, str):
+        tags = json.loads(tags) if tags else []
+    parts = [row.get("title") or "", row.get("category") or "", ", ".join(tags), row.get("description") or ""]
+    return "\n".join(p for p in parts if p)

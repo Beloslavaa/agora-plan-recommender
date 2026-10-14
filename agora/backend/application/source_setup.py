@@ -23,9 +23,9 @@ from typing import Literal
 from urllib.parse import urlparse
 
 from agora.backend.application.extraction import extract_plans_from_wp_api
-from agora.backend.application.ports import LLMProvider
-from agora.backend.application.selector_learning import check_selectors, learn_selectors
-from agora.backend.domain.card_selectors import plans_from_cards
+from agora.backend.application.ports import LLMProvider, PageFetcher, SourceStore
+from agora.backend.application.selector_learning import learn_selectors
+from agora.backend.domain.card_selectors import check_selectors, plans_from_cards
 from agora.backend.domain.event_parsing import (
     extract_dice_listing_events,
     extract_item_list_urls,
@@ -33,8 +33,6 @@ from agora.backend.domain.event_parsing import (
 )
 from agora.backend.domain.schemas import CardSelectors, FixedSource, PlanData
 from agora.backend.domain.url_safety import effective_base_url
-from agora.backend.infrastructure.http.fetcher import fetch_page
-from agora.backend.infrastructure.persistence.json_files import load_fixed_sources, save_fixed_sources
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +61,16 @@ def _page_method(html: str, url: str) -> Method:
     return "llm"
 
 
-async def _set_up(source: FixedSource, llm: LLMProvider, today: date) -> SourceSetup:
+async def _set_up(source: FixedSource, llm: LLMProvider, fetcher: PageFetcher, today: date) -> SourceSetup:
     """Detect the extractor and, for an LLM-read page, learn its selectors.
     Updates `source` in place."""
     async with _sem:
-        if await extract_plans_from_wp_api(source.url, "fixed"):
+        if await extract_plans_from_wp_api(fetcher, source.url, "fixed"):
             source.extractor, source.selectors = "wp_api", None
             return SourceSetup(source, "wp_api")
         source.extractor = "page"
         try:
-            html = await fetch_page(source.url)
+            html = await fetcher.fetch_page(source.url)
         except Exception as e:
             # Leave any selectors alone — a fetch hiccup says nothing about them.
             return SourceSetup(source, "fetch_failed", f"{type(e).__name__}")
@@ -97,6 +95,7 @@ async def _set_up(source: FixedSource, llm: LLMProvider, today: date) -> SourceS
 
 
 def sources_to_set_up(
+    store: SourceStore,
     cities: list[str] | None = None,
     names: set[str] | None = None,
     redo: bool = False,
@@ -105,7 +104,7 @@ def sources_to_set_up(
     explorer), or every source with `redo`; `names` picks sources by name
     whether or not they were set up before."""
     return [
-        s for s in load_fixed_sources()
+        s for s in store.load_fixed_sources()
         if (not cities or s.city in cities)
         and (s.name in names if names else redo or s.extractor is None)
     ]
@@ -113,6 +112,8 @@ def sources_to_set_up(
 
 async def set_up_sources(
     llm: LLMProvider,
+    fetcher: PageFetcher,
+    store: SourceStore,
     cities: list[str] | None = None,
     names: set[str] | None = None,
     redo: bool = False,
@@ -121,12 +122,12 @@ async def set_up_sources(
     """Set up the selected sources (see sources_to_set_up) and save them to
     data/fixed_sources.json."""
     today = today or date.today()
-    sources = load_fixed_sources()
-    picked = {s.url for s in sources_to_set_up(cities, names, redo)}
+    sources = store.load_fixed_sources()
+    picked = {s.url for s in sources_to_set_up(store, cities, names, redo)}
     todo = [s for s in sources if s.url in picked]
     if not todo:
         return []
     logger.info("Setting up %d of %d fixed sources", len(todo), len(sources))
-    results = list(await asyncio.gather(*[_set_up(s, llm, today) for s in todo]))
-    save_fixed_sources(sources)
+    results = list(await asyncio.gather(*[_set_up(s, llm, fetcher, today) for s in todo]))
+    store.save_fixed_sources(sources)
     return results
