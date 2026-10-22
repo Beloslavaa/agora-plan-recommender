@@ -1373,15 +1373,12 @@
   }
 
   // Photo panel shared by the tile, the detail page and the saved row: the
-  // B&W-paled photo under the halftone dots, or — with no usable photo,
-  // including one that 404s at render time — one of the fill shapes.
-  function dskPhotoSlot(plan, i, accent, css) {
+  // B&W-paled photo under the halftone dots. Callers only build it when the
+  // plan has a photo, and `onFail` swaps in their no-photo look if it 404s
+  // or turns out to be a placeholder at render time.
+  function dskPhotoSlot(plan, css, onFail) {
     const slot = el("div", css + "overflow:hidden;isolation:isolate;");
-    if (isHttp(plan.image_url)) {
-      photoImg(plan, slot, function () { slot.insertBefore(fillShape(i, accent), slot.firstChild); }, true);
-    } else {
-      slot.appendChild(fillShape(i, accent));
-    }
+    photoImg(plan, slot, onFail, true);
     slot.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));
     return slot;
   }
@@ -1408,9 +1405,6 @@
     const deco = tileDecoration(r, i);
     if (deco) card.appendChild(deco);
 
-    card.appendChild(dskPhotoSlot(plan, i, accent,
-      "position:relative;flex:none;height:" + TILE_IMG_H + "px;background:#FFFFFF;border-bottom:5px solid #121212;z-index:2;"));
-
     const info = el("div",
       "position:relative;flex:1;min-height:0;padding:15px 18px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;z-index:4;");
     info.appendChild(el("div", "",
@@ -1427,6 +1421,26 @@
       "font-weight:700;font-size:10.5px;letter-spacing:0.04em;color:" + dateColor + ";white-space:nowrap;",
       { text: formatDates(plan.start_date, plan.end_date) }));
     info.appendChild(row);
+
+    // No usable photo (none in the data, or it fails at render time) → no
+    // photo box at all: the whole tile is its footer color, with one big
+    // accent shape where the photo would have been.
+    function noPhoto() {
+      if (deco) deco.remove();
+      const shape = fillShape(i, accent);
+      shape.style.bottom = "auto";
+      shape.style.height = TILE_IMG_H + "px";
+      shape.style.zIndex = "1";
+      card.insertBefore(shape, card.firstChild);
+    }
+    if (isHttp(plan.image_url)) {
+      const slot = dskPhotoSlot(plan,
+        "position:relative;flex:none;height:" + TILE_IMG_H + "px;background:#FFFFFF;border-bottom:5px solid #121212;z-index:2;",
+        function () { slot.remove(); noPhoto(); });
+      card.appendChild(slot);
+    } else {
+      noPhoto();
+    }
     card.appendChild(info);
 
     wrap.appendChild(card);
@@ -1550,8 +1564,21 @@
     // borders, shadows, type and spacing all together, as if the corner
     // were pulled — so it reads at the same weight as the 92px title.
     const right = el("div", "flex:none;width:462px;display:flex;flex-direction:column;gap:17px;align-self:flex-start;");
-    right.appendChild(dskPhotoSlot(p, n, accent,
-      "position:relative;flex:none;aspect-ratio:4 / 3;border:6px solid #121212;background:#FFFFFF;"));
+    // No usable photo → no photo box: just the accent shape, bare on the
+    // page, in the space the photo would have taken.
+    const photoCss = "position:relative;flex:none;aspect-ratio:4 / 3;";
+    function bareShape() {
+      const s = el("div", photoCss + "overflow:hidden;");
+      s.appendChild(fillShape(n, accent));
+      return s;
+    }
+    if (isHttp(p.image_url)) {
+      const slot = dskPhotoSlot(p, photoCss + "border:6px solid #121212;background:#FFFFFF;",
+        function () { slot.replaceWith(bareShape()); });
+      right.appendChild(slot);
+    } else {
+      right.appendChild(bareShape());
+    }
 
     const btn = el("button",
       "flex:none;width:100%;display:flex;align-items:center;justify-content:center;gap:14px;font-weight:700;font-size:17px;letter-spacing:0.08em;text-transform:uppercase;padding:18px;border:6px solid #121212;cursor:pointer;background:" +
@@ -1615,11 +1642,23 @@
         : "#E3A5CE";
       const row = el("div",
         "position:relative;display:flex;height:150px;background:" + bg + ";border:4px solid #121212;cursor:pointer;overflow:hidden;box-shadow:6px 6px 0 0 #EA4632;");
-      if (p) {
-        row.appendChild(dskPhotoSlot(p, i, RED,
-          "position:relative;flex:none;width:172px;background:#FFFFFF;border-right:4px solid #121212;"));
+      // No usable photo → no photo box: the whole row stays pink, with the
+      // accent shape behind the text where the photo would have been.
+      function noPhoto() {
+        const shape = fillShape(i, RED);
+        shape.style.right = "auto";
+        shape.style.width = "172px";
+        row.insertBefore(shape, row.firstChild);
       }
-      const col = el("div", "flex:1;min-width:0;padding:13px 14px 12px;display:flex;flex-direction:column;justify-content:space-between;");
+      if (p && isHttp(p.image_url)) {
+        const slot = dskPhotoSlot(p,
+          "position:relative;flex:none;width:172px;background:#FFFFFF;border-right:4px solid #121212;",
+          function () { slot.remove(); noPhoto(); });
+        row.appendChild(slot);
+      } else if (p) {
+        noPhoto();
+      }
+      const col = el("div", "position:relative;z-index:1;flex:1;min-width:0;padding:13px 14px 12px;display:flex;flex-direction:column;justify-content:space-between;");
       col.appendChild(el("div", "",
         { text: p ? (cleanTitle(p.title) || "UNTITLED") : "PLAN #" + id, attrs: { class: "dsk-saved-title" } }));
       const bottom = el("div", "display:flex;align-items:flex-end;justify-content:space-between;gap:8px;");
