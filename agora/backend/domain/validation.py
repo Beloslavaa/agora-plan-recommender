@@ -1,9 +1,11 @@
 import logging
+from collections import defaultdict
 from datetime import date, timedelta
 from urllib.parse import unquote, urlparse
 
 from agora.backend.domain.countries import country_code, postal_code_fits
 from agora.backend.domain.schemas import PlanData
+from agora.backend.domain.url_safety import is_placeholder_image
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,12 @@ _BOILERPLATE_TITLES = {
 }
 
 _IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
+
+# One image shared by this many differently-titled plans from the same source
+# page is site chrome (a logo, spinner, lazy-load placeholder), not an event
+# photo. Real posters reused across a show's dates/branches top out around 5
+# in live data; the junk ones were 10-41.
+_SHARED_IMAGE_MIN_TITLES = 6
 
 
 def _wrong_country(plan: PlanData, expected_country: str | None) -> str | None:
@@ -113,6 +121,9 @@ def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) 
         elif not _looks_like_image_url(plan.image_url):
             logger.debug("  ~ dropping non-image image_url: %s", plan.image_url)
             plan.image_url = None
+        elif is_placeholder_image(plan.image_url):
+            logger.debug("  ~ dropping placeholder image_url: %s", plan.image_url)
+            plan.image_url = None
 
     # ── Price ────────────────────────────────────
     if plan.price is not None and (plan.price < 0 or plan.price > 100_000):
@@ -162,7 +173,28 @@ def validate_and_filter(plans: list[PlanData], city_countries: dict[str, str] | 
     dropped = len(plans) - len(valid)
     if dropped:
         logger.info("  Validator dropped %d/%d plans", dropped, len(plans))
+    _drop_shared_images(valid)
     return valid
+
+
+def _drop_shared_images(plans: list[PlanData]) -> None:
+    """Clear image_url on plans whose image is shared by many differently-
+    titled plans from the same source page — catches site chrome that
+    PLACEHOLDER_IMAGE doesn't know about yet. Enrichment can then backfill
+    the plan's own og:image."""
+    titles: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for p in plans:
+        if p.image_url:
+            titles[(p.source_url, p.image_url)].add(p.title.lower().strip())
+    shared = {k for k, t in titles.items() if len(t) >= _SHARED_IMAGE_MIN_TITLES}
+    if not shared:
+        return
+    for p in plans:
+        if (p.source_url, p.image_url) in shared:
+            p.image_url = None
+    for source_url, image_url in shared:
+        logger.info("  ~ dropping image shared by %d plans from %s: %s",
+                    len(titles[(source_url, image_url)]), source_url, image_url)
 
 
 def correct_city_from_location(plans: list[PlanData], assumed_city: str, cities: list[str]) -> None:

@@ -17,6 +17,7 @@
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #d9d9d9; font-family: "Space Mono", monospace; }
   ::-webkit-scrollbar { width: 0; height: 0; }
   @keyframes spinRing { to { transform: rotate(360deg); } }
+  @keyframes photoWait { from { opacity:0.45; } to { opacity:1; } }
   @keyframes grainShift { 0% { transform: translate(0,0); } 100% { transform: translate(-6%,-4%); } }
   /* 100dvh (not 100vh) so mobile browsers size #app against the actual visible
      viewport, not the address-bar-collapsed one — otherwise the bottom nav gets
@@ -33,7 +34,11 @@
                   background-size:5px 5px; opacity:0.7; mix-blend-mode:multiply; pointer-events:none; }
   /* Photo behind the dots: black & white, paled toward the white panel. */
   .photo-bw { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;
-              filter:grayscale(1) contrast(0.9) brightness(1.08); opacity:0.72; }
+              filter:grayscale(1) contrast(0.9) brightness(1.08); opacity:0.72; transition:opacity 0.25s; }
+  .photo-bw.is-loading { opacity:0; }
+  /* Shown under a photo until it loads, so a slow image doesn't read as an
+     empty white box. */
+  .photo-wait { position:absolute; inset:0; z-index:0; background:#E4E4E4; animation:photoWait 1.2s ease-in-out infinite alternate; }
   .anton { font-family:'Anton', sans-serif; }
   /* Titles keep the dense Anton treatment: condensed scaleX squash, and a
      DELIBERATELY tight line-height so wrapped lines overlap each other —
@@ -493,6 +498,26 @@
     return n;
   }
 
+  // Photo <img> for every panel, appended to `wrap` (the dots go on after).
+  // `onFail` runs when it 404s/403s OR when it "loads" as something tiny — a
+  // spacer, lazy-load placeholder or emoji the scraper picked up — which
+  // otherwise never errored and left a blank white box.
+  function photoImg(plan, wrap, onFail, lazy) {
+    const attrs = { class: "photo-bw is-loading", src: plan.image_url, alt: plan.title || "", decoding: "async" };
+    if (lazy) attrs.loading = "lazy";
+    const wait = el("div", "", { attrs: { class: "photo-wait" } });
+    const img = el("img", "", { attrs });
+    function fail() { wait.remove(); img.remove(); onFail(); }
+    img.addEventListener("error", fail);
+    img.addEventListener("load", function () {
+      if (img.naturalWidth < 50 || img.naturalHeight < 50) return fail();
+      wait.remove();
+      img.classList.remove("is-loading");
+    });
+    wrap.appendChild(wait);
+    wrap.appendChild(img);
+  }
+
   // Photo panel — ONLY built when the plan actually has a photo. The image is
   // rendered black & white and paled (.photo-bw) UNDER the halftone dots.
   // If the image fails to load, the whole panel is removed so the flex content
@@ -501,10 +526,7 @@
     const border = side === "L" ? "border-right:4px solid #121212;" : "border-left:4px solid #121212;";
     const wrap = el("div",
       "position:relative;width:120px;flex:none;background:#FFFFFF;overflow:hidden;isolation:isolate;z-index:3;" + border);
-    const img = el("img", "",
-      { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "", loading: "lazy" } });
-    img.addEventListener("error", function () { wrap.remove(); });
-    wrap.appendChild(img);                                   // photo (z-index:0)
+    photoImg(plan, wrap, function () { wrap.remove(); }, true);   // photo (z-index:0)
     wrap.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));  // dots on top (z-index:1)
     return wrap;
   }
@@ -1031,10 +1053,7 @@
     if (hasPhoto) {
       const banner = el("div",
         "position:relative;height:190px;margin-top:16px;border:4px solid #121212;background:#FFFFFF;overflow:hidden;isolation:isolate;");
-      const img = el("img", "",
-        { attrs: { class: "photo-bw", src: p.image_url, alt: p.title || "" } });
-      const dots = el("div", "", { attrs: { class: "imgslot-dots" } });
-      img.addEventListener("error", function () {
+      photoImg(p, banner, function () {
         // Image never actually loaded → fall all the way back to the no-photo
         // treatment (drop the empty banner, re-render the description behind
         // a shape) instead of leaving a bare "[ no photo ]" rectangle above
@@ -1042,8 +1061,7 @@
         banner.remove();
         renderShapedDesc();
       });
-      banner.appendChild(img);
-      banner.appendChild(dots);
+      banner.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));
       box.appendChild(banner);
     }
 
@@ -1206,10 +1224,7 @@
         if (!isHttp(plan.image_url)) return;   // no photo → no box
         const pbox = el("div",
           "position:relative;width:80px;flex:none;background:#FFFFFF;border-right:4px solid #121212;overflow:hidden;isolation:isolate;");
-        const img = el("img", "",
-          { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "" } });
-        img.addEventListener("error", function () { pbox.remove(); });
-        pbox.appendChild(img);
+        photoImg(plan, pbox, function () { pbox.remove(); });
         pbox.appendChild(el("div", "", { attrs: { class: "imgslot-dots" } }));
         photoSlot.appendChild(pbox);
       }
@@ -1363,10 +1378,7 @@
   function dskPhotoSlot(plan, i, accent, css) {
     const slot = el("div", css + "overflow:hidden;isolation:isolate;");
     if (isHttp(plan.image_url)) {
-      const img = el("img", "",
-        { attrs: { class: "photo-bw", src: plan.image_url, alt: plan.title || "", loading: "lazy" } });
-      img.addEventListener("error", function () { img.remove(); slot.insertBefore(fillShape(i, accent), slot.firstChild); });
-      slot.appendChild(img);
+      photoImg(plan, slot, function () { slot.insertBefore(fillShape(i, accent), slot.firstChild); }, true);
     } else {
       slot.appendChild(fillShape(i, accent));
     }

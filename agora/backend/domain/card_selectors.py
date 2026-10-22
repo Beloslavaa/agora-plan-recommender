@@ -14,7 +14,12 @@ from datetime import date
 from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 
 from agora.backend.domain.schemas import CardSelectors, PlanData
-from agora.backend.domain.url_safety import is_late_night, normalise_url
+from agora.backend.domain.url_safety import (
+    IMAGE_SRC_ATTRS,
+    is_late_night,
+    is_placeholder_image,
+    normalise_url,
+)
 
 
 def _text(el: Tag | None) -> str:
@@ -48,10 +53,12 @@ def _image(el: Tag | None) -> str | None:
         return None
     img = el if el.name in ("img", "source") else el.find(["img", "source"])
     if img is not None:
-        for attr in ("src", "data-src", "data-lazy-src", "srcset", "data-srcset"):
+        for attr in IMAGE_SRC_ATTRS:
             v = img.get(attr)
-            if v and not v.startswith("data:"):
-                return v.split(",")[0].split()[0]
+            if v and v.strip() and not v.startswith("data:"):
+                v = v.split(",")[0].split()[0]
+                if not is_placeholder_image(v):
+                    return v
     m = _BG_URL.search(el.get("style") or "")
     return m.group(1) if m else None
 

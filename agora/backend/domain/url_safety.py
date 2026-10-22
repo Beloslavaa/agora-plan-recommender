@@ -46,6 +46,32 @@ SONGKICK_BLANK_IMAGE = re.compile(
     r"sk-static\.com/images/media/profile_images/events/", re.IGNORECASE,
 )
 
+# Site chrome that loads fine but isn't an event photo, so the frontend's
+# image-error fallback never fires and the card shows a blank/spinner/logo
+# box. Seen in the wild: esmadrid's lazy-placeholder.png (the real photo sits
+# in data-src), visitsofia's loader-dark.gif, bucketlisters' logosmall.png,
+# and Facebook emoji (emoji.php) inlined in thecomedyclub.bg's program text.
+PLACEHOLDER_IMAGE = re.compile(
+    r"placeholder|/loader[^/]*\.gif|spinner|spacer\.gif|/blank\.(?:gif|png)"
+    r"|/emoji\.php/|/logo[^/]*\.(?:png|svg|webp|gif)$",
+    re.IGNORECASE,
+)
+
+
+# Lazy-loading sites put the real photo in one of these and a placeholder in
+# `src` until their JS swaps it in, so read them before `src`.
+IMAGE_SRC_ATTRS = ("data-src", "data-lazy-src", "data-original", "ng-src",
+                   "data-srcset", "srcset", "src")
+
+
+def is_placeholder_image(url: str | None) -> bool:
+    """True if *url* is a known blank/placeholder/site-chrome image rather
+    than a photo of the event."""
+    if not url:
+        return False
+    path = urlparse(url).path
+    return bool(SONGKICK_BLANK_IMAGE.search(url) or PLACEHOLDER_IMAGE.search(path))
+
 
 _BASE_HREF = re.compile(r'<base\b[^>]*\bhref\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
 

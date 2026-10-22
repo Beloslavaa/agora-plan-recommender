@@ -9,7 +9,9 @@ import re
 from html import unescape
 
 from agora.backend.domain.schemas import PlanData
-from agora.backend.domain.url_safety import SONGKICK_BLANK_IMAGE, is_late_night, normalise_url
+from agora.backend.domain.url_safety import (
+    IMAGE_SRC_ATTRS, is_late_night, is_placeholder_image, normalise_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ def _parse_ld_event(obj: dict, base_url: str | None = None) -> dict | None:
         image = image.get("url")
     if image:
         image_url = normalise_url(image, base_url)
-        if image_url and not SONGKICK_BLANK_IMAGE.search(image_url):
+        if image_url and not is_placeholder_image(image_url):
             out["image_url"] = image_url
 
     start = obj.get("startDate")
@@ -401,8 +403,9 @@ _MAX_HTML_CHARS = 60_000
 
 def _attr(tag: str, name: str) -> str | None:
     """Read an attribute value out of a raw start-tag string."""
-    m = (re.search(rf'{name}\s*=\s*"([^"]*)"', tag, re.IGNORECASE)
-         or re.search(rf"{name}\s*=\s*'([^']*)'", tag, re.IGNORECASE))
+    # (?<![\w-]) so "src" doesn't match inside "data-src" / "ng-src".
+    m = (re.search(rf'(?<![\w-]){name}\s*=\s*"([^"]*)"', tag, re.IGNORECASE)
+         or re.search(rf"(?<![\w-]){name}\s*=\s*'([^']*)'", tag, re.IGNORECASE))
     return m.group(1) if m else None
 
 
@@ -422,8 +425,14 @@ def html_to_text(html: str, base_url: str | None = None) -> str:
 
     # Images → " [image: URL] "
     def _img(m: re.Match) -> str:
-        src = _attr(m.group(0), 'src') or _attr(m.group(0), 'data-src')
-        u = normalise_url(src, base_url) if src else None
+        u = None
+        for attr in IMAGE_SRC_ATTRS:
+            src = (_attr(m.group(0), attr) or "").strip()
+            if src and not src.startswith("data:"):
+                u = normalise_url(src.split(",")[0].split()[0], base_url)
+                if u and not is_placeholder_image(u):
+                    break
+                u = None
         return f" [image: {u}] " if u else " "
     html = re.sub(r'<img\b[^>]*>', _img, html, flags=re.IGNORECASE)
 
