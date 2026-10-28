@@ -6,6 +6,7 @@ import unicodedata
 from difflib import SequenceMatcher
 
 from agora.backend.domain.schemas import PlanData
+from agora.backend.domain.url_safety import is_placeholder_image
 
 # Fields backfilled when a plan matches an existing row (see
 # compute_merge_updates) — deliberately excludes title/start_date/
@@ -19,6 +20,15 @@ URL_MERGE_FIELDS = (
 # backfill a missing date there since dates_compatible already ruled out
 # a real conflicting date.
 DEDUP_MERGE_FIELDS = URL_MERGE_FIELDS + ("start_date", "end_date")
+
+
+def _missing(field: str, value) -> bool:
+    """Whether a stored *value* counts as empty for backfilling. A
+    placeholder image (e.g. esmadrid's lazy-placeholder.png, saved before
+    scrapers learned to read data-src) does too — otherwise it blocks the
+    real photo a later scrape finds, forever."""
+    return not value or (field == "image_url" and is_placeholder_image(value))
+
 
 _DIGIT_RE = re.compile(r"\d+")
 
@@ -106,7 +116,7 @@ def compute_merge_updates(existing: dict, p: PlanData) -> dict:
         if p.short_title:
             updates["short_title"] = p.short_title
     for field in URL_MERGE_FIELDS:
-        if not existing.get(field) and getattr(p, field, None):
+        if _missing(field, existing.get(field)) and getattr(p, field, None):
             updates[field] = getattr(p, field)
     # url is REFRESHED here, not just backfilled-if-empty — some sources
     # (dice.fm confirmed) hand back a different URL for the same event on
@@ -149,7 +159,7 @@ def compute_dedup_merge_updates(keep: dict, drop: dict) -> dict:
         if drop.get("short_title"):
             updates["short_title"] = drop["short_title"]
     for field in DEDUP_MERGE_FIELDS:
-        if not keep.get(field) and drop.get(field):
+        if _missing(field, keep.get(field)) and not _missing(field, drop.get(field)):
             updates[field] = drop[field]
     if keep.get("is_stale") and not drop.get("is_stale"):
         updates["is_stale"] = False
