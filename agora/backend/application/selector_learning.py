@@ -10,7 +10,7 @@ are then checked against the real page before anyone keeps them.
 import logging
 from datetime import date
 
-from agora.backend.application.ports import LLMProvider
+from agora.backend.application.ports import LLMProvider, QuotaExhaustedError
 from agora.backend.domain.card_selectors import check_selectors, page_skeleton
 from agora.backend.domain.schemas import CardSelectors
 
@@ -62,6 +62,8 @@ async def learn_selectors(
         try:
             data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=2048)
             selectors = CardSelectors(**data)
+        except QuotaExhaustedError:
+            raise
         except Exception as e:
             summary = f"LLM gave no usable selectors: {e}"
             continue

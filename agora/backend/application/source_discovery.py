@@ -30,7 +30,13 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from agora.backend.application.extraction import FENCE_CLOSE, FENCE_OPEN
-from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider, SourceStore
+from agora.backend.application.ports import (
+    LLMProvider,
+    PageFetcher,
+    QuotaExhaustedError,
+    SearchProvider,
+    SourceStore,
+)
 from agora.backend.application.sources_admin import promote_source
 from agora.backend.domain.countries import language_name, search_country
 from agora.backend.domain.event_parsing import html_to_text
@@ -265,6 +271,8 @@ class _CityDiscovery:
             try:
                 self.report.llm_calls += 1
                 queries = await generate_queries(self.llm, category, self.city)
+            except QuotaExhaustedError:
+                raise
             except Exception as e:
                 logger.warning("  Failed to generate queries for %s: %s", category.value, e)
                 continue
@@ -328,6 +336,8 @@ class _CityDiscovery:
         try:
             self.report.llm_calls += 1
             sample = await self._sample(html, url)
+        except QuotaExhaustedError:
+            raise
         except Exception as e:
             # Our side failing says nothing about the page — not remembered.
             logger.warning("    sampling failed for %s: %s", url, e)

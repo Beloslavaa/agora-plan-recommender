@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from agora.backend.application.ingestion import run_one_city
+from agora.backend.application.ports import QuotaExhaustedError
 from agora.backend.application.source_discovery import (
     DISCOVERY_CATEGORIES,
     DiscoveryReport,
@@ -76,18 +77,21 @@ def main() -> None:
         format="%(levelname)s %(message)s",
     )
 
-    if args.mode == "setup-sources":
-        _setup_sources(args)
-        return
+    try:
+        if args.mode == "setup-sources":
+            _setup_sources(args)
+            return
 
-    cities = args.city if args.city else store.load_cities()
-    if not cities:
-        print("No cities configured — add some to data/cities.json (or pass --city).")
-        return
+        cities = args.city if args.city else store.load_cities()
+        if not cities:
+            print("No cities configured — add some to data/cities.json (or pass --city).")
+            return
 
-    if args.mode == "explorer":
-        _discover(args, cities)
-        return
+        if args.mode == "explorer":
+            _discover(args, cities)
+            return
+    except QuotaExhaustedError as e:
+        _exit_quota_exhausted(e)
 
     if args.dry_run:
         print(f"Would run for {len(cities)} cities: {', '.join(cities)}")
@@ -105,7 +109,7 @@ def main() -> None:
 
     only_names = set(args.source) if args.source else None
 
-    async def _all() -> tuple[list, int]:
+    async def _all() -> tuple[list, int, QuotaExhaustedError | None]:
         # One event loop for every city: LLM/HTTP clients and the pipeline's
         # semaphore bind to the loop they're first used on, so one
         # asyncio.run per city broke them ("Event loop is closed").
@@ -114,6 +118,10 @@ def main() -> None:
         for city in cities:
             try:
                 plans = await run_one_city(llm, search, fetcher, store, city, only_names)
+            except QuotaExhaustedError as e:
+                # Every remaining city would fail the same way. Stop, but hand
+                # back the cities that finished so their plans still get saved.
+                return all_plans, failed, e
             except Exception as e:
                 # One city's bad source / LLM hiccup must not take down the
                 # rest of an unattended multi-city run.
@@ -124,14 +132,14 @@ def main() -> None:
             print(f"\n[{city}] Scraped this run: {len(plans)}")
             for p in plans:
                 print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
-        return all_plans, failed
+        return all_plans, failed, None
 
-    all_plans, failed = asyncio.run(_all())
+    all_plans, failed, quota_error = asyncio.run(_all())
 
     # Partial failure stays tolerated above, but if *every* city blew up the
     # run accomplished nothing — exit non-zero so CI shows red instead of a
     # green check on a run that only produced stack traces.
-    if failed == len(cities):
+    if failed == len(cities) and not quota_error:
         logger.error("All %d city pipeline(s) failed — nothing was processed.", failed)
         sys.exit(1)
 
@@ -146,24 +154,42 @@ def main() -> None:
         upsert_plans,
     )
 
-    inserted = upsert_plans(all_plans)
-    total = get_plan_count()
-    print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
+    # finally: close the DB pool even when a step below throws — otherwise
+    # its worker threads outlive the run and print "couldn't stop thread".
+    try:
+        inserted = upsert_plans(all_plans)
+        total = get_plan_count()
+        print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
+        if quota_error:
+            # The steps below need the provider too (embeddings); a later run's
+            # backfills pick up everything saved here.
+            _exit_quota_exhausted(quota_error)
 
-    embedded = backfill_embeddings(gemini_embeddings, postgres_repository)
-    print(f"Embedded {embedded} plan(s) for the semantic recommender")
+        embedded = backfill_embeddings(gemini_embeddings, postgres_repository)
+        print(f"Embedded {embedded} plan(s) for the semantic recommender")
 
-    staled = mark_stale_plans()
-    print(
-        f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted"
+        staled = mark_stale_plans()
+        print(
+            f"Marked {staled} plan(s) stale (end date, or start date if no end date, in the past) — hidden from browsing, not deleted"
+        )
+
+        # After staling, so no proxy is spent on a plan that just went stale.
+        # Cold-start proxies only, no retraining — see backfill_graph_embeddings.
+        graphed = backfill_graph_embeddings(postgres_repository)
+        print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
+    except QuotaExhaustedError as e:
+        _exit_quota_exhausted(e)
+    finally:
+        pool.close()
+
+
+def _exit_quota_exhausted(e: QuotaExhaustedError) -> None:
+    logger.error(
+        "LLM provider is out of credit — stopping the run (%s). Top up (for "
+        "Gemini: https://ai.studio/projects → Billing → Buy credits) and re-run; "
+        "plans already saved get embedded then.", e,
     )
-
-    # After staling, so no proxy is spent on a plan that just went stale.
-    # Cold-start proxies only, no retraining — see backfill_graph_embeddings.
-    graphed = backfill_graph_embeddings(postgres_repository)
-    print(f"Gave {graphed} new plan(s) a cold-start graph embedding")
-
-    pool.close()
+    sys.exit(1)
 
 
 def _discover(args: argparse.Namespace, cities: list[str]) -> None:
@@ -186,6 +212,8 @@ def _discover(args: argparse.Namespace, cities: list[str]) -> None:
         for city in cities:
             try:
                 reports.append(await discover_sources(llm, search, fetcher, store, city, categories))
+            except QuotaExhaustedError:
+                raise
             except Exception as e:
                 # One city's failure must not take down the rest of the run.
                 logger.error("[%s] discovery failed: %s", city, e)

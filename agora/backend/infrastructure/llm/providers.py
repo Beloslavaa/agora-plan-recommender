@@ -2,6 +2,7 @@ import logging
 
 from agora.backend.application.ports import LLMProvider
 from agora.backend.infrastructure.config import settings
+from agora.backend.infrastructure.llm.quota import raise_if_quota_exhausted
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,11 @@ class AnthropicProvider(LLMProvider):
         temperature: float = 0.1,
         max_tokens: int = 4096,
     ):
-        raw = await self.complete(prompt, system, temperature, max_tokens)
+        try:
+            raw = await self.complete(prompt, system, temperature, max_tokens)
+        except Exception as e:
+            raise_if_quota_exhausted(e)
+            raise
         return self._parse_json_safe(raw)
 
 
@@ -81,7 +86,11 @@ class OpenAIProvider(LLMProvider):
         temperature: float = 0.1,
         max_tokens: int = 4096,
     ):
-        raw = await self.complete(prompt, system, temperature, max_tokens)
+        try:
+            raw = await self.complete(prompt, system, temperature, max_tokens)
+        except Exception as e:
+            raise_if_quota_exhausted(e)
+            raise
         return self._parse_json_safe(raw)
 
 
@@ -133,7 +142,11 @@ class GeminiProvider(LLMProvider):
         temperature: float = 0.1,
         max_tokens: int = 4096,
     ):
-        raw = await self.complete(prompt, system, temperature, max_tokens)
+        try:
+            raw = await self.complete(prompt, system, temperature, max_tokens)
+        except Exception as e:
+            raise_if_quota_exhausted(e)
+            raise
         return self._parse_json_safe(raw)
 
 

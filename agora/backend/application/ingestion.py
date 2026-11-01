@@ -8,7 +8,14 @@ import logging
 from datetime import date
 
 from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
-from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider, SourceStore
+from agora.backend.application.ports import (
+    LLMProvider,
+    PageFetcher,
+    QuotaExhaustedError,
+    SearchProvider,
+    SourceStore,
+    gather_until_quota,
+)
 from agora.backend.application.extraction import extract_plans_from_html, extract_plans_from_wp_api
 from agora.backend.domain.card_selectors import check_selectors, plans_from_cards
 from agora.backend.domain.schemas import PlanData
@@ -81,14 +88,13 @@ async def run_fixed_pipeline(
                             html, page_url, "fixed", llm, fetcher, category=category,
                         )
                         return extracted
+                    except QuotaExhaustedError:
+                        raise
                     except Exception as e:
                         logger.warning("  ✗ Extraction failed for %s: %s", page_url, e)
                         return []
 
-            results = await asyncio.gather(
-                *[_extract(html, url) for html, url in page_htmls],
-                return_exceptions=True,
-            )
+            results = await gather_until_quota([_extract(html, url) for html, url in page_htmls])
             for extracted in results:
                 if isinstance(extracted, Exception):
                     continue
@@ -99,6 +105,8 @@ async def run_fixed_pipeline(
             total = sum(len(r) for r in results if not isinstance(r, Exception))
             logger.info("  → %d total plans from %s (%d pages)",
                         total, source.name, len(page_htmls))
+        except QuotaExhaustedError:
+            raise
         except Exception as e:
             logger.warning("  ✗ Failed to scrape %s: %s", source.name, e)
     # Stamped here (not asked of the LLM extractor) — this is the one place

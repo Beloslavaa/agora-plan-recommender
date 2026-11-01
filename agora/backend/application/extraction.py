@@ -3,7 +3,7 @@ import logging
 from datetime import date, timedelta
 from urllib.parse import urlparse
 
-from agora.backend.application.ports import LLMProvider, PageFetcher
+from agora.backend.application.ports import LLMProvider, PageFetcher, QuotaExhaustedError
 from agora.backend.domain.event_parsing import (
     html_to_text,
     plan_from_ld_event,
@@ -226,6 +226,8 @@ async def extract_plans_from_html(
     extraction_max_tokens = 32768 if len(safe) > 30_000 else 16384
     try:
         data = await llm.parse_json(prompt, system=system, temperature=0.1, max_tokens=extraction_max_tokens)
+    except QuotaExhaustedError:
+        raise
     except Exception:
         logger.warning("  First extraction attempt failed, retrying with stronger prompt")
         system += (

@@ -7,6 +7,7 @@ from is domain/ranking.py's plan_text."""
 from openai import OpenAI
 
 from agora.backend.infrastructure.config import settings
+from agora.backend.infrastructure.llm.quota import raise_if_quota_exhausted
 
 _client: OpenAI | None = None
 
@@ -27,5 +28,9 @@ def _get_client() -> OpenAI:
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """One batched embeddings call for the whole list — cheaper and faster
     than one call per plan."""
-    resp = _get_client().embeddings.create(model=settings.embedding_model, input=texts)
+    try:
+        resp = _get_client().embeddings.create(model=settings.embedding_model, input=texts)
+    except Exception as e:
+        raise_if_quota_exhausted(e)
+        raise
     return [d.embedding for d in resp.data]

@@ -17,7 +17,13 @@ calls:
 import logging
 from urllib.parse import urlparse
 
-from agora.backend.application.ports import LLMProvider, PageFetcher, SearchProvider
+from agora.backend.application.ports import (
+    LLMProvider,
+    PageFetcher,
+    QuotaExhaustedError,
+    SearchProvider,
+    gather_until_quota,
+)
 from agora.backend.domain.countries import search_country, tickets_word
 from agora.backend.domain.event_parsing import extract_meta_description, extract_og_image, extract_ticket_url
 from agora.backend.domain.schemas import CATEGORY_LABELS, City, PlanCategory, PlanData
@@ -93,6 +99,8 @@ async def _generate_short_title(plan: PlanData, llm: LLMProvider) -> str:
         st = (data.get("short_title") or "").strip()
         if st and len(st.split()) <= 10:
             return st
+    except QuotaExhaustedError:
+        raise
     except Exception:
         logger.debug("  ~ short_title LLM failed for %s", plan.title[:40])
     return ""
@@ -125,6 +133,8 @@ async def _generate_description(plan: PlanData, llm: LLMProvider) -> str:
         desc = (data.get("description") or "").strip()
         if desc:
             return desc
+    except QuotaExhaustedError:
+        raise
     except Exception:
         logger.debug("  ~ description LLM failed for %s", plan.title[:40])
     return ""
@@ -274,7 +284,7 @@ async def enrich_plans(
 
     # enrich_plan mutates in place, so `plans` already reflects the changes;
     # we still await so the fetches/LLM calls complete before returning.
-    await asyncio.gather(*[_enrich(p) for p in to_enrich], return_exceptions=True)
+    await gather_until_quota([_enrich(p) for p in to_enrich])
     return plans
 
 
@@ -326,6 +336,8 @@ async def classify_category_from_text(
         data = await llm.parse_json(prompt, system=_CLASSIFY_CATEGORY_SYSTEM, temperature=0.1, max_tokens=2048)
         category = (data.get("category") or "").strip()
         return PlanCategory(category).value
+    except QuotaExhaustedError:
+        raise
     except Exception as e:
         logger.warning("  ~ category classification failed for %r: %s", title[:50], e)
         return None
@@ -351,5 +363,5 @@ async def classify_missing_categories(plans: list[PlanData], llm: LLMProvider | 
             if category:
                 p.category = category
 
-    await asyncio.gather(*[_classify(p) for p in to_classify], return_exceptions=True)
+    await gather_until_quota([_classify(p) for p in to_classify])
     return plans

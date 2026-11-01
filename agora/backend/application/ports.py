@@ -13,6 +13,40 @@ from typing import Protocol
 from agora.backend.domain.schemas import City, FixedSource, SearchResult
 
 
+class QuotaExhaustedError(Exception):
+    """The LLM / embeddings provider refused a call for billing reasons — e.g.
+    Gemini's prepaid credit balance hit zero (HTTP 402). Unlike a flaky call,
+    every later call fails the same way, so the broad `except Exception`
+    handlers around provider calls re-raise this instead of logging and moving
+    on: one clear stop rather than a warning per remaining plan."""
+
+
+async def gather_until_quota(coros) -> list:
+    """asyncio.gather(..., return_exceptions=True), except that a
+    QuotaExhaustedError cancels every task still running or queued and is
+    raised. Plain gather would let all the remaining tasks run first, each
+    making its own doomed provider call."""
+    import asyncio
+
+    async def _one(coro):
+        try:
+            return await coro
+        except QuotaExhaustedError:
+            raise
+        except Exception as e:  # same as return_exceptions=True
+            return e
+
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(_one(c)) for c in coros]
+    except BaseExceptionGroup as eg:
+        quota = eg.subgroup(QuotaExhaustedError)
+        if quota:
+            raise quota.exceptions[0] from None
+        raise
+    return [t.result() for t in tasks]
+
+
 class LLMProvider(ABC):
     @abstractmethod
     async def complete(
