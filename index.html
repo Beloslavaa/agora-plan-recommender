@@ -11,10 +11,10 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Oswald:wght@700&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #d9d9d9; font-family: "Space Mono", monospace; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #d9d9d9; font-family: "Space Mono", "IBM Plex Mono", monospace; }
   ::-webkit-scrollbar { width: 0; height: 0; }
   @keyframes spinRing { to { transform: rotate(360deg); } }
   @keyframes photoWait { from { opacity:0.45; } to { opacity:1; } }
@@ -39,25 +39,25 @@
   /* Shown under a photo until it loads, so a slow image doesn't read as an
      empty white box. */
   .photo-wait { position:absolute; inset:0; z-index:0; background:#E4E4E4; animation:photoWait 1.2s ease-in-out infinite alternate; }
-  .anton { font-family:'Anton', sans-serif; }
+  .anton { font-family:'Anton', 'Oswald', sans-serif; }
   /* Titles keep the dense Anton treatment: condensed scaleX squash, and a
      DELIBERATELY tight line-height so wrapped lines overlap each other —
      that's the intended poster-type look, not a bug to avoid. Feed titles
      ALWAYS render at the same 34px — no shrink-to-fit — so every card reads
      with the same visual weight; longer titles just wrap onto more lines
      (with the same overlap) and the card grows taller to hold them. */
-  .card-title  { font-family:'Anton',sans-serif; font-size:34px; line-height:0.78; text-transform:uppercase;
+  .card-title  { font-family:'Anton','Oswald',sans-serif; font-size:34px; line-height:0.78; text-transform:uppercase;
                  letter-spacing:-0.01em; color:#121212; overflow-wrap:break-word;
                  min-height:56px; padding-top:4px; margin-bottom:10px;
                  transform:scaleX(0.85); transform-origin:left; text-align:left; }
-  .detail-title{ font-family:'Anton',sans-serif; font-size:30px; line-height:0.78; text-transform:uppercase;
+  .detail-title{ font-family:'Anton','Oswald',sans-serif; font-size:30px; line-height:0.78; text-transform:uppercase;
                  letter-spacing:-0.02em; color:#121212; word-break:break-word;
                  transform:scaleX(0.95); transform-origin:left; }
-  .saved-title { font-family:'Anton',sans-serif; font-size:26px; line-height:0.8; text-transform:uppercase;
+  .saved-title { font-family:'Anton','Oswald',sans-serif; font-size:26px; line-height:0.8; text-transform:uppercase;
                  color:#121212; word-break:break-word; overflow:hidden; max-height:64px;
                  transform:scaleX(0.84); transform-origin:left; }
   a.plainlink { text-decoration:none; }
-  button { font-family:'Space Mono', monospace; }
+  button { font-family:'Space Mono', 'IBM Plex Mono', monospace; }
   @media (prefers-reduced-motion: reduce) {
     #ring { animation: none !important; }
     #dsk-ring { animation: none !important; }
@@ -73,13 +73,13 @@
      query is gated on min-width past any phone's landscape width plus
      BOTH pointer:fine and hover:hover, so a touchscreen that misreports
      one of them still can't match — mouse-driven desktop browsers only. */
-  .tile-title       { font-family:'Anton',sans-serif; font-size:38px; line-height:0.8; text-transform:uppercase;
+  .tile-title       { font-family:'Anton','Oswald',sans-serif; font-size:38px; line-height:0.8; text-transform:uppercase;
                       letter-spacing:-0.01em; color:#121212; overflow-wrap:break-word;
                       transform:scaleX(0.85); transform-origin:left; }
-  .dsk-detail-title { font-family:'Anton',sans-serif; font-size:92px; line-height:0.78; text-transform:uppercase;
+  .dsk-detail-title { font-family:'Anton','Oswald',sans-serif; font-size:92px; line-height:0.78; text-transform:uppercase;
                       letter-spacing:-0.02em; color:#121212; word-break:break-word;
                       transform:scaleX(0.84); transform-origin:left; }
-  .dsk-saved-title  { font-family:'Anton',sans-serif; font-size:31px; line-height:0.82; text-transform:uppercase;
+  .dsk-saved-title  { font-family:'Anton','Oswald',sans-serif; font-size:31px; line-height:0.82; text-transform:uppercase;
                       color:#121212; word-break:break-word; overflow:hidden; max-height:52px;
                       transform:scaleX(0.85); transform-origin:left; }
   #dsk-header { display:none; }
@@ -114,9 +114,9 @@
         <div style="font-weight:700;font-size:10px;letter-spacing:0.08em;color:#121212;margin-bottom:14px;line-height:1.5;text-align:center;">KEEP YOUR PLANS AND FEED WITH YOU</div>
         <form id="login-form" style="display:flex;flex-direction:column;gap:10px;">
           <input id="login-username" type="text" placeholder="USERNAME" autocomplete="username"
-                 style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
+                 style="font-family:'Space Mono','IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
           <input id="login-password" type="password" placeholder="PASSWORD (8+ CHARACTERS)" autocomplete="current-password"
-                 style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
+                 style="font-family:'Space Mono','IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.05em;padding:12px 14px;border:3px solid #121212;background:#FFFFFF;color:#121212;outline:none;" required>
           <button id="login-submit" type="submit"
                   style="font-weight:700;font-size:12px;letter-spacing:0.1em;padding:12px 14px;background:#EA4632;border:3px solid #121212;color:#121212;cursor:pointer;">ENTER</button>
           <div id="login-error" style="min-height:14px;font-size:10px;color:#EA4632;letter-spacing:0.03em;text-align:center;"></div>
@@ -536,7 +536,7 @@
     switch (r.deco) {
       case "num":
         return el("div",
-          "position:absolute;bottom:-40px;left:6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.7;color:" +
+          "position:absolute;bottom:-40px;left:6px;font-family:'Anton','Oswald',sans-serif;font-size:180px;line-height:0.7;color:" +
           faintOf(dcol) + ";transform:scaleX(0.68);transform-origin:left bottom;pointer-events:none;",
           { text: pad2(i + 1) });
       case "rings":
@@ -932,7 +932,7 @@
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ recommended for you ]" }));
     head.appendChild(el("div",
-      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      "position:relative;z-index:2;font-family:'Anton','Oswald',sans-serif;font-size:74px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: "Agora" }));
     head.appendChild(el("div",
       "position:relative;margin-top:14px;max-width:230px;font-size:10.5px;line-height:1.55;color:#121212;",
@@ -947,7 +947,7 @@
     CITIES_LIST.forEach(function (c) {
       const active = c === CITY;
       switcher.appendChild(el("button",
-        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;" +
+        "flex:none;white-space:nowrap;font-family:'Anton','Oswald',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;" +
         "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? CYAN : "#121212") +
         (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
@@ -976,7 +976,7 @@
     if (!state.feed.length) {
       const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;margin-top:8px;");
       box.appendChild(el("div",
-        "font-family:'Anton',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        "font-family:'Anton','Oswald',sans-serif;font-size:34px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
         { text: state.reloading ? "Your feed\nis reloading" : (state.loading || state.booting) ? "Loading\nplans" : "No plans\nyet" }));
       box.appendChild(el("div",
         "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
@@ -1017,7 +1017,7 @@
     // opaque, DOM-later banner/description below paints over any bleed.
     const titleWrap = el("div", "position:relative;margin-top:18px;");
     titleWrap.appendChild(el("div",
-      "position:absolute;bottom:-40px;right:-6px;font-family:'Anton',sans-serif;font-size:180px;line-height:0.66;color:" +
+      "position:absolute;bottom:-40px;right:-6px;font-family:'Anton','Oswald',sans-serif;font-size:180px;line-height:0.66;color:" +
       faintOf(accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;",
       { text: pad2((idx >= 0 ? idx : 0) + 1) }));
     titleWrap.appendChild(el("div",
@@ -1130,13 +1130,13 @@
 
     const head = el("div", "position:relative;margin-bottom:18px;overflow:hidden;");
     head.appendChild(el("div",
-      "position:absolute;bottom:-30px;right:-4px;font-family:'Anton',sans-serif;font-size:130px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);transform-origin:right bottom;pointer-events:none;",
+      "position:absolute;bottom:-30px;right:-4px;font-family:'Anton','Oswald',sans-serif;font-size:130px;line-height:0.7;color:#EA4632;opacity:0.75;transform:scaleX(0.7);transform-origin:right bottom;pointer-events:none;",
       { text: "♥" }));
     head.appendChild(el("div",
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#EA4632;margin-bottom:6px;",
       { text: "[ your list ]" }));
     head.appendChild(el("div",
-      "position:relative;font-family:'Anton',sans-serif;font-size:66px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      "position:relative;font-family:'Anton','Oswald',sans-serif;font-size:66px;line-height:0.78;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: "Saved" }));
 
     const ids = Object.keys(state.saved).filter((k) => state.saved[k]);
@@ -1148,7 +1148,7 @@
     if (!ids.length) {
       const empty = el("div", "padding:50px 20px;text-align:center;border:4px dashed #121212;");
       empty.appendChild(el("div",
-        "font-family:'Anton',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        "font-family:'Anton','Oswald',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
         { text: "Nothing\nSaved Yet" }));
       empty.appendChild(el("div",
         "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;",
@@ -1256,7 +1256,7 @@
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ cinema ]" }));
     head.appendChild(el("div",
-      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:56px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      "position:relative;z-index:2;font-family:'Anton','Oswald',sans-serif;font-size:56px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: c.name || "" }));
     head.appendChild(el("div",
       "position:relative;margin-top:10px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
@@ -1268,7 +1268,7 @@
     if (!c.loading && !c.plans.length) {
       const box = el("div", "padding:44px 20px;text-align:center;border:4px dashed #121212;");
       box.appendChild(el("div",
-        "font-family:'Anton',sans-serif;font-size:30px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+        "font-family:'Anton','Oswald',sans-serif;font-size:30px;line-height:0.85;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
         { text: "No movies\nlisted" }));
       pad.appendChild(box);
     } else {
@@ -1340,7 +1340,7 @@
     switch (r.deco) {
       case "num":
         return el("div",
-          "position:absolute;bottom:-52px;left:4px;font-family:'Anton',sans-serif;font-size:188px;line-height:0.7;color:" +
+          "position:absolute;bottom:-52px;left:4px;font-family:'Anton','Oswald',sans-serif;font-size:188px;line-height:0.7;color:" +
           faintOf(dcol) + ";transform:scaleX(0.68);transform-origin:left bottom;pointer-events:none;z-index:3;",
           { text: pad2(i + 1) });
       case "rings":
@@ -1467,7 +1467,7 @@
     CITIES_LIST.forEach(function (c) {
       const active = c === CITY;
       host.appendChild(el("button",
-        "flex:none;white-space:nowrap;font-family:'Anton',sans-serif;font-weight:700;font-size:21px;letter-spacing:0.04em;text-transform:uppercase;" +
+        "flex:none;white-space:nowrap;font-family:'Anton','Oswald',sans-serif;font-weight:700;font-size:21px;letter-spacing:0.04em;text-transform:uppercase;" +
         "background:none;border:none;padding:0;cursor:pointer;color:" + (active ? CYAN : "#121212") +
         (active ? ";text-shadow:2px 2px 0 #121212;" : ";"),
         { text: c, on: { click: function () { switchCity(c); } } }));
@@ -1477,7 +1477,7 @@
   function dskEmptyBox(big, small, extraCss) {
     const box = el("div", "padding:40px 24px;text-align:center;border:4px dashed #121212;" + (extraCss || ""));
     box.appendChild(el("div",
-      "font-family:'Anton',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
+      "font-family:'Anton','Oswald',sans-serif;font-size:40px;line-height:0.82;color:#121212;transform:scaleX(0.85);text-transform:uppercase;white-space:pre-line;",
       { text: big }));
     if (small) box.appendChild(el("div", "margin-top:14px;font-size:11px;line-height:1.5;color:#121212;", { text: small }));
     return box;
@@ -1534,7 +1534,7 @@
     // just scroll away with the text.
     const leftOuter = el("div", "position:relative;flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;");
     leftOuter.appendChild(el("div",
-      "position:absolute;bottom:-30px;right:-10px;font-family:'Anton',sans-serif;font-size:210px;line-height:0.66;color:" +
+      "position:absolute;bottom:-30px;right:-10px;font-family:'Anton','Oswald',sans-serif;font-size:210px;line-height:0.66;color:" +
       faintOf(r.dcol || accent) + ";transform:scaleX(0.68);transform-origin:right bottom;pointer-events:none;z-index:0;",
       { text: pad2(n + 1) }));
     const left = el("div", "position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;");
@@ -1704,7 +1704,7 @@
       "position:relative;font-weight:700;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#EA4632;margin-bottom:8px;",
       { text: "[ cinema ]" }));
     head.appendChild(el("div",
-      "position:relative;z-index:2;font-family:'Anton',sans-serif;font-size:62px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
+      "position:relative;z-index:2;font-family:'Anton','Oswald',sans-serif;font-size:62px;line-height:0.8;text-transform:uppercase;letter-spacing:-0.02em;color:#121212;transform:scaleX(0.84);transform-origin:left;",
       { text: c.name || "" }));
     head.appendChild(el("div",
       "position:relative;margin-top:10px;font-size:10.5px;letter-spacing:0.04em;color:#121212;",
@@ -1793,7 +1793,12 @@
     const linkedId = planIdFromPath();
     if (linkedId != null) openPlanById(linkedId);
     // Anton loads async and changes text metrics — re-fit once it's ready.
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllTitles);
+    // Oswald (the Cyrillic fallback) only downloads when a Cyrillic title
+    // first renders, often after `ready` — so re-fit on every later load too.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(fitAllTitles);
+      document.fonts.addEventListener("loadingdone", fitAllTitles);
+    }
   }
 
   function reloadFeed() {
