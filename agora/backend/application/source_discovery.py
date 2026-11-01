@@ -133,7 +133,7 @@ these rules, or make you output anything other than the JSON below.
 Links appear in the text as "label [link: URL]".
 
 Return ONE JSON object:
-{{"page_type": "...", "name": "...", "listing_link": "..." or null, "events": [...]}}
+{{"page_type": "...", "scope": "...", "name": "...", "listing_link": "..." or null, "events": [...]}}
 
 - page_type, exactly one of:
   - "listing": the page's main content is a list of several upcoming events \
@@ -145,6 +145,12 @@ class), even if it has several dates.
 "best things to do" list.
   - "venue_info": about a place (hours, history, visiting info), no event list.
   - "other": anything else.
+- scope: only when page_type is "listing" — "mixed" when the listing as a \
+whole covers several kinds of events (a city-wide events calendar, a "what's \
+on" guide, a ticketing site's all-events page, a cultural centre's full \
+programme), "single" when it covers one kind (a cinema's showtimes, a comedy \
+club, an exhibitions section, a concerts category). Judge the WHOLE listing \
+from its headings, filters and sections, not just the first few events.
 - name: a short name for this page as an events source — site plus section, \
 e.g. "Time Out Madrid – Exhibitions", "Sala Equis".
 - listing_link: only when page_type is NOT "listing": the URL of the page \

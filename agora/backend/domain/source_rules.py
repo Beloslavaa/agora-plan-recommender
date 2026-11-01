@@ -139,9 +139,13 @@ def judge_sample(sample: dict, url: str, city: str, city_countries: dict[str, st
         name=str(sample.get("name") or "").strip()[:80] or url_key(url)[0],
         good_events=good,
         category=cats.most_common(1)[0][0],
-        # Sampled events in different categories → a multi-category page,
-        # whose plans mustn't all be stamped with one (see FixedSource).
-        is_general_listing=len(cats) > 1,
+        # A multi-category page's plans mustn't all be stamped with one
+        # category (see FixedSource). The sampled events spanning several
+        # categories proves it; the LLM's read of the whole listing ("scope")
+        # catches the rest — a city-wide calendar whose first 3 events
+        # happened to be concerts was otherwise stamped music_concerts for
+        # good (seen on visitsofia.bg, bilet.bg, esmadrid's calendars).
+        is_general_listing=len(cats) > 1 or sample.get("scope") == "mixed",
     )
 
 
