@@ -29,6 +29,13 @@ _COUNTRY_NAMES: dict[str, str] = {
     "venezuela": "VE",
     "philippines": "PH", "filipinas": "PH",
     "bulgaria": "BG", "българия": "BG", "bulgarie": "BG",
+    # Bulgarian ticketing sites list events across the Balkans too.
+    "cyprus": "CY", "кипър": "CY", "chipre": "CY",
+    "greece": "GR", "гърция": "GR", "grecia": "GR",
+    "romania": "RO", "румъния": "RO", "rumanía": "RO", "rumania": "RO",
+    "serbia": "RS", "сърбия": "RS",
+    "turkey": "TR", "türkiye": "TR", "турция": "TR", "turquía": "TR",
+    "north macedonia": "MK", "северна македония": "MK", "македония": "MK",
 }
 
 # Postal code formats, keyed by the EXPECTED country. Only used to spot a code
@@ -83,6 +90,39 @@ def language_name(code: str) -> str:
 
 def tickets_word(language: str | None) -> str:
     return _TICKETS_WORD.get(language or "en", "tickets")
+
+
+def country_in_location(location: str | None) -> str | None:
+    """The country a free-text location ends with ("…, Limassol, Cyprus" →
+    "CY"), or None. Only the LAST comma segment is read, where addresses put
+    the country — a country name earlier on is usually a venue's name
+    ("Casa Argentina", "Café México"), not where it is."""
+    if not location:
+        return None
+    last = location.rsplit(",", 1)[-1].strip(" .")
+    return _COUNTRY_NAMES.get(last.lower())
+
+
+# A venue's postal code inside free-text location, recognised only in
+# address position: right before the town name ("9000 Варна", "28004
+# Madrid") or, in the US, right after the state ("New York, NY 10001").
+# That context keeps street numbers and years ("бул. Княз Борис I 115",
+# "Culturama 2026") from being read as one.
+_POSTAL_IN_TEXT: dict[str, re.Pattern] = {
+    "ES": re.compile(r"(?<!\d)(\d{5})\s+[^\W\d_]"),
+    "BG": re.compile(r"(?<!\d)(\d{4})\s+[^\W\d_]"),
+    "US": re.compile(r"\b[A-Z]{2}\s+(\d{5})(?:-\d{4})?\b"),
+}
+
+
+def postal_code_in_text(text: str | None, country: str) -> str | None:
+    """The last address-position postal code in *text* for *country*'s
+    format, or None (no text, no known format, or no match)."""
+    pattern = _POSTAL_IN_TEXT.get(country)
+    if not pattern or not text:
+        return None
+    found = pattern.findall(text)
+    return found[-1] if found else None
 
 
 def postal_code_fits(postal_code: str | None, country: str) -> bool | None:

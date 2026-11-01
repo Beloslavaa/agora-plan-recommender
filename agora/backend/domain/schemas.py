@@ -107,6 +107,10 @@ class City(BaseModel):
     # ISO 639-1 code of the language locals search in — discovery writes one
     # query in it and one in English (see source_discovery.QUERY_SYSTEM).
     language: str = "en"
+    # Postal code prefixes of the area this city's plans may be in — a plan
+    # whose venue postal code starts with none of them is in another town
+    # (domain/validation.py). Empty = no postal check.
+    postal_prefixes: list[str] = []
 
 
 class CardSelectors(BaseModel):

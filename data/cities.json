@@ -1,6 +1,6 @@
 [
-  {"name": "Madrid", "country": "Spain", "language": "es"},
-  {"name": "Barcelona", "country": "Spain", "language": "es"},
-  {"name": "Sofia", "country": "Bulgaria", "language": "bg"},
-  {"name": "New York", "country": "United States", "language": "en"}
+  {"name": "Madrid", "country": "Spain", "language": "es", "postal_prefixes": ["28"]},
+  {"name": "Barcelona", "country": "Spain", "language": "es", "postal_prefixes": ["08"]},
+  {"name": "Sofia", "country": "Bulgaria", "language": "bg", "postal_prefixes": ["1"]},
+  {"name": "New York", "country": "United States", "language": "en", "postal_prefixes": ["100", "101", "102", "103", "104", "110", "111", "112", "113", "114", "116"]}
 ]

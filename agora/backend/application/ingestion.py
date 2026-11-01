@@ -123,7 +123,8 @@ async def run_fixed_pipeline(
     # city) span cities under one URL scraped for only one of them — correct
     # the ones whose actual location says otherwise before validating.
     correct_city_from_location(plans, city, store.load_cities())
-    return validate_and_filter(plans, store.load_city_countries())
+    prefixes = {name: c.postal_prefixes for name, c in store.load_city_settings().items()}
+    return validate_and_filter(plans, store.load_city_countries(), prefixes)
 
 
 async def run_one_city(

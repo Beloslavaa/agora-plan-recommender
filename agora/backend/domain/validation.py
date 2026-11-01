@@ -3,7 +3,14 @@ from collections import defaultdict
 from datetime import date, timedelta
 from urllib.parse import unquote, urlparse
 
-from agora.backend.domain.countries import country_code, postal_code_fits
+import re
+
+from agora.backend.domain.countries import (
+    country_code,
+    country_in_location,
+    postal_code_fits,
+    postal_code_in_text,
+)
 from agora.backend.domain.schemas import PlanData
 from agora.backend.domain.url_safety import is_placeholder_image
 
@@ -40,6 +47,11 @@ def _wrong_country(plan: PlanData, expected_country: str | None) -> str | None:
     stated = country_code(plan.country)
     if stated and stated != expected:
         return f"country {plan.country!r}, expected {expected}"
+    # Selector-read plans have no country field, only the location text —
+    # e.g. bilet.bg's calendar lists races in Limassol, Cyprus.
+    named = country_in_location(plan.location)
+    if named and named != expected:
+        return f"location ends in country {named}, expected {expected}"
     if not stated and postal_code_fits(plan.postal_code, expected) is False:
         return f"postal code {plan.postal_code!r} isn't a {expected} one"
     return None
@@ -76,7 +88,30 @@ def _is_boilerplate(text: str | None) -> bool:
     return text.strip().lower() in _BOILERPLATE_TITLES
 
 
-def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) -> tuple[bool, str | None]:
+def outside_city(
+    location: str | None, postal_code: str | None, city: str,
+    expected_country: str | None, postal_prefixes: list[str] | None,
+) -> str | None:
+    """Why a plan is in another town than *city*, or None. Rejects only on a
+    venue postal code outside the city's area (data/cities.json
+    postal_prefixes) — Sofia's are 1xxx, so "9000 Варна" is out. No postal
+    code, or no prefixes configured → keep."""
+    expected = country_code(expected_country)
+    if not expected or not postal_prefixes:
+        return None
+    code = postal_code if postal_code and re.search(r"\d", postal_code) else None
+    code = code or postal_code_in_text(location, expected)
+    digits = re.sub(r"\D", "", code or "")
+    if digits and not digits.startswith(tuple(postal_prefixes)):
+        return f"postal code {code} is outside {city}"
+    return None
+
+
+def validate_plan(
+    plan: PlanData,
+    city_countries: dict[str, str] | None = None,
+    city_postal_prefixes: dict[str, list[str]] | None = None,
+) -> tuple[bool, str | None]:
     # Computed per call so validation stays correct in a long-running process.
     today = date.today()
     issues: list[str] = []
@@ -102,6 +137,11 @@ def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) 
         issues.append("city missing (ingestion pipeline bug, not scraped data)")
     elif wrong := _wrong_country(plan, (city_countries or {}).get(plan.city)):
         issues.append(f"wrong country: {wrong} (location '{plan.location}')")
+    elif other_town := outside_city(
+        plan.location, plan.postal_code, plan.city,
+        (city_countries or {}).get(plan.city), (city_postal_prefixes or {}).get(plan.city),
+    ):
+        issues.append(f"wrong town: {other_town} (location '{plan.location}')")
 
     # ── Ticket URL ───────────────────────────────
     # Both fields are optional everywhere else (nullable on PlanData, and
@@ -149,7 +189,11 @@ def validate_plan(plan: PlanData, city_countries: dict[str, str] | None = None) 
     return True, None
 
 
-def validate_and_filter(plans: list[PlanData], city_countries: dict[str, str] | None = None) -> list[PlanData]:
+def validate_and_filter(
+    plans: list[PlanData],
+    city_countries: dict[str, str] | None = None,
+    city_postal_prefixes: dict[str, list[str]] | None = None,
+) -> list[PlanData]:
     valid: list[PlanData] = []
     seen: set[tuple[str, str, object]] = set()
 
@@ -164,7 +208,7 @@ def validate_and_filter(plans: list[PlanData], city_countries: dict[str, str] | 
             continue
         seen.add(key)
 
-        ok, reason = validate_plan(plan, city_countries)
+        ok, reason = validate_plan(plan, city_countries, city_postal_prefixes)
         if ok:
             valid.append(plan)
         else:
