@@ -27,7 +27,7 @@ from agora.backend.application.ports import (
 from agora.backend.domain.countries import search_country, tickets_word
 from agora.backend.domain.event_parsing import extract_meta_description, extract_og_image, extract_ticket_url
 from agora.backend.domain.schemas import CATEGORY_LABELS, City, PlanCategory, PlanData
-from agora.backend.domain.url_safety import effective_base_url, normalise_url
+from agora.backend.domain.url_safety import effective_base_url, is_placeholder_image, normalise_url
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +177,15 @@ async def _search_url(plan: PlanData, search: SearchProvider, city: City | None 
     return None
 
 
+def _lacks_image(p: PlanData) -> bool:
+    """No image, or only a stored placeholder (e.g. esmadrid's
+    lazy-placeholder.png, saved before scrapers learned to read data-src).
+    Counting the placeholder as an image meant enrichment never fetched the
+    event's own page for a real one — and a plan that has dropped off its
+    listing never gets re-scraped, so nothing else would ever replace it."""
+    return not p.image_url or is_placeholder_image(p.image_url)
+
+
 def _needs_enrichment(p: PlanData) -> bool:
     if not p.short_title:
         return True
@@ -185,7 +194,7 @@ def _needs_enrichment(p: PlanData) -> bool:
     # url known but image, ticket or description still missing (or the
     # description is just a thin listing-page category tag) → own-page
     # scrape can help
-    if p.url and (not p.image_url or not p.ticket_url or _is_thin_description(p.description)):
+    if p.url and (_lacks_image(p) or not p.ticket_url or _is_thin_description(p.description)):
         return True
     return False
 
@@ -217,7 +226,7 @@ async def enrich_plan(
             logger.info("  ✓ URL for %s: %s", plan.title[:40], url)
 
     # ── 3. Own-page scrape: og:image + ticket link + description ─
-    if plan.url and (not plan.image_url or not plan.ticket_url or _is_thin_description(plan.description)):
+    if plan.url and (_lacks_image(plan) or not plan.ticket_url or _is_thin_description(plan.description)):
         try:
             html = await fetcher.fetch_page(plan.url)
         except Exception as e:
@@ -232,7 +241,7 @@ async def enrich_plan(
             # image URLs for that whole source).
             resolve_base = effective_base_url(html, plan.url)
 
-            if not plan.image_url:
+            if _lacks_image(plan):
                 og = extract_og_image(html, base_url=resolve_base)
                 if og:
                     plan.image_url = og
