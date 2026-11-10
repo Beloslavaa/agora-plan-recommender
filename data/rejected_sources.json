@@ -1,0 +1,2362 @@
+[
+  {
+    "url": "http://nyc-shows.brooklynvegan.com/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "http://pop.jccm.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "http://www.cines-verdi.com/barcelona/ca/pelicula/el-hilo-invisible-vose/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aktitudeceramics.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aktitudeceramics.com/en",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aktitudeceramics.com/en/collections/clases",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://andrewprokos.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://andrewprokos.com/photography-articles/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://andrewprokos.com/photography-articles/top-new-york-photography-museums/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aperture.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aperture.org/editorial/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aperture.org/editorial/14-exhibitions-to-see-this-fall/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://app.gopopup.com/de/search/Madrid",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://app.gopopup.com/es/search/madrid",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arteneablog.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arteneablog.com/2025/09/16/las-exposiciones-de-arte-imprescindibles-para-otono-invierno-en-madrid-este-2025/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arteneablog.com/category/exposiciones/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artguide.artforum.com/exhibitions/madrid/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artguide.artforum.com/exhibitions/new-york/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artguide.artforum.com/venue/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artguide.artforum.com/venue/barcelona-gallery-weekend-4148/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artguide.artforum.com/venues/barcelona/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arthouseny.org/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arthouseny.org/ahny-programs",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arthouseny.org/cinemas",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://arthouseny.org/film-forum",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://articketbcn.org/es/la-nit-dels-museus-articket/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://articketbcn.org/les-grans-exposicions-de-2026-a-barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://articketbcn.org/les-grans-exposicions-de-lestiu-a-barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artphotobcn.com/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artphotobcn.com/en/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artphotobcn.com/en/home/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://artsofia.bg/bg/events/?page=569",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://as.com/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://as.com/meristation/series/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://as.com/meristation/series/que-ver-esta-semana-del-9-al-15-de-noviembre-en-netflix-disney-prime-video-hbo-max-y-todas-las-plataformas-f202611-n/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://aws-ami.yelmocines.es/cartelera/barcelona",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://barcelonagalleryweekend.com/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://barcelonagalleryweekend.com/expo.php?lang=cat&id=186",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://barcelonahacks.com/barcelona-events/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://barcelonaurbana.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://barcelonaurbana.com/en/blog/barcelona-kids-workshops-guide",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bg.kinoafisha.info/sofia/cinema/8328114/map/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bg.kinoafisha.info/sofia/movies/8386816/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bilet.bg/bg/search",
+    "reason": "good listing, but can't be saved: file, search, tag, news or blog URL",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blantonmuseum.org/permanent-collection/exhibitions/",
+    "reason": "0/3 sampled events good: 'Shadows on Stone: Portraits of Colonial ': not in Sofia; 'Haas Brothers: Uncanny Valley': not in Sofia; 'The European Avant-Garde: From Impressio': not in Sofia",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blog.apartmentbarcelona.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blog.apartmentbarcelona.com/barcelonas-top-8-workshops/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blog.holabarcelona.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blog.holabarcelona.com/es/love-barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://blog.holabarcelona.com/es/love-barcelona/top-5-cines-vose-en-barcelona-donde-ver-cine-en-version-original",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/1728/06/15/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/1813/06/22/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/2181/08/26/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/2214/06/27/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/2288/06/11/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/2293/01/26/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://bulgariamall.bg/en/event/2357/06/26/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://caixaforum.org/es/barcelona/actividades",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://calendar.fashion.bg/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://capital.es/lifestyle/afteroffice/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://capital.es/lifestyle/afteroffice/los-mejores-planes-culturales-para-disfrutar-de-madrid-este-fin-de-semana/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://capital.es/lifestyle/afteroffice/los-mejores-planes-culturales-para-disfrutar-de-madrid-este-fin-de-semana/92006/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cartelera.elpais.com/",
+    "reason": "0/3 sampled events good: 'Sacamantecas': not in Barcelona; 'Ramayana: El nacimiento de una leyenda': not in Barcelona; 'George Michael: The Faith Tour': not in Barcelona",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cartelera.elpais.com/cines/barcelona/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cartelera.elpais.com/cines/barcelona/barcelona/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://catshostels.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://catshostels.com/summer-cinemas-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ccmadridsur.es/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ccmadridsur.es/eventos",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ccmadridsur.es/eventos/talleres-creativos-familiares-gratuitos-en-cc-madrid-sur-marzo-2025",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ci.ovationtix.com/209/production/1194215",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cineland.bg/bg/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cineland.bg/bg/bulgariamall/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cineland.bg/bg/program/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cineland.bg/en/cinema-daily-program/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cinesembajadores.es/pelicula/elegir-mi-vida-vose/?ciudad=madrid",
+    "reason": "fetch failed: ConnectError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cinesembajadores.es/pelicula/la-odisea-vose/?ciudad=madrid",
+    "reason": "fetch failed: ConnectError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://city-confidential.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://city-confidential.com/planes-culturales-en-madrid-2025",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://city-confidential.com/planes-insolitos",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://classbento.com/family-pasta-making-class-new-york-city?srsltid=AYCX9vI3VQUFbTyoq6jTPmljNcLn610nWdn7B6qidDEZ5zPTWdFML-U2",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cocusocial.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cocusocial.com/newevent/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://cocusocial.com/newevent/New-York-City_Italian-Date-Night%3A-Fresh-Handmade-Pasta_Nov-2",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://codeplay.bg/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://codeplay.bg/media-category/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://codeplay.bg/media-category/events-c/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://coursehorse.com/nyc/classes/life-skills/diy",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://crashmusic.es/",
+    "reason": "1/3 sampled events good: 'TEMPLES': not in Madrid; 'NUDO SUR': not in Madrid",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://culturama.art/en/events.html",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://dice.fm/browse/new_york-5bbf4db0f06331478e9b2c59/music/gig?lng=en-US",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://dle.rae.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://dle.rae.es/pop",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://domnakinoto.com/programing/index?next_week=1",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://dondego.es/madrid/event/ferias-le-chic-pop-up/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://drafthouse.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://drafthouse.com/nyc?srsltid=AYCX9vJJeZolq5C9G6LZOdBeT09lcJs2IzZEazTxSooCkX--xOoQYJrR",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://en.giftcometrue.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://en.giftcometrue.com/collections/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://en.giftcometrue.com/collections/experiences-in-sofia",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://etheriamagazine.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://etheriamagazine.com/articulos/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://etheriamagazine.com/articulos/10-exposiciones-en-madrid-para-otono-2020/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://events.codefashion.bg/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://events.musicofourdesire.com/events/Sofia",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://eventsupport.bg/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://eventsupport.bg/ItemPage/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://eventsupport.bg/ItemPage/2468097",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://exposicionesquehayenmadrid.wordpress.com/category/exposiciones-en-madrid/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://filmfreeway.com/NewYorkFilmWeek",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://fundacionmusicforall.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://fundacionmusicforall.org/actividades/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://funtalk.es/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://funtalk.es/en/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://funtalk.es/en/english-workshops-for-adults/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://guides.bloombergconnects.org/en-US/guide/artDealersAssociationOfAmerica/event/391cb37c-5102-4af5-915b-6b18f86a7a0b",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://hera.nyc/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://hera.nyc/blogs/news/emerging-designers-at-new-york-fashion-week-fall-2025",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://homecookingny.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://inbalcabiri.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://inbalcabiri.com/en/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://inbalcabiri.com/en/madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://irbarcelona.org/entertainment/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://irbarcelona.org/entertainment/live-music-concerts-barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://irbarcelona.org/temporary-exhibitions-barcelona/",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://kinepolis.es/content/vose-version-original-subtitulada/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://kinepolis.es/movies/detail/36661/HO00006424/0/vose-turno-de-noche/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://kraftstories.com/pages/craft-classes-nyc?srsltid=AYCX9vJZxJU25nj-tFhCG8NZ8xk2NtA0pDMtkf08EQebgo0HEfqgyhMf",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://luma.com/vg2ib9sn",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ma.to/event/chelsea-gallery-openings-27-aug-2026",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridbullfighting.com/blog/unique-things-to-do-in-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridnoticia.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridnoticia.com/agenda-cultural-de-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridnoticia.com/madrid-hoy/noticias-de-madrid/cultura-y-eventos/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridsecreto.co/en/alternative-cinemas-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridsecreto.co/en/cinema/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://madridsecreto.co/en/free-ceramics-fair-arrives-in-downtown-madrid-for-san-isidro-few-people-know-about-it/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://mamapottery.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://martaceramica.com/en/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://martaceramica.com/en/pottery-classes-madrid/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://martaceramica.com/en/wheel-throwing-madrid/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://mcasd.org/exhibitions",
+    "reason": "0/3 sampled events good: 'Visiones Nocturnas: Queer Nightlife in C': wrong country: country 'US', expected BG (location 'Museum of Contemporary Art San Diego, 700 Prospect St. La Jolla, CA 92037'); 'Collection Galleries': wrong country: country 'US', expected BG (location 'Museum of Contemporary Art San Diego, 700 Prospect St. La Jolla, CA 92037'); 'Sculpture Garden': wrong country: country 'US', expected BG (location 'Museum of Contemporary Art San Diego, 700 Prospect St. La Jolla, CA 92037')",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://mediahub.fundacionlacaixa.org/en/culture/exhibitions",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://metropoliabierta.elespanol.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://metropoliabierta.elespanol.com/temas/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://metropoliabierta.elespanol.com/temas/mercadillos_barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://museumnight.bg/calendar/sofia-galleries-2026/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.amazon.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.apple.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.apple.com/es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.apple.com/es/new",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.apple.com/us/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://music.apple.com/us/new",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://newmusicusa.org/newmusicbox/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://news.artnet.com/art-world/5-photography-shows-to-see-in-new-york-2694985",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://newyork.fotografiska.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://newyork.fotografiska.com/en/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://newyork.fotografiska.com/en/street-photography",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://newyorkinternationalfilmawards.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://nmaahc.si.edu/explore/exhibitions",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://nyicff.org/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://nysiff.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://occ.sn/vbtwjdxk",
+    "reason": "0/3 sampled events good: 'How to Salad (Fall Edition)': not in New York; 'How to Make Great Soups': not in New York; 'Introduction to Indian Cooking': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://open.spotify.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://open.spotify.com/album/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://open.spotify.com/album/0fSfkmx0tdPqFYkJuNX74a",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://open.spotify.com/track/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://open.spotify.com/track/0Jc8qF1mUPo1A96HE9QxZz",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://opencallforartists.com/explore",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://opencallforartists.com/listing/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://opencallforartists.com/listing/78",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://opensofia.org/events/",
+    "reason": "fetch failed: RuntimeError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://phe.es/exposiciones/",
+    "reason": "1/3 sampled events good: 'XIX Premio de Fotografía Fundación ENAIR': not in Madrid; 'Estela de Castro: Persona': not in Madrid",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://planesfamiliares.com/actividades-culturales/talleres/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://plataformadepacientes.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://poble-espanyol.com/en/activities/concerts/",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://poble-espanyol.com/en/artesania-a-barcelona/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pocallum.cat/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pocallum.cat/en/noticies/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pocallum.cat/en/noticies/photo-exhibitions-spaces-barcelona-guide/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pools.events/",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pools.events/p/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pools.events/p/sebas-jya69zy6/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://popupsmadrid.es/calendario-pop-up-madrid-2/action~agenda/page_offset~1/time_limit~1446073200/request_format~html/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://popupsmadrid.es/evento/pop-up-moda-sostenible-abril-2019/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://programa.sofiastage.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pulsd.com/new-york/fashion?srsltid=AYCX9vIB_KJ-9YM8-7gCmx5S1EPCv4YTg-1cHK_2_f-7V2g7B5H9DAa3",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://pulsd.com/new-york/sample-sales?srsltid=AYCX9vL7JejeC2wdO8Se1-yZ1fMIOVSbSuHz5USU9ec0nm5ngLNfEQmu",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ra.co/events/2142287",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://ra.co/events/2382575",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://recreational.ice.edu/cooking-classes",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://recreational.ice.edu/courses/pasta-making-class/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://recreational.ice.edu/courses/pasta-making-class/13664",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://rentfashion.bg/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://rentfashion.bg/events/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://rentfashion.bg/events/calendar/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://revistayoung.es/agenda/barcelona/exposiciones/?cuando=hoy",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://seatgeek.com/concert-tickets/indie",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://secretnyc.co/11-nycs-best-crafts-classes-unleash-inner-maker/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sghg.bg/exhibition/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sghg.bg/exhibitions/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sghg.bg/exhibitions/%D0%BF%D1%80%D0%B5%D0%BA%D0%BE%D1%81%D1%8F%D0%B2%D0%B0%D0%BD%D0%B5crossings-%D0%B1%D0%B8%D0%B9%D0%BA%D0%B5-%D0%B4%D0%B5%D0%BF%D0%BE%D1%80%D1%82%D0%B5%D1%80/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://simonyvarela.com/pages/events-pop-ups?srsltid=AYCX9vKaKJneGJRSiQQYsrhypztWWbYZea7fhJYl1OcgzhiuFYh_FmUJ",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://simple-events.eu/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sofia-art-galleries.com/cat/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sofia-art-galleries.com/cat/hudozhestveni-galerii-v-sofiya/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sofia-art-galleries.com/hudozhestveni-galerii-v-sofiya/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sofiaartfair.art/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sosofia.com/en/events/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sosofia.com/en/places/category/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sosofia.com/en/places/category/contemporary-art/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://spainfordesign.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://spainfordesign.com/2024/04/workshops-in-madrid-on-ceramic-making/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://sxsw.com/exhibitions/",
+    "reason": "0/3 sampled events good: 'SXSW Expo': wrong country: country 'US', expected BG (location 'Fairmont Congressional, Austin, TX'); 'Flatstock': wrong country: country 'US', expected BG (location 'Marriott Moontower, Austin, TX'); 'XR Experience': wrong country: country 'US', expected BG (location 'Fairmont Manchester, Austin, TX')",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://system76.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://system76.com/pop?srsltid=AYCX9vIhq0FmRshgpunwv0ZE2Jd5p6jVUliElL7PdibdzmJbyhQhHpcd",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://theexhibitionsgroup.org.uk/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://theexhibitionsgroup.org.uk/events/",
+    "reason": "0/3 sampled events good: 'Copyright Essentials with Naomi Korn Ass': not in Sofia; '2026 Online Share Session': not in Sofia; 'Exhibition Programming for Impact': not in Sofia",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://thepark.businesspark-sofia.com/bg/events/art",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://thepotterymadrid.es/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://thisisbarcelona.com/agenda",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://thisisbarcelona.com/es/agenda",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://tickets.paysera.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://tickets.paysera.com/en-BG/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://tickets.paysera.com/en-BG/top-events",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0/%D0%B8%D0%B7%D0%BB%D0%BE%D0%B6%D0%B1%D0%B8/day.listevents/2024/06/19/-",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0/day.listevents/2026/10/02/-",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0/month.calendar/2025/04/22/-",
+    "reason": "fetch failed: RuntimeError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/en/events-calendar",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.bg/en/events-calendar/day.listevents/2026/07/15/145%7C146%7C147%7C148%7C149%7C150%7C151%7C152%7C153%7C154%7C155%7C156",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.info-sofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0/%D0%B8%D0%B7%D0%BB%D0%BE%D0%B6%D0%B1%D0%B8/month.calendar/2025/04/08/-",
+    "reason": "fetch failed: RuntimeError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.info-sofia.bg/bg/%D0%BA%D0%B0%D0%BB%D0%B5%D0%BD%D0%B4%D0%B0%D1%80-%D0%BD%D0%B0-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F%D1%82%D0%B0/%D0%B8%D0%B7%D0%BB%D0%BE%D0%B6%D0%B1%D0%B8/month.calendar/2026/03/04/-",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://visitsofia.info-sofia.bg/en/events-calendar/cat.listevents/2026/10/01/-",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://whatsplaying.nyc/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://whichmuseum.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://whichmuseum.com/place/sofia-2505/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://whichmuseum.com/place/sofia-2505/t-contemporary-art",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://wnyc.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://wnyc.org/story/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://wnyc.org/story/museum-and-gallery-shows-to-catch-in-nyc-this-fall",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.65ymas.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.65ymas.com/sociedad/cultura",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.65ymas.com/sociedad/cultura/mejores-exposiciones-fotografia-barcelona_5832_102.html",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.academyofartbarcelona.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.academyofartbarcelona.com/en/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.academyofartbarcelona.com/en/courses/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.amny.com/news/events-135/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arenasdebarcelona.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arenasdebarcelona.com/ES/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arenasdebarcelona.com/ES/cartelera-de-cine",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.art-madrid.com/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.art-madrid.com/en/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.art-madrid.com/en/visitor-information",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arteinformado.com/agenda/exposiciones/exposiciones-de-fotografia-en-barcelona-espana-p4072_4_0_3/294",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arteinformado.com/agenda/exposiciones/exposiciones-de-fotografia-en-barcelona-espana-p4072_4_0_3/51",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.arteinformado.com/agenda/f/barcelona-foto-biennale-217433",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artemadrid.com/agenda/?date=1-2029",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artnet.com/events/new-york/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artrabbit.com/events/artrabbit-winter-gallery-tour-2025",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artsy.net/shows/madrid-spain?page=2",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artsy.net/shows/new-york-ny-usa",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.artsy.net/shows/sofia-bulgaria",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atlasobscura.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atlasobscura.com/things-to-do/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atlasobscura.com/things-to-do/madrid-spain",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atrapalo.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atrapalo.com/actividades/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.atrapalo.com/actividades/taller-de-pintura-en-ceramica-para-toda-la-familia-con-bebida-incluida_e4932459/?srsltid=AYCX9vI6n2U7qfY0FZdgMmBjSrsaPASNhaZ1oWGRhYwbe3zVeoy73vfC",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.auntjakesnyc.com/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.auntjakesnyc.com/nyc-location",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.bandsintown.com/c/barcelona-spain/today/genre/all-genres",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.bandsintown.com/c/brooklyn-ny",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.bandsintown.com/c/new-york-ny/all-dates/genre/alternative",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.bandsintown.com/c/sofia-bulgaria/all-dates/genre/pop",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.bandsintown.com/c/sofia-bulgaria/today/genre/all-genres",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona-tourist-guide.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona-tourist-guide.com/es/entretenimiento/cines/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona-tourist-guide.com/es/entretenimiento/cines/original-idioma-cine-barcelona.html",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/barcelonacultura/sites/cartelera/widget/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/barcelonacultura/sites/cartelera/widget/index.php?lang=ca&color=5d55f0",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/lanitdelsmuseus/es#programa",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/lanitdelsmuseus/es/programa/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelona.cat/lanitdelsmuseus/es/programa/fundacio-foto-colectania",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelonaobertura.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelonaobertura.com/2023/01/foto-colectania-amantes-de-la-fotografia-contemporanea-y-clasica/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.barcelonaturisme.com/wv3/frt/page/4955/marches-en-plein-air.html",
+    "reason": "fetch failed: RemoteProtocolError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.biteunite.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.biteunite.com/blog/where-to-take-a-fresh-pasta-making-class-in-nyc",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.biteunite.com/cooking-classes/nyc",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.boqueria.barcelona/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.boqueria.barcelona/gastronomia-na-9-es?pag=5",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brooklynvegan.com/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brownpapertickets.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brownpapertickets.com/event/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brownpapertickets.com/event/3431062",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brownpapertickets.com/event/3574573",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.brownpapertickets.com/producer/26315",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.casademexico.es/exposiciones-actuales-en-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.catalunyapress.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.catalunyapress.es/texto-diario/mostrar/3033212/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.catalunyapress.es/texto-diario/mostrar/3033212/plan-fin-semana-estos-mejores-mercadillos-ropa-barcelona",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.centrocentro.org/en/public-program",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.centrocentro.org/en/public-programme/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.centrocentro.org/en/public-programme/cibeles-de-cine",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.chicmi.com/new-york/online-sample-sales/",
+    "reason": "0/3 sampled events good: 'MYLA - The Heritage Collections - Online': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.cinemacity.bg/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.cinemacity.bg/home/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.cinemacity.bg/imax",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.circulobellasartes.com/en/humanidades/visita-guiada-a-las-exposiciones-de-photoespana-2026/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.citylifemadrid.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.citylifemadrid.com/activities/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.citylifemadrid.com/movie-theatres-in-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.cityswipe.es/barcelona/exposiciones",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.clocate.com/conferences-in+new-york-city/Y2ktMTk5MTM=/h/h/",
+    "reason": "0/3 sampled events good: 'EDTECH WORLD FORUM 2026': not in New York; 'Konseye Career Impact Summit': not in New York; 'Digital Health Congress 2026': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.codetickets.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.codetickets.com/portal/cinemapendent/online/35728/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.codetickets.com/portal/cinemapendent/online/35728/92034?lang=en_EN",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.comunidad.madrid/actividades?f%5B0%5D=tipo_actividad%3AEncuentro",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.comunidad.madrid/cultura/amantes-fotografia",
+    "reason": "0/3 sampled events good: 'Exposición: Marisa Flórez. Un tiempo par': not in Madrid; 'Exposición «Madrid en construcción, 1940': not in Madrid; 'Exposición \"Chema Madoz. Manual de un di': not in Madrid",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.craftnightnyc.com/workshops",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.danzigergallery.com/",
+    "reason": "0/3 sampled events good: 'Oliver Wasow: Portraits': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.entase.com/explore/bg/sofia/cinema",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.entase.com/explore/bg/sofia?lc=en-gb",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.entradas.com/city/barcelona-371/",
+    "reason": "fetch failed: ReadTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.escuelasuperiordemusicareinasofia.es/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.escuelasuperiordemusicareinasofia.es/en/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.escuelasuperiordemusicareinasofia.es/en/agenda/",
+    "reason": "1/3 sampled events good: 'Fun Classics “Occident”: The Grumpy Nutc': repeats another sampled event; 'Fun Classics “Occident”: The Grumpy Nutc': repeats another sampled event",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.esmadrid.com/en/films-their-original-language",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.esmadrid.com/en/madrid-art-galleries",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.esmadrid.com/experiencias-typical-spanish",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.esmadrid.com/planes-madrid",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.ca/d/bulgaria/sofia-bulgaria/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.co.uk/d/spain--barcelona/music--events--this-weekend/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/bulgaria--%D1%81%D0%BE%D1%84%D0%B8%D1%8F/js-talks/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/bulgaria--%D1%81%D0%BE%D1%84%D0%B8%D1%8F/workshop/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/ny--new-york/arts--tour",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/ny--new-york/fashion",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/ny--new-york/film-festivals/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/spain--barcelona/social/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/d/spain--madrid/events--this-week/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/e/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/e/chelsea-130-pm-april-4-gallery-tour-tickets-1984199800015",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.com/e/design-nyfw-emerging-brands-runway-event-tickets-1992018894136",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.dk/d/bulgaria/sofia-bulgaria/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.es/d/spain--madrid/pop-up/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.fi/d/spain--barcelona/events/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventbrite.fi/d/spain--madrid/events/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventim.bg/artist/sofiyska-filharmoniya/",
+    "reason": "fetch failed: ReadTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.eventim.bg/en/city/%D1%81%D0%BE%D1%84%D0%B8%D1%8F-7510/next-week/",
+    "reason": "fetch failed: ReadTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.filmbooster.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.filmbooster.es/en-gb/cinema/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.filmbooster.es/en-gb/cinema/1102-barcelona/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.finestresullarte.info/en/city/madrid",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.fundacionpsv.org/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.fundacionpsv.org/worldpressphotobarcelona/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.fundacionpsv.org/worldpressphotobarcelona/en/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.galleriesnow.net/",
+    "reason": "fetch failed: ConnectTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.galleriesnow.net/exhibitions/new-york-chelsea/",
+    "reason": "fetch failed: ConnectTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.garysguide.com/events/s1b4qkz/NY-Fashion-Week-Made-With-Intention",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.getyourguide.com/en-gb/madrid-l46/museums-exhibitions-tc132/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.getyourguide.com/sofia-l158/workshops-classes-tc79/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.giftory.com/collections/new-york-arts-crafts?srsltid=AYCX9vKg6ddhN_gGguOiiYU8KeX0_ejF1FGURY4Kylp4zXuzV4VhA1_x",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.girlsofsofia.com/en/events/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.granviewapartments.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.granviewapartments.com/en/we-offer/discover-madrid/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.granviewapartments.com/en/we-offer/discover-madrid/cultural-exhibitions-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.groupon.es/deals/clay-capsule",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.guggenheim-bilbao.eus/en/exhibitions",
+    "reason": "0/3 sampled events good: 'Steve MᶜQueen: 66–76–26': not in Sofia; 'Ever is Over All. Pipilotti Rist': not in Sofia; 'Works from the Guggenheim Museum Bilbao ': not in Sofia",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.guggenheim.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.guggenheim.org/exhibition",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.guggenheim.org/exhibitions",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.homofaber.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.homofaber.com/en/destinations/cities/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.homofaber.com/en/destinations/cities/barcelona",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.hoybarcelona.app/planes/clases-de-ceramica-y-vino-en-barcelona-recrea-taller-de-ceramica-barcelona/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.hoybarcelona.app/planes/taller-de-ceramica-familiar-para-todos-los-niveles-y-edades-waku-taller-de-ceramica-barcelona/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.ica-sofia.org/en/component/k2/itemlist/category/26:home",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.insidefashiondesign.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.insidefashiondesign.com/post/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.insidefashiondesign.com/post/independent-designers-reshaping-nyfw-emerging-fashion-designers-to-watch",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.inyfilmfest.com/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.jerez.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.jerez.es/webs-municipales/inclusion-social/programas-y-servicios",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.jerez.es/webs-municipales/inclusion-social/programas-y-servicios/semana-de-las-personas-mayores",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.kinoarena.com/bg/cinema/kino-arena-the-mall",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.lacentral.com/agenda/madrid/otros",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.lavanguardia.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.lavanguardia.com/qf/",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.lavanguardia.com/qf/artes",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.littlemakers.es/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.littlemakers.es/madrid",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.littlemakers.es/talleres-madrid",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.livenation.es/en",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.loc.gov/exhibits/",
+    "reason": "0/3 sampled events good: \"The Declaration's Promise: A Revolutiona\": wrong country: country 'US', expected BG (location 'David M. Rubenstein Treasures Gallery, Second Floor, Thomas Jefferson Building'); '“Alive in Many Hands”: The American Folk': wrong country: country 'US', expected BG (location 'Southwest Exhibition Gallery, Second Floor, Thomas Jefferson Building'); \"Thomas Jefferson's Library\": wrong country: country 'US', expected BG (location 'Southwest Pavilion, Second Floor, Thomas Jefferson Building'); start_date 2008-04-11 is in the past",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.madrid.es/portales/munimadrid/es/Talleres-para-aprender-y-divertirse/?vgnextfmt=default&vgnextoid=81682887f345f710VgnVCM1000001d4a900aRCRD&vgnextchannel=c937f073808fe410VgnVCM2000000c205a0aRCRD",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.magicfashionevents.com/events/magic-new-york/event-information/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.majadahonda.org/semana-del-mayor",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.meet.barcelona/es/acontecimientos-principales",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.meetup.com/es-ES/creative-workshops-in-barcelona/",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.meetup.com/fr-FR/madrid-independent-cinema-group/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.mmoca.org/",
+    "reason": "0/3 sampled events good: 'MMoCA Cinema • Our Land': not in New York; 'Drink and Draw': not in New York; 'Diffuse Control by Beeple': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.mmoca.org/events/",
+    "reason": "0/3 sampled events good: 'MMoCA Cinema • Our Land': not in New York; 'MMoCA Cinema • Our Land': not in New York; 'Drink and Draw': not in New York",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.mmoca.org/events/new-york-capital-of-photography/",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.more.com/bg-bg/tickets/",
+    "reason": "fetch failed: ReadTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.more.com/bg-en/tickets/",
+    "reason": "fetch failed: ReadTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.museodelprado.es/en/whats-on/exhibitions",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.mutualart.com/ExhibitionSearchResults/Browse/Madrid--Spain/75981A3F2F45ABB9",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.mycookingparty.com/",
+    "reason": "fetch failed: ConnectTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.myguidebarcelona.com/events",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.myspacebarcelona.com/blog/events_a1.aspx",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nationalgallery.sg/",
+    "reason": "not a listing (venue_info)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nationalgallery.sg/sg/en/exhibitions/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nationalgallery.sg/sg/en/exhibitions/Pop-after-Pop-Art-around-Us.html",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nextevent.ai/united-states/new-york/center-for-architecture/events/ongoing",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nycitff.org/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nycitff.org/nycitff",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.nypl.org/events/exhibitions",
+    "reason": "0/3 sampled events good: 'Polonsky Exhibition of The New York Publ': not in Sofia; 'Silly Old Bear! Winnie-the-Pooh at 100': not in Sofia; 'To Uncover and Reveal to the World: Artu': not in Sofia",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.palaciodeliria.com/actualidad/cultural-plans-in-madrid",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.pamplona.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.pamplona.es/actualidad/eventos",
+    "reason": "0/3 sampled events good: 'Teatro - Teoría king kong - Teatro Gayar': not in Madrid; 'Conferencia - ¿Cómo se hace un libro? - ': not in Madrid; 'II Muestra de cine Irlandés - Ciclo de c': not in Madrid",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.pamplona.es/semanamovilidad",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.planomato.com/",
+    "reason": "1/3 sampled events good: 'Feria Internacional Ganadera de Querétar': not in Barcelona; 'Dimash Qudaibergen - DiMENSIONS': not in Barcelona",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.planomato.com/es/barcelona/p/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.planomato.com/es/barcelona/p/circuito-mercados-vintage-markets-barcelona",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.revistaviajeros.es/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.revistaviajeros.es/inspiracion/cultural",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.revistaviajeros.es/inspiracion/cultural/madrid-exposiciones-de-fotografia-y-viajes",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sculpture-center.org/files/Artnet_Nicola%20L._170830_3.pdf",
+    "reason": "fetch failed: ConnectTimeout",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.semana.es/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sensacine.com/cines/ciudades-27420/",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sensation-apartments.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sensation-apartments.com/en/blog.html",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sensation-apartments.com/en/news/workshops-in-barcelona.html",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.sofarsounds.com/cities/sofia",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.spain-sothebysrealty.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.spain-sothebysrealty.com/journal/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.spain-sothebysrealty.com/journal/art-and-culture-the-must-see-exhibitions-in-madrid",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.spottedbylocals.com/madrid/cinema/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.success.events/cities/new-york-city-ny-us",
+    "reason": "1/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.ticketmaster.es/discover/barcelona?language=en-us",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.timeout.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.timeout.com/madrid/art/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.timeout.com/madrid/art/free-art-in-madrid",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.tripadvisor.ca/Attractions-g187497-Activities-c41-Barcelona_Catalonia.html",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.tripadvisor.co.uk/Attractions-g187514-Activities-c62-Madrid.html",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.tripadvisor.co.uk/Attractions-g294451-Activities-c62-Bulgaria.html",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.tripadvisor.ie/Attractions-g187497-Activities-c56-t97-Barcelona_Catalonia.html",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.tripadvisor.ie/Attractions-g187514-Activities-c56-t272-Madrid.html",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.uc3m.es/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.uc3m.es/empleoyaccesoalmercadolaboral/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.uc3m.es/empleoyaccesoalmercadolaboral/semana-del-empleo",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.velocidadcuchara.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.velocidadcuchara.com/torrijas-fritas-de-semana-santa-paso-a-paso/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.viator.com/es-ES/Barcelona-tours/Cooking-Classes/d562-g6-c19",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.visitsofia.bg/en/events-calendar/day.listevents/2026/03/26/145%7C146%7C147%7C148%7C149%7C150%7C151%7C152%7C153%7C154%7C155%7C156",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.westmall.webnovel.bg/en/stores?cat=6",
+    "reason": "fetch failed: ConnectError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.wfcn.co/festival/",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.wfcn.co/festival/https-www-wfcn-co-nyciff",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.wfcn.co/film-festivals",
+    "reason": "0/3 sampled events good: no events found",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.xhbt.org/whats-on/madrid",
+    "reason": "fetch failed: HTTPStatusError",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.yosilose.com/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.yosilose.com/talleres-cursos-y-clases-en-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://www.yosilose.com/talleres-de-manualidades-en-madrid/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://xceed.me/en/madrid/events?srsltid=AYCX9vLx9o8wiM2L5VtxorztMJQR-dXczbDoI3yOMrNmQ70NGv2sI4ig",
+    "reason": "good listing, but can't be saved: has a query string",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://youth.europa.eu/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://youth.europa.eu/youthweek_es",
+    "reason": "not a listing (single_event)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://zarastro.art/",
+    "reason": "not a listing (other)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://zarastro.art/art-news/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  },
+  {
+    "url": "https://zarastro.art/nyc-fall-2024-art-exhibitions/",
+    "reason": "not a listing (article)",
+    "rejected_on": "2026-11-10"
+  }
+]

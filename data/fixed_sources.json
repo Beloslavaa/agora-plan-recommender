@@ -1429,5 +1429,1014 @@
       "location": null,
       "description": null
     }
+  },
+  {
+    "name": "Casa de México – Exposiciones",
+    "url": "https://www.casademexico.es/exposiciones/",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Hoy Madrid – Exposiciones gratis esta semana",
+    "url": "https://www.hoymadrid.app/planes-exposiciones-esta-semana-en-madrid-gratis/",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "exibart.es – Exposiciones en Madrid",
+    "url": "https://www.exibart.es/exposiciones-madrid/",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".exibart-related-event",
+      "title": ".entry-title",
+      "link": ".entry-title a",
+      "date": ".exibart-related-event-date",
+      "image": ".td-module-image img",
+      "location": ".exibart-related-event-sede",
+      "description": null
+    }
+  },
+  {
+    "name": "CentroCentro – Exhibitions",
+    "url": "https://www.centrocentro.org/en/exhibitions",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".view-taxonomy-term .views-row",
+      "title": ".field-name-node-title",
+      "link": ".field-name-node-title a",
+      "date": ".friendly-date",
+      "image": ".field--name-field-outstanding-image img",
+      "location": null,
+      "description": ".field--name-field-subtitle"
+    }
+  },
+  {
+    "name": "ARTEINFORMADO - Exposiciones de Fotografía en Madrid",
+    "url": "https://www.arteinformado.com/agenda/exposiciones/exposiciones-de-fotografia-en-madrid-espana-p4094_4_0_3",
+    "city": "Madrid",
+    "promoted_by": "explorer/photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "div.row.top30 > div.col-md-4",
+      "title": "h3",
+      "link": "h3 a",
+      "date": ".txt-date",
+      "image": null,
+      "location": ".min-alto-agenda > div.font17:not(.txt-gris)",
+      "description": null
+    }
+  },
+  {
+    "name": "Fundación MAPFRE – Exposiciones",
+    "url": "https://www.fundacionmapfre.org/arte-y-cultura/exposiciones/",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Artlovers – Madrid",
+    "url": "https://artlovers.travel/en/destinations/spain/madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Círculo de Bellas Artes – Agenda",
+    "url": "https://www.circulobellasartes.com/en/agenda/",
+    "city": "Madrid",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".agenda-container .carousel-item",
+      "title": ".carousel-item-titulo",
+      "link": ".carousel-item-titulo a",
+      "date": ".carousel-item-fecha",
+      "image": ".fl-post-image img",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "eCartelera – Cartelera de cine de Madrid",
+    "url": "https://www.ecartelera.com/cines/0,30,1.html",
+    "city": "Madrid",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Renoir Plaza De España - Cartelera",
+    "url": "https://www.pillalas.com/cine/renoir-plaza-espana/cartelera/",
+    "city": "Madrid",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Pillalas.com – Renoir Retiro",
+    "url": "https://www.pillalas.com/cine/renoir-retiro/cartelera/",
+    "city": "Madrid",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Pop Ups Madrid – Calendario",
+    "url": "https://popupsmadrid.es/calendario-pop-up-madrid-2/",
+    "city": "Madrid",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".ai1ec-agenda-view .ai1ec-event",
+      "title": ".ai1ec-event-title",
+      "link": "a.ai1ec-read-more",
+      "date": ".ai1ec-event-time",
+      "image": null,
+      "location": null,
+      "description": ".ai1ec-event-description"
+    }
+  },
+  {
+    "name": "DondeGo – Ferias en Madrid",
+    "url": "https://dondego.es/madrid/ferias/",
+    "city": "Madrid",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Círculo de Bellas Artes – Cursos y talleres",
+    "url": "https://www.circulobellasartes.com/talleres/",
+    "city": "Madrid",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".fl-post-grid-post",
+      "title": ".carousel-item-titulo",
+      "link": ".carousel-item-titulo a",
+      "date": ".carousel-item-fecha",
+      "image": ".fl-post-image img",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Mama pottery - Talleres",
+    "url": "https://mamapottery.com/talleres",
+    "city": "Madrid",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "cierraporfuera - Qué hacer en el centro de Madrid",
+    "url": "https://www.cierraporfuera.com/madrid/madrid/centro/que-hacer.21",
+    "city": "Madrid",
+    "promoted_by": "explorer/comedy_theatre",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "#contenidos .item_portada",
+      "title": "h3 a",
+      "link": "h3 a",
+      "date": "p.fecha",
+      "image": ".foto img",
+      "location": "p.localidad",
+      "description": "p.entradilla"
+    }
+  },
+  {
+    "name": "Palacio de Liria – Activities and Exhibitions",
+    "url": "https://www.palaciodeliria.com/en/actividades-exposiciones-madrid",
+    "city": "Madrid",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Madrid Bullfighting",
+    "url": "https://madridbullfighting.com/",
+    "city": "Madrid",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ArticketBCN",
+    "url": "https://articketbcn.org/es/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".exhibitions .swiper-slide",
+      "title": ".ti",
+      "link": ":scope",
+      "date": ".tx",
+      "image": ".img img",
+      "location": ".museum",
+      "description": ".ds"
+    }
+  },
+  {
+    "name": "MACBA – Guía Digital",
+    "url": "https://www.macba.cat/es/guia-digital/inicio-pwa/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".swiper-slide.macba-activitat-agenda",
+      "title": ".card-title",
+      "link": null,
+      "date": ".macba-type-date",
+      "image": ".activitat-imatge img",
+      "location": null,
+      "description": ".macba-subtitle"
+    }
+  },
+  {
+    "name": "MACBA – What’s On",
+    "url": "https://www.macba.cat/en/whats-on/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".macba-activitat-agenda",
+      "title": ".card-title",
+      "link": "a.text-decoration-none",
+      "date": ".macba-type-date",
+      "image": "img",
+      "location": null,
+      "description": ".macba-subtitle"
+    }
+  },
+  {
+    "name": "Artlovers – Barcelona Exhibitions",
+    "url": "https://artlovers.travel/en/exhibitions/in/spain/barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ArtRabbit – Barcelona",
+    "url": "https://www.artrabbit.com/all-listings/spain/barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ARTEINFORMADO – Exposiciones de Fotografía en Barcelona",
+    "url": "https://www.arteinformado.com/agenda/exposiciones/exposiciones-de-fotografia-en-barcelona-espana-p4072_4_0_3",
+    "city": "Barcelona",
+    "promoted_by": "explorer/photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "div.row.top30 > div.col-md-4",
+      "title": "h3",
+      "link": "h3 a",
+      "date": ".txt-date",
+      "image": null,
+      "location": ".min-alto-agenda .font17",
+      "description": null
+    }
+  },
+  {
+    "name": "La Virreina Centre de la Imatge – Exhibitions",
+    "url": "http://ajuntament.barcelona.cat/lavirreina/en/exhibitions",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".view-exposicions .views-row",
+      "title": "cite span",
+      "link": "a.thumb",
+      "date": ".th-s-date",
+      "image": "figure img",
+      "location": ".label",
+      "description": ".th-s-quote"
+    }
+  },
+  {
+    "name": "Cine Mooby Arenas",
+    "url": "https://www.moobycinemas.com/wai/arenas",
+    "city": "Barcelona",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "eCartelera – Balmes Multicines",
+    "url": "https://www.ecartelera.com/cines/balmes-multicines/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Songkick – Barcelona Conciertos",
+    "url": "https://www.songkick.com/es/metro-areas/28714-spain-barcelona/this-weekend",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Cap de setmana BCN – Música",
+    "url": "https://www.barcelona.cat/capdesetmana/es/musica",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "li.ajuntament-guia-item",
+      "title": ".ajuntament-guia-item-name",
+      "link": ".ajuntament-guia-item-name",
+      "date": ".ajuntament-guia-item-when",
+      "image": ".ajuntament-guia-item-image img",
+      "location": ".ajuntament-guia-item-where",
+      "description": ".ajuntament-guia-item-excerpt"
+    }
+  },
+  {
+    "name": "Taquilla.com – Conciertos en Barcelona",
+    "url": "https://www.taquilla.com/conciertos/barcelona",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "DondeGo Barcelona – Conciertos",
+    "url": "https://dondego.es/barcelona/conciertos/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Time Out Barcelona – Música",
+    "url": "https://www.timeout.cat/barcelona/ca/musica",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.tile:has(time), article.js-carousel-tile:has(time)",
+      "title": "h3",
+      "link": "a[class*='titleLinkContainer']",
+      "date": "time",
+      "image": "img",
+      "location": null,
+      "description": "div[class*='summary']"
+    }
+  },
+  {
+    "name": "Songkick Barcelona",
+    "url": "https://www.songkick.com/es/metro-areas/28714-spain-barcelona/tonight",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Classictic – Concerts in Barcelona",
+    "url": "https://www.classictic.com/en/city/barcelona-t13/barcelona-events-ec1/barcelona-concerts-el375/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "irBarcelona",
+    "url": "https://irbarcelona.org/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".alert_half .bloque:has(.fa-calendar)",
+      "title": "h3",
+      "link": "h3 a, .reservayellowok2 a, .reservatextonew2 a",
+      "date": ".texto_desc2:has(.fa-calendar)",
+      "image": "img",
+      "location": ".texto_desc2:has(.fa-map-marker)",
+      "description": ".texto_desc2:has(.fa-arrow-circle-right, .fa-info-circle)"
+    }
+  },
+  {
+    "name": "Hoy Barcelona – Charlas y talleres",
+    "url": "https://www.hoybarcelona.app/planes-charlas-y-talleres-en-barcelona/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Hoy Barcelona – Planes",
+    "url": "https://www.hoybarcelona.app/planes/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Poble Espanyol – Activities",
+    "url": "https://poble-espanyol.com/en/activities/",
+    "city": "Barcelona",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Barcelona.cat – Cultura 100 %",
+    "url": "https://www.barcelona.cat/es/que-hacer-en-bcn/cultura",
+    "city": "Barcelona",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".ajuntament-guia-item",
+      "title": ".ajuntament-guia-item-name",
+      "link": ".ajuntament-guia-item-name",
+      "date": ".ajuntament-guia-item-when",
+      "image": ".ajuntament-guia-item-image img",
+      "location": ".ajuntament-guia-item-where",
+      "description": ".ajuntament-guia-item-excerpt"
+    }
+  },
+  {
+    "name": "Luma – Arts & Culture Events Barcelona",
+    "url": "https://luma.com/discover/barcelona/arts",
+    "city": "Barcelona",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Barcelona Cultura",
+    "url": "https://www.barcelona.cat/barcelonacultura/en",
+    "city": "Barcelona",
+    "promoted_by": "explorer/photography",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": ".block-bcn-news .item",
+      "title": ".media-content h3",
+      "link": ".media-content h3 a",
+      "date": ".date-new",
+      "image": ".media-destacat img",
+      "location": null,
+      "description": ".text-new"
+    }
+  },
+  {
+    "name": "Национална галерия – Изложби",
+    "url": "https://nationalgallery.bg/bg/exhibitions/",
+    "city": "Sofia",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".naix-post-list article.exhibition",
+      "title": ".entry-title",
+      "link": ".entry-title a",
+      "date": ".custom-meta .date",
+      "image": ".entry-format img",
+      "location": ".custom-meta .place",
+      "description": null
+    }
+  },
+  {
+    "name": "Minerva Art Gallery",
+    "url": "https://minerva-artgallery.com/",
+    "city": "Sofia",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Кино Арена West Mall – Програма",
+    "url": "https://www.kinoarena.com/bg/program/view/arena-mega-mol",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".scheduleRow",
+      "title": ".rowHeader .title",
+      "link": ".rowHeader .title a",
+      "date": ".rowHeader .gold",
+      "image": "img.thumbnail",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Cine Grand – София Ринг Мол",
+    "url": "https://cinegrand.bg/%D1%81%D0%BE%D1%84%D0%B8%D1%8F-%D1%80%D0%B8%D0%BD%D0%B3-%D0%BC%D0%BE%D0%BB/schedule",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Кино Арена The MALL – Филми",
+    "url": "https://www.kinoarena.com/bg/cinema/kino-arena-the-mall/movies",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".scheduleRow",
+      "title": ".rowHeader .title a",
+      "link": ".rowHeader .title a",
+      "date": ".rowHeader em.gold",
+      "image": ".sideInfo img.thumbnail",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Дом на киното",
+    "url": "https://domnakinoto.com/",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Kinoafisha – Cinema City Sofia - Paradise Center",
+    "url": "https://bg.kinoafisha.info/sofia/cinema/8328115/schedule/",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.showtimesListItem_item",
+      "title": ".showtimesMovie_name",
+      "link": ".showtimesMovie_name",
+      "date": ".showtimesListItem_title",
+      "image": ".picture_image",
+      "location": null,
+      "description": ".showtimesMovie_details"
+    }
+  },
+  {
+    "name": "Kinoafisha – Cinema City Sofia - Mall of Sofia",
+    "url": "https://bg.kinoafisha.info/sofia/cinema/8328114/schedule/",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.showtimesListItem_item",
+      "title": ".showtimesMovie_name",
+      "link": ".showtimesMovie_name",
+      "date": ".showtimesListItem_title",
+      "image": ".picture_image",
+      "location": null,
+      "description": ".showtimesMovie_details"
+    }
+  },
+  {
+    "name": "Kinoafisha – Kino Arena The Mall",
+    "url": "https://bg.kinoafisha.info/sofia/cinema/8328117/",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Kinoafisha Sofia – Movies",
+    "url": "https://bg.kinoafisha.info/sofia/movies/",
+    "city": "Sofia",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Grabo.bg – Концерти в София",
+    "url": "https://grabo.bg/events/sofia/popular/koncerti",
+    "city": "Sofia",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".e_results .e_deal",
+      "title": ".ed_event_title",
+      "link": "a.ed_deal_title, a.ed_left",
+      "date": ".ed_date",
+      "image": ".ed_image",
+      "location": ".ed_venue",
+      "description": ".ed_deal_title"
+    }
+  },
+  {
+    "name": "Concerts 50 – Sofia",
+    "url": "https://concerts50.com/bulgaria/sofia",
+    "city": "Sofia",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Bilet BG – Calendar",
+    "url": "https://bilet.bg/en/calendar",
+    "city": "Sofia",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "div.grid article",
+      "title": "p.font-bold",
+      "link": "a[href*='/events/']",
+      "date": "p:nth-of-type(2)",
+      "image": "img",
+      "location": "p:nth-of-type(3)",
+      "description": null
+    }
+  },
+  {
+    "name": "AroundYou-BG – Базари и лайфстайл",
+    "url": "https://aroundyou-bg.com/events/category/bazari/",
+    "city": "Sofia",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Booking.com – Classes and workshops in Sofia",
+    "url": "https://www.booking.com/things-to-do/city/bg/sofia/classes-and-workshops.en-gb.html",
+    "city": "Sofia",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ArtRabbit – New York Popular Listings",
+    "url": "https://www.artrabbit.com/all-listings/united-states/new-york/current-popular",
+    "city": "New York",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.m_listing-item",
+      "title": ".b_small-heading.mod--primary",
+      "link": "a.m_listing-link",
+      "date": ".b_small-heading.mod--colour",
+      "image": ".m_listing-image img",
+      "location": ".b_instructional-text.mod--large",
+      "description": null
+    }
+  },
+  {
+    "name": "Grey Art Museum – Current Exhibitions",
+    "url": "https://greyartmuseum.nyu.edu/exhibitions",
+    "city": "New York",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ArtRabbit – New York",
+    "url": "https://www.artrabbit.com/places/united-states/new-york",
+    "city": "New York",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".Carousel--feature:not(.mod--small) .Media--feature",
+      "title": ".b_small-heading.mod--primary",
+      "link": "a.m_carousel-event-link",
+      "date": ".b_small-heading:not(.mod--primary):not(.b_highlight)",
+      "image": "img",
+      "location": ".b_instructional-text.mod--large",
+      "description": null
+    }
+  },
+  {
+    "name": "MATO – Events in New York",
+    "url": "https://ma.to/events/new-york",
+    "city": "New York",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.group\\/card",
+      "title": "h3",
+      "link": "a[href^='/event/']",
+      "date": ".absolute.top-3 span span",
+      "image": "img.object-cover",
+      "location": ".truncate",
+      "description": "p"
+    }
+  },
+  {
+    "name": "International Center of Photography – Exhibitions",
+    "url": "https://www.icp.org/exhibitions",
+    "city": "New York",
+    "promoted_by": "explorer/photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".cards__three_column .cards__item",
+      "title": ".cards__title",
+      "link": "a.cards__anchor, a.btn-primary",
+      "date": ".field--name-field-text .field__item",
+      "image": ".cards__image img",
+      "location": null,
+      "description": null
+    }
+  },
+  {
+    "name": "Photoville",
+    "url": "https://photoville.com/",
+    "city": "New York",
+    "promoted_by": "explorer/photography",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Pace Gallery – Exhibitions",
+    "url": "https://www.pacegallery.com/exhibitions/",
+    "city": "New York",
+    "promoted_by": "explorer/art_exhibitions",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "li.index-grid__list-item",
+      "title": ".index-grid__text-title",
+      "link": "a.index-grid__link",
+      "date": ".index-grid__text-date",
+      "image": "img.image-base",
+      "location": ".index-grid__text-location",
+      "description": ".index-grid__text-subtitle"
+    }
+  },
+  {
+    "name": "doNYC – Film Screenings",
+    "url": "https://donyc.com/events/film-screenings/today",
+    "city": "New York",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Rooftop Cinema Club Midtown",
+    "url": "https://rooftopcinemaclub.com/us/new-york/midtown",
+    "city": "New York",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "section.rooftop-favs li.splide__slide",
+      "title": "h3.uppercase",
+      "link": "a[href*='/screenings/']",
+      "date": ".flex.items-center.gap-3 div:first-child",
+      "image": "img",
+      "location": "span.truncate",
+      "description": null
+    }
+  },
+  {
+    "name": "The Film-Makers' Cooperative – Screenings & Workshops",
+    "url": "https://film-makerscoop.com/screenings",
+    "city": "New York",
+    "promoted_by": "explorer/cinema",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "li.tile--event",
+      "title": ".tile__title--event",
+      "link": "a.tile__link",
+      "date": ".tile__date--event",
+      "image": null,
+      "location": ".tile__place",
+      "description": ".tile__text"
+    }
+  },
+  {
+    "name": "New Music USA - Community Events Calendar",
+    "url": "https://newmusicusa.org/resources/event-calendar/",
+    "city": "New York",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": ".search-filter-results .grid-item",
+      "title": "h4",
+      "link": "h4 a",
+      "date": ".meta:first-of-type",
+      "image": "img",
+      "location": ".org-location",
+      "description": null
+    }
+  },
+  {
+    "name": "New York City Theatre – Indie & Rock",
+    "url": "https://www.newyorkcitytheatre.com/shows/indie-rock",
+    "city": "New York",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": {
+      "card": "#allShows .grid > .flex > article",
+      "title": "h2",
+      "link": "a[href*='/shows/']",
+      "date": "#heroCTAInfoTableDate p",
+      "image": null,
+      "location": "#heroCTAInfoTableVenue p",
+      "description": "p.font-body"
+    }
+  },
+  {
+    "name": "Eventbrite – New York Alternative Music Events",
+    "url": "https://www.eventbrite.com/b/ny--new-york/music/alternative/",
+    "city": "New York",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Chicmi – New York Women's Sample Sales",
+    "url": "https://www.chicmi.com/new-york/sample-sales/women/",
+    "city": "New York",
+    "promoted_by": "explorer/fashion",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "GarysGuide - NYC Tech Events",
+    "url": "https://www.garysguide.com/events",
+    "city": "New York",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "ClassBento – Cooking Classes NYC",
+    "url": "https://classbento.com/cooking-classes-new-york-city",
+    "city": "New York",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Unique Workshop NYC",
+    "url": "https://www.uniqueworkshop.nyc/",
+    "city": "New York",
+    "promoted_by": "explorer/workshops",
+    "is_general_listing": false,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Secret NYC",
+    "url": "https://secretnyc.co/",
+    "city": "New York",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Performatist – New York",
+    "url": "https://www.performatist.com/newyork",
+    "city": "New York",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "amNY Events",
+    "url": "https://events.amny.com",
+    "city": "New York",
+    "promoted_by": "explorer/music_concerts",
+    "is_general_listing": true,
+    "extractor": "wp_api",
+    "selectors": null
+  },
+  {
+    "name": "NextEvent.ai – New York",
+    "url": "https://www.nextevent.ai/united-states/new-york/ny-usa/events",
+    "city": "New York",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "Expo Assist - New York Exhibitions and Conferences",
+    "url": "https://expoassist.net/events/city/new-york",
+    "city": "New York",
+    "promoted_by": "explorer/festivals_markets",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "#portfolio > .event",
+      "title": "h3",
+      "link": "a[href*='/event/']",
+      "date": "span.text-dark",
+      "image": "img",
+      "location": "span:has(.icon-globe) ~ span",
+      "description": null
+    }
+  },
+  {
+    "name": "NextEvent.ai - InterContinental New York Times Square Past Events",
+    "url": "https://www.nextevent.ai/united-states/new-york/inter-continental-new-york/events/past",
+    "city": "New York",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "NextEvent.ai – Upcoming Events in New York",
+    "url": "https://www.nextevent.ai/united-states/new-york/events/upcoming",
+    "city": "New York",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
+  },
+  {
+    "name": "SUCCESS Events – New York",
+    "url": "https://www.success.events/cities/new-york-ny-us",
+    "city": "New York",
+    "promoted_by": "explorer/cultural",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": {
+      "card": "article.group",
+      "title": "h3",
+      "link": "a.absolute.inset-0",
+      "date": "div.p-4 > div.flex.items-center.gap-2",
+      "image": "img",
+      "location": "div.flex.items-center.justify-between span:last-child",
+      "description": "p.line-clamp-2"
+    }
   }
 ]
