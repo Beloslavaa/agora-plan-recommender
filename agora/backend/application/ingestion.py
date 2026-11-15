@@ -135,12 +135,17 @@ async def run_one_city(
     city: str,
     only_names: set[str] | None,
     stored: dict[tuple[str, str | None], dict] | None = None,
+    light_llm: LLMProvider | None = None,
 ) -> list[PlanData]:
     """Scrape a single city's fixed sources, then classify/enrich the results.
 
     *stored*: what the DB already holds for this city's plans (see
     enrichment.prefill_from_stored), so re-scraped plans skip the LLM calls
     and searches their stored row already answered.
+
+    *light_llm*: a cheaper model for the small batched tasks after scraping
+    (categories, short titles, fallback descriptions); *llm* when omitted.
+    Page extraction always uses *llm*.
 
     Split out so a multi-city (cron) run can call this once per configured
     city, in its own try/except — one city's failure must never abort the
@@ -159,6 +164,7 @@ async def run_one_city(
     # written to the DB, instead of leaving it null for a separate manual
     # backfill run (scripts/backfill_categories.py remains for the
     # pre-existing backlog only).
-    await classify_missing_categories(plans, llm)
+    small_llm = light_llm or llm
+    await classify_missing_categories(plans, small_llm)
 
-    return await enrich_plans(plans, fetcher, store.load_city_settings(), llm=llm, search=search)
+    return await enrich_plans(plans, fetcher, store.load_city_settings(), llm=small_llm, search=search)

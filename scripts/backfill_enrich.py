@@ -76,7 +76,7 @@ def main() -> None:
     before = get_all_plans()
     print(f"Loaded {len(before)} plans.  Before: {_counts(before)}")
 
-    llm = None if args.no_llm else get_llm_provider()
+    llm = None if args.no_llm else get_llm_provider(light=True)  # only small tasks — see run_one_city
     search = None if args.no_search else get_search_provider()
 
     plans = [_to_plan(r) for r in before]

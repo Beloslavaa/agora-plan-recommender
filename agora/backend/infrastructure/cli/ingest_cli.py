@@ -115,12 +115,13 @@ def main() -> None:
         # asyncio.run per city broke them ("Event loop is closed").
         from agora.backend.infrastructure.persistence.postgres_repository import get_stored_plan_fields
 
-        llm, search = get_llm_provider(), get_search_provider()
+        llm, light_llm, search = get_llm_provider(), get_llm_provider(light=True), get_search_provider()
         all_plans, failed = [], 0
         for city in cities:
             try:
                 plans = await run_one_city(
-                    llm, search, fetcher, store, city, only_names, stored=get_stored_plan_fields(city),
+                    llm, search, fetcher, store, city, only_names,
+                    stored=get_stored_plan_fields(city), light_llm=light_llm,
                 )
             except QuotaExhaustedError as e:
                 # Every remaining city would fail the same way. Stop, but hand

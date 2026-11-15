@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicProvider(LLMProvider):
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None) -> None:
         from anthropic import AsyncAnthropic
         self._client = AsyncAnthropic(api_key=settings.anthropic_api_key)
-        self._model = settings.anthropic_model
+        self._model = model or settings.anthropic_model
 
     async def complete(
         self,
@@ -52,13 +52,13 @@ class AnthropicProvider(LLMProvider):
 
 
 class OpenAIProvider(LLMProvider):
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None) -> None:
         from openai import AsyncOpenAI
         kwargs = {"api_key": settings.openai_api_key}
         if settings.openai_base_url:
             kwargs["base_url"] = settings.openai_base_url
         self._client = AsyncOpenAI(**kwargs)
-        self._model = settings.openai_model
+        self._model = model or settings.openai_model
 
     async def complete(
         self,
@@ -95,13 +95,16 @@ class OpenAIProvider(LLMProvider):
 
 
 class GeminiProvider(LLMProvider):
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None) -> None:
         from openai import AsyncOpenAI
         self._client = AsyncOpenAI(
             api_key=settings.gemini_api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         )
-        self._model = settings.gemini_model
+        self._model = model or settings.gemini_model
+        # Flipped off the first time this model rejects reasoning_effort (see
+        # complete()), so one 400 doesn't repeat on every later call.
+        self._send_reasoning_effort = True
 
     async def complete(
         self,
@@ -115,11 +118,8 @@ class GeminiProvider(LLMProvider):
             messages.append({"role": "user", "content": f"{system}\n\n{prompt}"})
         else:
             messages.append({"role": "user", "content": prompt})
-        resp = await self._client.chat.completions.create(
-            model=self._model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
+        kwargs = dict(model=self._model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+        if self._send_reasoning_effort:
             # Gemini flash models spend part of max_tokens on invisible "thinking"
             # tokens before writing the response, and the split is unpredictable
             # run to run (observed 11k-15k thinking tokens on the same prompt) —
@@ -131,8 +131,25 @@ class GeminiProvider(LLMProvider):
             # ("Thinking level MINIMAL is not supported for this model") while
             # "none" works. "none" is confirmed to work on both gemini-flash-
             # latest and the pinned gemini-2.5-flash, so it's the safe choice.)
-            reasoning_effort="none",
-        )
+            kwargs["reasoning_effort"] = "none"
+        try:
+            resp = await self._client.chat.completions.create(**kwargs)
+        except Exception as e:
+            # A model that has no thinking to switch off (or takes a different
+            # level, as above) 400s on the parameter itself. Retry once
+            # without it — such models don't think by default anyway.
+            msg = str(e).lower()
+            rejected = (
+                "reasoning_effort" in kwargs
+                and getattr(e, "status_code", None) == 400
+                and ("reasoning" in msg or "thinking" in msg)
+            )
+            if not rejected:
+                raise
+            logger.warning("%s rejected reasoning_effort=none — sending without it from now on", self._model)
+            self._send_reasoning_effort = False
+            kwargs.pop("reasoning_effort", None)
+            resp = await self._client.chat.completions.create(**kwargs)
         return resp.choices[0].message.content or ""
 
     async def parse_json(
@@ -150,14 +167,17 @@ class GeminiProvider(LLMProvider):
         return self._parse_json_safe(raw)
 
 
-def get_llm_provider() -> LLMProvider:
+def get_llm_provider(light: bool = False) -> LLMProvider:
+    """The configured provider. *light*: its cheaper model (settings.*_light_model),
+    for small batched tasks — see enrichment.generate_short_titles."""
     providers = {
-        "anthropic": AnthropicProvider,
-        "openai": OpenAIProvider,
-        "gemini": GeminiProvider,
+        "anthropic": (AnthropicProvider, settings.anthropic_light_model),
+        "openai": (OpenAIProvider, settings.openai_light_model),
+        "gemini": (GeminiProvider, settings.gemini_light_model),
     }
-    cls = providers.get(settings.llm_provider)
-    if not cls:
+    entry = providers.get(settings.llm_provider)
+    if not entry:
         msg = f"Unknown LLM provider: {settings.llm_provider}. Available: {list(providers)}"
         raise ValueError(msg)
-    return cls()
+    cls, light_model = entry
+    return cls(light_model if light else None)
