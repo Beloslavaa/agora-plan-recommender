@@ -759,6 +759,23 @@ def list_cinema_plans(key: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def get_stored_plan_fields(city: str) -> dict[tuple[str, str | None], dict]:
+    """Every stored plan in *city* (stale included — a re-scraped plan
+    upserts onto its row either way), keyed like the plans table's unique
+    index: (lower(btrim(title)), start_date). Carries the fields ingestion's
+    enrichment would otherwise re-generate; see
+    enrichment.prefill_from_stored."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT title, start_date, short_title, description, category, url, ticket_url, image_url "
+            "FROM plans WHERE city = %s",
+            (city,),
+        ).fetchall()
+    # start_date is a TEXT column holding the ISO date upsert_plans wrote,
+    # so it's already in stored_plan_key's format; str() also covers a DATE.
+    return {(r["title"].strip().lower(), str(r["start_date"]) if r["start_date"] else None): dict(r) for r in rows}
+
+
 def mark_stale_plans() -> int:
     """Soft-delete plans whose run is fully over: COALESCE(end_date,
     start_date) is before today. Plans with no date at all ("DATES TBA") are

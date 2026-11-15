@@ -113,11 +113,15 @@ def main() -> None:
         # One event loop for every city: LLM/HTTP clients and the pipeline's
         # semaphore bind to the loop they're first used on, so one
         # asyncio.run per city broke them ("Event loop is closed").
+        from agora.backend.infrastructure.persistence.postgres_repository import get_stored_plan_fields
+
         llm, search = get_llm_provider(), get_search_provider()
         all_plans, failed = [], 0
         for city in cities:
             try:
-                plans = await run_one_city(llm, search, fetcher, store, city, only_names)
+                plans = await run_one_city(
+                    llm, search, fetcher, store, city, only_names, stored=get_stored_plan_fields(city),
+                )
             except QuotaExhaustedError as e:
                 # Every remaining city would fail the same way. Stop, but hand
                 # back the cities that finished so their plans still get saved.

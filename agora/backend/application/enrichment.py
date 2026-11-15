@@ -269,6 +269,38 @@ async def enrich_plan(
     return plan
 
 
+def stored_plan_key(title: str, start_date) -> tuple[str, str | None]:
+    """The (title, start_date) half of the DB's (title, city, start_date)
+    key, normalised the same way — city is implied, lookups are per city."""
+    return title.strip().lower(), start_date.isoformat() if start_date else None
+
+
+def prefill_from_stored(plans: list[PlanData], stored: dict[tuple[str, str | None], dict]) -> int:
+    """Copy what the DB already holds onto re-scraped plans, BEFORE
+    classification/enrichment, so those steps skip work whose result would
+    be thrown away anyway: on a key conflict upsert_plans keeps any
+    non-empty stored value, so re-generating a short title, description or
+    category, or re-searching a URL, for a plan already stored only spends
+    LLM calls and SerpApi searches.
+
+    Only fills fields the scrape left empty. A stored placeholder image is
+    NOT copied, so enrichment still tries the event page for a real one.
+    *stored*: stored_plan_key -> stored row, for this run's city. Returns
+    how many plans matched a stored row."""
+    matched = 0
+    for p in plans:
+        row = stored.get(stored_plan_key(p.title, p.start_date))
+        if not row:
+            continue
+        matched += 1
+        for field in ("short_title", "description", "category", "url", "ticket_url"):
+            if not getattr(p, field) and row.get(field):
+                setattr(p, field, row[field])
+        if _lacks_image(p) and row.get("image_url") and not is_placeholder_image(row["image_url"]):
+            p.image_url = row["image_url"]
+    return matched
+
+
 async def enrich_plans(
     plans: list[PlanData],
     fetcher: PageFetcher,

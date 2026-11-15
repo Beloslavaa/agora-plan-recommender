@@ -7,7 +7,7 @@ import asyncio
 import logging
 from datetime import date
 
-from agora.backend.application.enrichment import classify_missing_categories, enrich_plans
+from agora.backend.application.enrichment import classify_missing_categories, enrich_plans, prefill_from_stored
 from agora.backend.application.ports import (
     LLMProvider,
     PageFetcher,
@@ -134,8 +134,13 @@ async def run_one_city(
     store: SourceStore,
     city: str,
     only_names: set[str] | None,
+    stored: dict[tuple[str, str | None], dict] | None = None,
 ) -> list[PlanData]:
     """Scrape a single city's fixed sources, then classify/enrich the results.
+
+    *stored*: what the DB already holds for this city's plans (see
+    enrichment.prefill_from_stored), so re-scraped plans skip the LLM calls
+    and searches their stored row already answered.
 
     Split out so a multi-city (cron) run can call this once per configured
     city, in its own try/except — one city's failure must never abort the
@@ -143,6 +148,10 @@ async def run_one_city(
     the whole run on its one event loop.
     """
     plans = await run_fixed_pipeline(llm, fetcher, store, city, only_names=only_names)
+
+    if stored:
+        known = prefill_from_stored(plans, stored)
+        logger.info("[%s] %d of %d scraped plan(s) already stored — reusing their enrichment", city, known, len(plans))
 
     # Not every plan gets a category while scraping (see
     # enrichment.classify_missing_categories) — general listings' plans
