@@ -107,62 +107,65 @@ def main() -> None:
     from agora.backend.infrastructure.llm.providers import get_llm_provider
     from agora.backend.infrastructure.search.providers import get_search_provider
 
-    only_names = set(args.source) if args.source else None
-
-    async def _all() -> tuple[list, int, QuotaExhaustedError | None]:
-        # One event loop for every city: LLM/HTTP clients and the pipeline's
-        # semaphore bind to the loop they're first used on, so one
-        # asyncio.run per city broke them ("Event loop is closed").
-        from agora.backend.infrastructure.persistence.postgres_repository import get_stored_plan_fields
-
-        llm, light_llm, search = get_llm_provider(), get_llm_provider(light=True), get_search_provider()
-        all_plans, failed = [], 0
-        for city in cities:
-            try:
-                plans = await run_one_city(
-                    llm, search, fetcher, store, city, only_names,
-                    stored=get_stored_plan_fields(city), light_llm=light_llm,
-                )
-            except QuotaExhaustedError as e:
-                # Every remaining city would fail the same way. Stop, but hand
-                # back the cities that finished so their plans still get saved.
-                return all_plans, failed, e
-            except Exception as e:
-                # One city's bad source / LLM hiccup must not take down the
-                # rest of an unattended multi-city run.
-                logger.error("[%s] pipeline failed: %s", city, e)
-                failed += 1
-                continue
-            all_plans.extend(plans)
-            print(f"\n[{city}] Scraped this run: {len(plans)}")
-            for p in plans:
-                print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
-        return all_plans, failed, None
-
-    all_plans, failed, quota_error = asyncio.run(_all())
-
-    # Partial failure stays tolerated above, but if *every* city blew up the
-    # run accomplished nothing — exit non-zero so CI shows red instead of a
-    # green check on a run that only produced stack traces.
-    if failed == len(cities) and not quota_error:
-        logger.error("All %d city pipeline(s) failed — nothing was processed.", failed)
-        sys.exit(1)
-
     from agora.backend.application.graph_recommendation import backfill_graph_embeddings
     from agora.backend.application.recommendation import backfill_embeddings
     from agora.backend.infrastructure.embeddings import gemini_embeddings
     from agora.backend.infrastructure.persistence import postgres_repository
     from agora.backend.infrastructure.persistence.postgres_repository import (
         get_plan_count,
+        get_stored_plan_fields,
         mark_stale_plans,
         pool,
         upsert_plans,
     )
 
+    only_names = set(args.source) if args.source else None
+
+    async def _all() -> tuple[int, int, QuotaExhaustedError | None]:
+        # One event loop for every city: LLM/HTTP clients and the pipeline's
+        # semaphore bind to the loop they're first used on, so one
+        # asyncio.run per city broke them ("Event loop is closed").
+        llm, light_llm, search = get_llm_provider(), get_llm_provider(light=True), get_search_provider()
+        inserted, failed = 0, 0
+        for city in cities:
+            try:
+                plans = await run_one_city(
+                    llm, search, fetcher, store, city, only_names,
+                    stored=get_stored_plan_fields(city), light_llm=light_llm,
+                )
+                # Saved as soon as the city finishes, not once at the end:
+                # running out of credit, a crash or a killed job later in the
+                # run then costs at most the city in progress, never the
+                # cities already done.
+                new = upsert_plans(plans)
+            except QuotaExhaustedError as e:
+                # Every remaining city would fail the same way. Stop — the
+                # cities that finished are already saved.
+                return inserted, failed, e
+            except Exception as e:
+                # One city's bad source / LLM hiccup / failed save must not
+                # take down the rest of an unattended multi-city run.
+                logger.error("[%s] pipeline failed: %s", city, e)
+                failed += 1
+                continue
+            inserted += new
+            print(f"\n[{city}] Scraped this run: {len(plans)}  Saved as new: {new}")
+            for p in plans:
+                print(f"  · {p.title} [{p.source_type}] — {p.location or 'N/A'}")
+        return inserted, failed, None
+
     # finally: close the DB pool even when a step below throws — otherwise
     # its worker threads outlive the run and print "couldn't stop thread".
     try:
-        inserted = upsert_plans(all_plans)
+        inserted, failed, quota_error = asyncio.run(_all())
+
+        # Partial failure stays tolerated above, but if *every* city blew up
+        # the run accomplished nothing — exit non-zero so CI shows red instead
+        # of a green check on a run that only produced stack traces.
+        if failed == len(cities) and not quota_error:
+            logger.error("All %d city pipeline(s) failed — nothing was processed.", failed)
+            sys.exit(1)
+
         total = get_plan_count()
         print(f"\nNew: {inserted}  Total in DB (all cities): {total}")
         if quota_error:
