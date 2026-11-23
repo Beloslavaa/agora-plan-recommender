@@ -137,12 +137,14 @@ class GeminiProvider(LLMProvider):
         except Exception as e:
             # A model that has no thinking to switch off (or takes a different
             # level, as above) 400s on the parameter itself. Retry once
-            # without it — such models don't think by default anyway.
+            # without it — such models don't think by default anyway. Some
+            # reject it with only a generic "Request contains an invalid
+            # argument" (gemini-flash-lite-latest, 2026-11), so that counts too.
             msg = str(e).lower()
             rejected = (
                 "reasoning_effort" in kwargs
                 and getattr(e, "status_code", None) == 400
-                and ("reasoning" in msg or "thinking" in msg)
+                and ("reasoning" in msg or "thinking" in msg or "invalid_argument" in msg)
             )
             if not rejected:
                 raise

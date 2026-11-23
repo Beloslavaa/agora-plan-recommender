@@ -34,7 +34,11 @@ class Settings(BaseSettings):
     # titles, categories, fallback descriptions) — short-input classification
     # and rewording that don't need the extraction model. Page extraction,
     # discovery and selector learning stay on the models above.
-    gemini_light_model: str = "gemini-flash-lite-latest"
+    # Pinned, not "gemini-flash-lite-latest": as of 2026-11 that alias 400s
+    # ("Request contains an invalid argument") on reasoning_effort="none",
+    # which every batched call sends to keep thinking off. 2.5-flash-lite
+    # accepts it (checked with scripts/check_light_model.py).
+    gemini_light_model: str = "gemini-2.5-flash-lite"
     openai_light_model: str = "gpt-4o-mini"
     anthropic_light_model: str = "claude-haiku-4-5"
     # Used by the semantic recommender (agora/backend/recommender/semantic.py)

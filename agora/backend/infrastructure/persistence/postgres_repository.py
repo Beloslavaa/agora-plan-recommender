@@ -517,6 +517,25 @@ def get_plans_missing_category() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def get_live_plans_missing_category_or_short_title() -> list[dict]:
+    """Browsable plans (not stale) still lacking a category or short title —
+    what a run whose batched LLM calls failed leaves behind. See
+    scripts/backfill_light_fields.py."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, title, description, tags, category, short_title FROM plans "
+            "WHERE NOT is_stale AND (category IS NULL OR COALESCE(short_title, '') = '')"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_plan_short_title(plan_id: int, short_title: str) -> None:
+    """Unlike set_plan_category, leaves the embedding alone: short_title
+    isn't part of the embedded text (domain/ranking.py's plan_text)."""
+    with _conn() as conn:
+        conn.execute("UPDATE plans SET short_title = %s WHERE id = %s", (short_title, plan_id))
+
+
 def set_plan_category(plan_id: int, category: str) -> None:
     """Also nulls the semantic embedding: it's computed from title +
     CATEGORY + tags + description (domain/ranking.py's plan_text), so an
