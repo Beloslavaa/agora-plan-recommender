@@ -15,7 +15,10 @@ from agora.backend.domain.validation import validate_plan
 
 SAMPLE_SIZE = 3
 MIN_GOOD_EVENTS = 2
-REJECTION_DAYS = 90
+# Two quarterly discovery runs: a page turned down is skipped by the next
+# run and re-checked by the one after (90 days ≈ one cycle, so rejections
+# would expire right as the next run starts and be re-sampled every time).
+REJECTION_DAYS = 180
 
 # Sites that are never a fixed source on any page. Fever is added by hand
 # (its city category pages), never through search — its search hits are

@@ -10,7 +10,7 @@ For each source it records:
   LLM extractor — JSON-LD and dice.fm pages are already read without it.
 
 Results are written to data/fixed_sources.json, which ships inside the
-image — so this runs before a deploy (the monthly source-discovery Action,
+image — so this runs before a deploy (the quarterly source-discovery Action,
 or locally), never from the deployed pipeline. Driven by
 `main.py --mode setup-sources` (infrastructure/cli/ingest_cli.py).
 """

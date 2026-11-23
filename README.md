@@ -147,9 +147,12 @@ One image, two roles — both run from the same container, off the same
   (Application type) that `docker exec`s into that same running container on
   a cron. This is the ingestion half: scrape the known sources, extract
   plans, upsert them, backfill embeddings, mark stale plans. It reaches
-  Postgres directly over Dokploy's internal network.
+  Postgres directly over Dokploy's internal network. It runs monthly
+  (`0 5 12 * *`, the 12th at 05:00 UTC). That keeps LLM spend low while the
+  feed stays fresh, since most events are announced only weeks ahead. The
+  cron lives in Dokploy's UI, not in this repo.
 
-**Source discovery is a completely separate concern** and runs monthly on
+**Source discovery is a completely separate concern** and runs quarterly (10th of Jan/Apr/Jul/Oct) on
 GitHub Actions (`.github/workflows/ingestion.yml`, `--mode explorer`, also
 triggerable from the Actions tab). It searches for new sources, compares
 them against the existing list, and opens a PR proposing additions to
@@ -159,7 +162,7 @@ plans, since ingestion is the worker's job: for each search hit it samples
 3 events with one small LLM call and promotes the page when it's an events
 listing with at least 2 good ones. A hit that's a single event or an
 article leads to the listing it belongs to instead. Pages it turns down go
-to `data/rejected_sources.json` and are skipped for 90 days. See
+to `data/rejected_sources.json` and are skipped for 180 days (the next quarterly run). See
 `application/source_discovery.py`.
 
 After exploring, the same job runs `--mode setup-sources` on the newly

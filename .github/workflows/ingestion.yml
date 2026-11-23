@@ -8,9 +8,11 @@ name: Source discovery
 
 on:
   schedule:
-    # Once a month, on the 10th, 04:00 UTC. GitHub may delay scheduled runs
-    # by a few minutes under load — that's fine for this job.
-    - cron: "0 4 10 * *"
+    # Once a quarter: the 10th of Jan, Apr, Jul and Oct, 04:00 UTC. Each run
+    # costs LLM credit and SerpApi searches, and new sources don't appear
+    # fast enough to need more. GitHub may delay scheduled runs by a few
+    # minutes under load — that's fine for this job.
+    - cron: "0 4 10 1,4,7,10 *"
   workflow_dispatch: {}   # lets you trigger a run manually from the Actions tab
 
 permissions:
@@ -47,7 +49,7 @@ jobs:
       # Records how each newly promoted source is read (extractor, and CSS
       # selectors for pages that would otherwise go to the LLM every run) —
       # see application/source_setup.py. Only sources without an extractor
-      # yet, so a month that promoted nothing makes no LLM calls here. Its
+      # yet, so a run that promoted nothing makes no LLM calls here. Its
       # Markdown report goes into the PR body below for review.
       - name: Set up newly promoted sources
         env:
@@ -60,7 +62,7 @@ jobs:
         run: |
           {
             cat <<'BODY'
-          Proposed by the monthly source-discovery run
+          Proposed by the quarterly source-discovery run
           (`.github/workflows/ingestion.yml`, `--mode explorer` then `--mode setup-sources`).
 
           Each new entry was found by search and passed discovery's checks
@@ -68,7 +70,7 @@ jobs:
           city and fitting a category), but nothing here has been scraped for
           plans yet — ingestion only picks a source up after this merges and
           Dokploy redeploys. Merging also records this run's rejections in
-          `data/rejected_sources.json`, so next month skips them.
+          `data/rejected_sources.json`, so the next run skips them.
 
           Worth a look before merging:
           - does each URL actually list events for the city it's filed under,
@@ -94,7 +96,7 @@ jobs:
       #
       # Opens a PR even when nothing was promoted, as long as something was
       # rejected — data/rejected_sources.json changed, and merging it is what
-      # makes next month skip those pages. No diff at all → no PR.
+      # makes the next run skip those pages. No diff at all → no PR.
       # The fixed branch name means a run while a PR is still open updates
       # that PR instead of opening a second one.
       - name: Open PR for newly promoted fixed sources

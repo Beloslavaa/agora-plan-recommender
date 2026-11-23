@@ -6,7 +6,7 @@ Per city and category: the LLM writes 2 search queries, each returns 5 hits.
 Each hit goes through:
 
 1. URL rules (domain/source_rules.py), no fetch — skip-listed sites (social media, Fever, ...), URLs
-   that overlap an existing source, URLs rejected in the last 90 days.
+   that overlap an existing source, URLs rejected in the last REJECTION_DAYS (180) days.
 2. One small LLM call on the hit's page (see SAMPLE_SYSTEM): what kind of
    page it is, up to 3 of its upcoming events, and — when it isn't a
    listing itself — the link to the listing it belongs to.
@@ -19,7 +19,7 @@ Each hit goes through:
    site's root — each checked the same way.
 
 Everything checked and not promoted is remembered in
-data/rejected_sources.json (per URL, for 90 days), so the next runs
+data/rejected_sources.json (per URL, for REJECTION_DAYS), so the next runs
 don't pay for it again.
 """
 
@@ -48,6 +48,7 @@ from agora.backend.domain.schemas import (
     PlanData,
 )
 from agora.backend.domain.source_rules import (
+    REJECTION_DAYS,
     SAMPLE_SIZE,
     UrlKey,
     is_skip_listed,
@@ -267,7 +268,7 @@ class _CityDiscovery:
         if overlaps(url, self.source_keys):
             return "overlaps an existing source"
         if recently_rejected(self.rejected.get(url_key(url)), date.today()):
-            return "rejected in the last 90 days"
+            return f"rejected in the last {REJECTION_DAYS} days"
         return None
 
     async def run(self, categories: list[PlanCategory]) -> DiscoveryReport:
