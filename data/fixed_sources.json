@@ -2438,5 +2438,14 @@
       "location": "div.flex.items-center.justify-between span:last-child",
       "description": "p.line-clamp-2"
     }
+  },
+  {
+    "name": "CULTURAMA – Events",
+    "url": "https://culturama.art/en/events",
+    "city": "Sofia",
+    "promoted_by": "manual/music_concerts",
+    "is_general_listing": true,
+    "extractor": "page",
+    "selectors": null
   }
 ]

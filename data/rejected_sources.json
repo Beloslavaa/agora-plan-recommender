@@ -450,11 +450,6 @@
     "rejected_on": "2026-11-10"
   },
   {
-    "url": "https://culturama.art/en/events.html",
-    "reason": "1/3 sampled events good: no events found",
-    "rejected_on": "2026-11-10"
-  },
-  {
     "url": "https://dice.fm/browse/new_york-5bbf4db0f06331478e9b2c59/music/gig?lng=en-US",
     "reason": "good listing, but can't be saved: has a query string",
     "rejected_on": "2026-11-10"
